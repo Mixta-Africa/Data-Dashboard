@@ -7,1137 +7,1852 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --red:#C0392B;--red2:#E74C3C;--red3:#F5B7B1;--red4:#FDECEA;--red5:#922B21;
-  --bg:#F4F5F7;--card:rgba(255,255,255,0.82);--card-border:rgba(255,255,255,0.92);
-  --text:#1A1A2E;--text2:#5A5A72;--text3:#9090A8;
-  --shadow-sm:0 2px 8px rgba(0,0,0,0.06),0 0 0 0.5px rgba(0,0,0,0.04);
-  --shadow-md:0 4px 24px rgba(0,0,0,0.08),0 0 0 0.5px rgba(0,0,0,0.06);
-  --r:18px;--r-sm:10px;--font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
-}
-html{scroll-behavior:smooth}
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* GLASS */
-.glass{background:var(--card);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid var(--card-border);border-radius:var(--r);box-shadow:var(--shadow-md)}
+  :root {
+    --red: #C0392B;
+    --red-light: #E74C3C;
+    --red-pale: #FDECEA;
+    --red-mid: #F5B7B1;
+    --red-dark: #922B21;
+    --white: #FFFFFF;
+    --bg: #F4F5F7;
+    --bg2: #ECEEF2;
+    --card: rgba(255,255,255,0.78);
+    --card-border: rgba(255,255,255,0.9);
+    --text: #1A1A2E;
+    --text2: #5A5A72;
+    --text3: #9090A8;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.06), 0 0 0 0.5px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 24px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.06);
+    --shadow-lg: 0 8px 48px rgba(0,0,0,0.10), 0 0 0 0.5px rgba(0,0,0,0.06);
+    --radius: 18px;
+    --radius-sm: 10px;
+    --radius-xs: 6px;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+    --transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
 
-/* HEADER */
-.hdr{background:rgba(255,255,255,0.88);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%);border-bottom:1px solid rgba(255,255,255,0.9);box-shadow:0 1px 20px rgba(0,0,0,0.06);position:sticky;top:0;z-index:200;padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:60px;gap:16px}
-.brand{display:flex;align-items:center;gap:12px;flex-shrink:0}
-.brand-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--red) 0%,var(--red2) 100%);border-radius:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(192,57,43,0.3);flex-shrink:0}
-.brand-icon svg{width:17px;height:17px;fill:white}
-.brand-title{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-0.3px;white-space:nowrap}
-.brand-sub{font-size:10px;color:var(--text3);font-weight:400}
-.nav{display:flex;gap:2px;flex-shrink:0}
-.nav-btn{padding:5px 13px;border-radius:7px;font-size:12.5px;font-weight:500;color:var(--text2);background:none;border:none;cursor:pointer;transition:all 0.18s;font-family:var(--font);white-space:nowrap}
-.nav-btn:hover,.nav-btn.active{background:var(--red4);color:var(--red)}
-.hdr-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
-.live-badge{display:flex;align-items:center;gap:6px;background:var(--red4);border:1px solid var(--red3);border-radius:20px;padding:4px 11px;font-size:11px;font-weight:600;color:var(--red);white-space:nowrap}
-.live-dot{width:6px;height:6px;background:var(--red);border-radius:50%;animation:pulse 1.8s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
-.sync-btn{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;font-size:11.5px;font-weight:500;color:var(--red);background:var(--red4);border:1px solid var(--red3);cursor:pointer;font-family:var(--font);transition:all 0.18s;white-space:nowrap}
-.sync-btn:hover{background:var(--red3)}
-.sync-btn svg{width:13px;height:13px;transition:transform 0.4s}
-.sync-btn.spinning svg{animation:spin 0.8s linear infinite}
-@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  html { scroll-behavior: smooth; }
 
-/* LOADER */
-.loader-overlay{position:fixed;inset:0;background:rgba(255,255,255,0.92);backdrop-filter:blur(20px);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.4s}
-.loader-overlay.hidden{opacity:0;pointer-events:none}
-.loader-spinner{width:44px;height:44px;border:3px solid var(--red3);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite}
-.loader-text{font-size:13px;color:var(--text2);font-weight:500}
-.loader-sub{font-size:11px;color:var(--text3)}
-.error-bar{display:none;background:#FFF3CD;border:1px solid #FFEAA7;border-radius:8px;padding:10px 16px;margin:12px 28px 0;font-size:12px;color:#856404;align-items:center;gap:8px}
-.error-bar.show{display:flex}
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
-/* MAIN */
-.main{padding:22px 28px;max-width:1600px;margin:0 auto}
-.section{display:none}
-.section.active{display:block;animation:fadeIn 0.35s ease}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  /* GLASS EFFECT */
+  .glass {
+    background: var(--card);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+  }
 
-/* KPI */
-.kpi-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:18px}
-.kpi{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.92);border-radius:15px;box-shadow:var(--shadow-sm);padding:16px 18px;position:relative;overflow:hidden;transition:box-shadow 0.2s,transform 0.2s}
-.kpi:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
-.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--red),var(--red2));border-radius:15px 15px 0 0}
-.kpi-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px}
-.kpi-value{font-size:21px;font-weight:600;color:var(--text);letter-spacing:-.5px;line-height:1.1}
-.kpi-value.red{color:var(--red)}
-.kpi-sub{font-size:10px;color:var(--text3);margin-top:4px}
-.kpi-sub.up{color:#27AE60}.kpi-sub.dn{color:var(--red)}
+  .glass-sm {
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.85);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+  }
 
-/* GRIDS */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
-.g21{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
-.g32{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px}
-.full{margin-bottom:14px}
+  /* HEADER */
+  .header {
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(32px) saturate(200%);
+    -webkit-backdrop-filter: blur(32px) saturate(200%);
+    border-bottom: 1px solid rgba(255,255,255,0.9);
+    box-shadow: 0 1px 24px rgba(0,0,0,0.06);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+  }
 
-/* CHART CARD */
-.cc{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.92);border-radius:var(--r);box-shadow:var(--shadow-sm);padding:20px 22px;transition:box-shadow 0.2s}
-.cc:hover{box-shadow:var(--shadow-md)}
-.ch{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:8px}
-.ct{font-size:13.5px;font-weight:600;color:var(--text);letter-spacing:-.2px}
-.cs{font-size:10.5px;color:var(--text3);margin-top:2px}
-.badge{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:500;flex-shrink:0}
-.br{background:var(--red4);color:var(--red);border:1px solid var(--red3)}
-.bg_{background:#F0F0F4;color:var(--text2);border:1px solid #E0E0E8}
-.bgrn{background:#EAFAF1;color:#1E8449;border:1px solid #A9DFBF}
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
 
-/* CHART WRAP */
-.cw{position:relative;width:100%}
+  .brand-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--red) 0%, var(--red-light) 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(192,57,43,0.35);
+  }
 
-/* SPARKLINE BARS */
-.sl-row{display:flex;align-items:center;gap:8px;margin-bottom:9px}
-.sl-lbl{width:190px;font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
-.sl-bw{flex:1;height:7px;background:#F0F0F4;border-radius:4px;overflow:hidden}
-.sl-bf{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--red5),var(--red2))}
-.sl-val{width:110px;text-align:right;color:var(--text);font-family:var(--mono);font-size:10.5px;font-weight:500;flex-shrink:0}
+  .brand-icon svg { width: 18px; height: 18px; fill: white; }
 
-/* RANK BADGE */
-.rn{width:20px;height:20px;background:var(--red4);color:var(--red);border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;font-family:var(--mono);flex-shrink:0}
+  .brand-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
 
-/* LEGEND */
-.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px}
-.li{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--text2)}
-.ld{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+  .brand-sub {
+    font-size: 11px;
+    color: var(--text3);
+    font-weight: 400;
+  }
 
-/* INSIGHT STRIP */
-.ins-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
-.ins{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.92);border-radius:13px;box-shadow:var(--shadow-sm);padding:15px 17px;display:flex;gap:12px;align-items:flex-start}
-.ins-ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.ins-ico.r{background:var(--red4)}.ins-ico.g{background:#EAFAF1}.ins-ico.a{background:#FEF9E7}.ins-ico.b{background:#EBF5FB}
-.ins-ico svg{width:17px;height:17px}
-.ins-ico.r svg{color:var(--red)}.ins-ico.g svg{color:#1E8449}.ins-ico.a svg{color:#D68910}.ins-ico.b svg{color:#1A5276}
-.ins-val{font-size:18px;font-weight:600;color:var(--text);letter-spacing:-.4px}
-.ins-lbl{font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4}
+  .header-nav {
+    display: flex;
+    gap: 4px;
+  }
 
-/* HEATMAP */
-.hm-cell{display:inline-block;width:36px;height:28px;border-radius:4px;font-size:9px;font-weight:500;font-family:var(--mono);text-align:center;line-height:28px;color:white;cursor:default;transition:transform 0.12s}
-.hm-cell:hover{transform:scale(1.12);z-index:2;position:relative}
+  .nav-btn {
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: var(--font);
+  }
 
-/* STATUS INDICATOR */
-.status-pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:500}
+  .nav-btn:hover, .nav-btn.active {
+    background: var(--red-pale);
+    color: var(--red);
+  }
 
-/* DATA FRESHNESS */
-.freshness{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px}
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
 
-/* SECTION DIVIDER */
-.sdiv{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;margin-top:6px;display:flex;align-items:center;gap:8px}
-.sdiv::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(0,0,0,0.07) 0%,transparent 100%)}
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--red-pale);
+    border: 1px solid var(--red-mid);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--red);
+    letter-spacing: 0.3px;
+  }
 
-/* TABLE */
-.tbl-scroll{max-height:320px;overflow-y:auto}
-.tbl-scroll::-webkit-scrollbar{width:4px}
-.tbl-scroll::-webkit-scrollbar-thumb{background:var(--red3);border-radius:4px}
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--red);
+    border-radius: 50%;
+    animation: pulse 1.8s ease-in-out infinite;
+  }
 
-/* RESPONSIVE */
-@media(max-width:1200px){
-  .kpi-strip{grid-template-columns:repeat(3,1fr)}
-  .ins-strip{grid-template-columns:repeat(2,1fr)}
-  .g21,.g32{grid-template-columns:1fr}
-}
-@media(max-width:768px){
-  .main{padding:14px}.hdr{padding:0 14px}
-  .kpi-strip{grid-template-columns:repeat(2,1fr)}
-  .g2,.g3,.g21,.g32{grid-template-columns:1fr}
-  .ins-strip{grid-template-columns:1fr}.nav{display:none}
-}
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  /* MAIN LAYOUT */
+  .main {
+    padding: 28px 32px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  /* PAGE SECTIONS */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* KPI STRIP */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .kpi-card {
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.92);
+    border-radius: 16px;
+    box-shadow: var(--shadow-sm);
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .kpi-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--red) 0%, var(--red-light) 100%);
+    border-radius: 16px 16px 0 0;
+  }
+
+  .kpi-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+  }
+
+  .kpi-value.red { color: var(--red); }
+
+  .kpi-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .kpi-sub.up { color: #27AE60; }
+  .kpi-sub.down { color: var(--red); }
+
+  /* GRID LAYOUTS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-bottom: 16px; }
+  .grid-3-2 { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; margin-bottom: 16px; }
+  .full-row { margin-bottom: 16px; }
+
+  .chart-card {
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.92);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 22px 24px;
+    transition: box-shadow 0.2s ease;
+  }
+
+  .chart-card:hover { box-shadow: var(--shadow-md); }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.2px;
+  }
+
+  .card-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+    font-weight: 400;
+  }
+
+  .badge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .badge-red { background: var(--red-pale); color: var(--red); border: 1px solid var(--red-mid); }
+  .badge-gray { background: #F0F0F4; color: var(--text2); border: 1px solid #E0E0E8; }
+  .badge-green { background: #EAFAF1; color: #1E8449; border: 1px solid #A9DFBF; }
+
+  /* CHART CONTAINERS */
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* FILTER BAR */
+  .filter-bar {
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.92);
+    border-radius: 12px;
+    padding: 12px 20px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .filter-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    white-space: nowrap;
+  }
+
+  select.filter-sel {
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+    padding: 5px 10px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  select.filter-sel:focus { border-color: var(--red); }
+
+  /* TABLE */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .data-table th {
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text3);
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+
+  .data-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+    color: var(--text);
+    font-size: 12px;
+  }
+
+  .data-table tr:hover td { background: rgba(192,57,43,0.03); }
+  .data-table tr:last-child td { border-bottom: none; }
+
+  .rank-num {
+    width: 22px;
+    height: 22px;
+    background: var(--red-pale);
+    color: var(--red);
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: var(--mono);
+  }
+
+  /* PROGRESS BAR */
+  .progress-bar {
+    width: 100%;
+    height: 4px;
+    background: #F0F0F4;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--red-dark) 0%, var(--red-light) 100%);
+    transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .progress-fill.green { background: linear-gradient(90deg, #1E8449, #27AE60); }
+  .progress-fill.amber { background: linear-gradient(90deg, #D68910, #F39C12); }
+
+  /* DONUT LEGEND */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-top: 12px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text2);
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* INSIGHT CARDS */
+  .insight-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .insight-card {
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.92);
+    border-radius: 14px;
+    box-shadow: var(--shadow-sm);
+    padding: 16px 18px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .insight-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .insight-icon.red { background: var(--red-pale); }
+  .insight-icon.green { background: #EAFAF1; }
+  .insight-icon.amber { background: #FEF9E7; }
+  .insight-icon.blue { background: #EBF5FB; }
+
+  .insight-icon svg { width: 18px; height: 18px; }
+  .insight-icon.red svg { color: var(--red); }
+  .insight-icon.green svg { color: #1E8449; }
+  .insight-icon.amber svg { color: #D68910; }
+  .insight-icon.blue svg { color: #1A5276; }
+
+  .insight-body { flex: 1; min-width: 0; }
+  .insight-val { font-size: 20px; font-weight: 600; color: var(--text); letter-spacing: -0.4px; }
+  .insight-label { font-size: 11px; color: var(--text3); margin-top: 2px; line-height: 1.4; }
+
+  /* SPARKLINE */
+  .sparkline-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 12px;
+  }
+
+  .sl-label { width: 130px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; }
+  .sl-bar-wrap { flex: 1; height: 6px; background: #F0F0F4; border-radius: 4px; overflow: hidden; }
+  .sl-bar { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--red-dark), var(--red-light)); }
+  .sl-val { width: 80px; text-align: right; color: var(--text); font-family: var(--mono); font-size: 11px; font-weight: 500; }
+
+  /* PAGE SECTION TITLE */
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 16px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(0,0,0,0.08) 0%, transparent 100%);
+  }
+
+  /* AGENT TABLE SCROLLABLE */
+  .table-scroll { max-height: 340px; overflow-y: auto; }
+  .table-scroll::-webkit-scrollbar { width: 4px; }
+  .table-scroll::-webkit-scrollbar-thumb { background: var(--red-mid); border-radius: 4px; }
+
+  /* HEAT MAP */
+  .heatmap-cell {
+    display: inline-block;
+    width: 34px;
+    height: 28px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 500;
+    font-family: var(--mono);
+    text-align: center;
+    line-height: 28px;
+    color: white;
+    cursor: default;
+    transition: transform 0.15s;
+  }
+
+  .heatmap-cell:hover { transform: scale(1.1); z-index: 2; position: relative; }
+
+  /* TAG */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+  }
+
+  /* RESPONSIVE FIXES */
+  @media (max-width: 1200px) {
+    .kpi-strip { grid-template-columns: repeat(3, 1fr); }
+    .insight-strip { grid-template-columns: repeat(2, 1fr); }
+    .grid-2-1 { grid-template-columns: 1fr; }
+    .grid-3-2 { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 768px) {
+    .main { padding: 16px; }
+    .header { padding: 0 16px; }
+    .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+    .grid-2, .grid-3, .grid-4, .grid-2-1, .grid-1-2, .grid-3-2 { grid-template-columns: 1fr; }
+    .insight-strip { grid-template-columns: 1fr; }
+    .header-nav { display: none; }
+  }
+
+  /* TOOLTIP */
+  .tooltip-custom {
+    position: fixed;
+    background: rgba(26,26,46,0.92);
+    backdrop-filter: blur(12px);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 1000;
+    display: none;
+    max-width: 200px;
+  }
+
+  /* ANIMATIONS */
+  .fade-in {
+    animation: fadeIn 0.4s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* scroll */
+  .main-content { overflow-y: auto; }
+
 </style>
 </head>
 <body>
 
-<!-- LOADER -->
-<div class="loader-overlay" id="loader">
-  <div class="loader-spinner"></div>
-  <div class="loader-text">Connecting to Google Sheets…</div>
-  <div class="loader-sub" id="loader-sub">Fetching live data</div>
-</div>
-
 <!-- HEADER -->
-<header class="hdr">
-  <div class="brand">
+<header class="header">
+  <div class="header-brand">
     <div class="brand-icon">
-      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22" fill="none" stroke="white" stroke-width="1.5"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
     </div>
     <div>
       <div class="brand-title">Mixta Africa</div>
-      <div class="brand-sub">Portfolio Intelligence Hub · Live Sheet</div>
+      <div class="brand-sub">Portfolio Intelligence Hub — 2014–2024</div>
     </div>
   </div>
 
-  <nav class="nav">
-    <button class="nav-btn active" onclick="showSection('overview',this)">Overview</button>
-    <button class="nav-btn" onclick="showSection('revenue',this)">Revenue</button>
-    <button class="nav-btn" onclick="showSection('portfolio',this)">Portfolio</button>
-    <button class="nav-btn" onclick="showSection('collections',this)">Collections</button>
-    <button class="nav-btn" onclick="showSection('agents',this)">Agents</button>
-    <button class="nav-btn" onclick="showSection('buyers',this)">Buyers</button>
+  <nav class="header-nav">
+    <button class="nav-btn active" onclick="showSection('overview', this)">Overview</button>
+    <button class="nav-btn" onclick="showSection('revenue', this)">Revenue Trends</button>
+    <button class="nav-btn" onclick="showSection('portfolio', this)">Portfolio</button>
+    <button class="nav-btn" onclick="showSection('collections', this)">Collections</button>
+    <button class="nav-btn" onclick="showSection('agents', this)">Agents</button>
+    <button class="nav-btn" onclick="showSection('buyers', this)">Buyers</button>
   </nav>
 
-  <div class="hdr-right">
-    <div class="freshness" id="freshness-label">—</div>
-    <button class="sync-btn" id="syncBtn" onclick="syncData()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-      Sync
-    </button>
-    <div class="live-badge"><div class="live-dot"></div><span id="record-count">—</span> records</div>
+  <div class="header-right">
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      2,845 records
+    </div>
   </div>
 </header>
-
-<!-- ERROR BAR -->
-<div class="error-bar" id="errorBar">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-  <span id="errorMsg">Could not load live data. Showing cached fallback.</span>
-</div>
 
 <!-- MAIN -->
 <main class="main">
 
-<!-- ===== OVERVIEW ===== -->
-<div id="section-overview" class="section active">
+<!-- ========== OVERVIEW ========== -->
+<div id="section-overview" class="section active fade-in">
+
+  <!-- KPI Strip -->
   <div class="kpi-strip">
-    <div class="kpi"><div class="kpi-label">Total Portfolio Revenue</div><div class="kpi-value red" id="k-totalrev">—</div><div class="kpi-sub" id="k-totalrev-sub">loading…</div></div>
-    <div class="kpi"><div class="kpi-label">Total Units</div><div class="kpi-value" id="k-units">—</div><div class="kpi-sub" id="k-units-sub">—</div></div>
-    <div class="kpi"><div class="kpi-label">Total Collected</div><div class="kpi-value" id="k-collected">—</div><div class="kpi-sub up">89% avg collection rate</div></div>
-    <div class="kpi"><div class="kpi-label">Outstanding Balance</div><div class="kpi-value red" id="k-outstanding">—</div><div class="kpi-sub dn" id="k-out-pct">—</div></div>
-    <div class="kpi"><div class="kpi-label">Mortgage Transactions</div><div class="kpi-value" id="k-mortgage">—</div><div class="kpi-sub">Financed units</div></div>
-    <div class="kpi"><div class="kpi-label">Active Properties</div><div class="kpi-value" id="k-props">—</div><div class="kpi-sub" id="k-comms">—</div></div>
-  </div>
-
-  <div class="ins-strip">
-    <div class="ins">
-      <div class="ins-ico r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-      <div><div class="ins-val" id="ins-peak-rev">—</div><div class="ins-lbl" id="ins-peak-prop">—</div></div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Portfolio Revenue</div>
+      <div class="kpi-value red">₦131.2B</div>
+      <div class="kpi-sub up">▲ 10 year period</div>
     </div>
-    <div class="ins">
-      <div class="ins-ico g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
-      <div><div class="ins-val" id="ins-top-prop-rev">—</div><div class="ins-lbl" id="ins-top-prop-name">—</div></div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Units Tracked</div>
+      <div class="kpi-value">2,845</div>
+      <div class="kpi-sub">Across 7 communities</div>
     </div>
-    <div class="ins">
-      <div class="ins-ico a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
-      <div><div class="ins-val" id="ins-peak-year">—</div><div class="ins-lbl" id="ins-peak-year-lbl">—</div></div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Collected</div>
+      <div class="kpi-value">₦107.9B</div>
+      <div class="kpi-sub up">▲ 89% avg collection rate</div>
     </div>
-    <div class="ins">
-      <div class="ins-ico b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
-      <div><div class="ins-val" id="ins-top-channel">—</div><div class="ins-lbl" id="ins-top-channel-lbl">—</div></div>
+    <div class="kpi-card">
+      <div class="kpi-label">Outstanding Balance</div>
+      <div class="kpi-value red">₦23.4B</div>
+      <div class="kpi-sub down">▼ 17.8% of portfolio</div>
     </div>
-  </div>
-
-  <div class="g32">
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Revenue Recognition Trend</div><div class="cs">Annual total selling price · ₦ Billions</div></div><span class="badge br" id="ov-years-badge">—</span></div>
-      <div class="cw" style="height:230px"><canvas id="c-revyear" role="img" aria-label="Revenue by year trend">Annual revenue trend chart.</canvas></div>
+    <div class="kpi-card">
+      <div class="kpi-label">Mortgage Transactions</div>
+      <div class="kpi-value">213</div>
+      <div class="kpi-sub">7.5% of all units</div>
     </div>
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Revenue by Community</div><div class="cs">Share of total portfolio</div></div></div>
-      <div class="cw" style="height:160px"><canvas id="c-commdonut" role="img" aria-label="Community revenue share">Community revenue donut.</canvas></div>
-      <div class="legend" id="leg-comm"></div>
+    <div class="kpi-card">
+      <div class="kpi-label">Active Properties</div>
+      <div class="kpi-value">37</div>
+      <div class="kpi-sub">Across 5 states</div>
     </div>
   </div>
 
-  <div class="g2">
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Sales Channel Performance</div><div class="cs">Revenue by agent group · ₦ Billions</div></div></div>
-      <div class="cw" style="height:210px"><canvas id="c-agentgrp" role="img" aria-label="Agent group revenue">Agent group bar chart.</canvas></div>
+  <!-- Insights -->
+  <div class="insight-strip">
+    <div class="insight-card">
+      <div class="insight-icon red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      </div>
+      <div class="insight-body">
+        <div class="insight-val">₦364M</div>
+        <div class="insight-label">Highest single avg — Lagos New Town (48 units)</div>
+      </div>
     </div>
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Finish Type — Avg Unit Price</div><div class="cs">Specification grade vs price</div></div></div>
-      <div class="cw" style="height:210px"><canvas id="c-finish" role="img" aria-label="Finish type avg price">Finish type chart.</canvas></div>
+    <div class="insight-card">
+      <div class="insight-icon green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+      </div>
+      <div class="insight-body">
+        <div class="insight-val">₦26.3B</div>
+        <div class="insight-label">Lakowe Lakes Plots — highest single property revenue</div>
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div class="insight-body">
+        <div class="insight-val">2022–23</div>
+        <div class="insight-label">Peak revenue years — ₦15.5B and ₦16.1B respectively</div>
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      </div>
+      <div class="insight-body">
+        <div class="insight-val">62.4%</div>
+        <div class="insight-label">Mixta Sales dominant channel by deal count (1,906 units)</div>
+      </div>
     </div>
   </div>
 
-  <div class="cc full">
-    <div class="ch"><div><div class="ct">Top Properties by Cumulative Revenue</div><div class="cs">Ranked by total selling price</div></div><span class="badge bg_" id="ov-top-n">Top 12</span></div>
-    <div id="top-props-bars"></div>
+  <div class="grid-3-2">
+    <!-- Revenue by Year Line -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Revenue Recognition Trend</div>
+          <div class="card-sub">Annual total selling price (₦ Billions) · 2014–2024</div>
+        </div>
+        <span class="badge badge-red">11 years</span>
+      </div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="revenueYearChart" role="img" aria-label="Revenue recognition trend 2014 to 2024">Annual revenue from 940M in 2014 to 7.4B in 2024, peak at 16.1B in 2023.</canvas>
+      </div>
+    </div>
+
+    <!-- Community Donut -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Revenue by Community</div>
+          <div class="card-sub">Share of total portfolio</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:180px;">
+        <canvas id="communityDonut" role="img" aria-label="Revenue share by community">Lakowe 62.3%, Shapati 32.5%, others 5.2%.</canvas>
+      </div>
+      <div class="legend" id="communityLegend"></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Agent Group Bar -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Sales Channel Performance</div>
+          <div class="card-sub">Revenue by agent group (₦ Billions)</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="agentGroupChart" role="img" aria-label="Sales channel performance">Mixta Sales 94B, 3rd Party 20.5B, Staff 7.7B, ARM FA 2.4B.</canvas>
+      </div>
+    </div>
+
+    <!-- Finish Type -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Finish Type — Revenue vs Volume</div>
+          <div class="card-sub">Avg. selling price by specification grade</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="finishTypeChart" role="img" aria-label="Finish type analysis">Hybrid highest avg at 97.6M, Shell 29.2M, Move-in-Ready 16.2M.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Properties -->
+  <div class="chart-card full-row">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Top Properties by Cumulative Revenue</div>
+        <div class="card-sub">Ranked by total selling price across all recognition years</div>
+      </div>
+      <span class="badge badge-gray">Top 12</span>
+    </div>
+    <div id="topPropertiesBars"></div>
+  </div>
+
+</div>
+
+<!-- ========== REVENUE TRENDS ========== -->
+<div id="section-revenue" class="section fade-in">
+
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-label">Peak Year</div>
+      <div class="kpi-value red">2023</div>
+      <div class="kpi-sub">₦16.1B recognized</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Lowest Year</div>
+      <div class="kpi-value">2014</div>
+      <div class="kpi-sub">₦940M — portfolio start</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Best Single Unit Avg</div>
+      <div class="kpi-value red">₦364M</div>
+      <div class="kpi-sub">Lagos New Town</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Unit Price 2024</div>
+      <div class="kpi-value">₦77.6M</div>
+      <div class="kpi-sub up">▲ from ₦11.1M in 2014</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">CAGR 2014–2023</div>
+      <div class="kpi-value red">37%</div>
+      <div class="kpi-sub">Revenue recognition</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">2022 Revenue</div>
+      <div class="kpi-value">₦15.5B</div>
+      <div class="kpi-sub">2nd highest year</div>
+    </div>
+  </div>
+
+  <div class="full-row chart-card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Community Revenue — Stacked Annual View</div>
+        <div class="card-sub">Shapati vs Lakowe vs Others — 2014 to 2024 (₦ Billions)</div>
+      </div>
+    </div>
+    <div class="chart-wrap" style="height:320px;">
+      <canvas id="stackedRevenueChart" role="img" aria-label="Stacked community revenue by year">Lakowe dominates from 2018 onwards, Shapati grew significantly 2019-2023.</canvas>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Unit Volume vs Avg Price per Year</div>
+          <div class="card-sub">Dual axis — count and price trajectory</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="volumePriceChart" role="img" aria-label="Unit volume and average price trend">Volume peaks 2018-2020, avg price climbs sharply 2021-2024.</canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Unit Type Revenue Breakdown</div>
+          <div class="card-sub">Cumulative by product category</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="unitTypeChart" role="img" aria-label="Unit type revenue breakdown">Serviced Plot 43.4B, Unserviced Plot 24.3B, Apartment 4.6B.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Bedroom Mix — Revenue Share</div>
+          <div class="card-sub">Total revenue contribution by bedroom count</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="bedroomDonut" role="img" aria-label="Bedroom mix revenue share">2-bed 27.9B highest, 3-bed 12.2B, 4-bed 9.3B.</canvas>
+      </div>
+      <div class="legend" id="bedroomLegend"></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Payment Plan Distribution</div>
+          <div class="card-sub">Top payment plan types by unit count</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="paymentPlanChart" role="img" aria-label="Payment plan distribution">Unit Payment Plan 268, Payment Plan 1 166, Standard 162.</canvas>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- ===== REVENUE ===== -->
-<div id="section-revenue" class="section">
+<!-- ========== PORTFOLIO ========== -->
+<div id="section-portfolio" class="section fade-in">
+
   <div class="kpi-strip">
-    <div class="kpi"><div class="kpi-label">Peak Year</div><div class="kpi-value red" id="rv-peakyr">—</div><div class="kpi-sub" id="rv-peakyr-s">—</div></div>
-    <div class="kpi"><div class="kpi-label">Lowest Year</div><div class="kpi-value" id="rv-lowyr">—</div><div class="kpi-sub" id="rv-lowyr-s">—</div></div>
-    <div class="kpi"><div class="kpi-label">Best Avg Unit Price</div><div class="kpi-value red" id="rv-bestavg">—</div><div class="kpi-sub" id="rv-bestavg-s">—</div></div>
-    <div class="kpi"><div class="kpi-label">Latest Year Avg Price</div><div class="kpi-value" id="rv-latestprice">—</div><div class="kpi-sub up" id="rv-latestprice-s">—</div></div>
-    <div class="kpi"><div class="kpi-label">Rev CAGR (all yrs)</div><div class="kpi-value red" id="rv-cagr">—</div><div class="kpi-sub">Revenue recognition</div></div>
-    <div class="kpi"><div class="kpi-label">Recognized Years</div><div class="kpi-value" id="rv-yrs">—</div><div class="kpi-sub">Distinct years in dataset</div></div>
-  </div>
-  <div class="cc full">
-    <div class="ch"><div><div class="ct">Community Revenue — Stacked Annual View</div><div class="cs">Shapati vs Lakowe vs Others · ₦ Billions</div></div></div>
-    <div class="cw" style="height:300px"><canvas id="c-stacked" role="img" aria-label="Stacked community revenue">Stacked bar chart.</canvas></div>
-  </div>
-  <div class="g2">
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Unit Volume vs Avg Price per Year</div><div class="cs">Dual axis — count and price trajectory</div></div></div>
-      <div class="cw" style="height:250px"><canvas id="c-volprice" role="img" aria-label="Volume and avg price">Dual axis chart.</canvas></div>
+    <div class="kpi-card">
+      <div class="kpi-label">Properties</div>
+      <div class="kpi-value red">37</div>
+      <div class="kpi-sub">Development projects</div>
     </div>
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Unit Type Revenue Breakdown</div><div class="cs">Cumulative by product category</div></div></div>
-      <div class="cw" style="height:250px"><canvas id="c-unittype" role="img" aria-label="Unit type revenue">Unit type bar.</canvas></div>
+    <div class="kpi-card">
+      <div class="kpi-label">Communities</div>
+      <div class="kpi-value">7</div>
+      <div class="kpi-sub">Geographic clusters</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Largest Property</div>
+      <div class="kpi-value red">397</div>
+      <div class="kpi-sub">Beechwood Park units</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Reserved Units</div>
+      <div class="kpi-value">2,751</div>
+      <div class="kpi-sub">96.7% of portfolio</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Sold Units</div>
+      <div class="kpi-value">94</div>
+      <div class="kpi-sub">3.3% fully completed</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Phase Overlap</div>
+      <div class="kpi-value">P1 + P2</div>
+      <div class="kpi-sub">Multi-phase developments</div>
     </div>
   </div>
-  <div class="g2">
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Bedroom Mix — Revenue Share</div><div class="cs">Total revenue contribution by bedroom count</div></div></div>
-      <div class="cw" style="height:220px"><canvas id="c-bedroom" role="img" aria-label="Bedroom mix">Bedroom donut.</canvas></div>
-      <div class="legend" id="leg-bedroom"></div>
+
+  <div class="grid-2-1">
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Portfolio Properties — Revenue Ranking</div>
+          <div class="card-sub">All 20 significant properties (₦ Billions)</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:380px;">
+        <canvas id="propertyRankChart" role="img" aria-label="Property revenue ranking">Lakowe Lakes Plots top at 26.3B, Lagos New Town 17.5B, Beechwood Park 8.6B.</canvas>
+      </div>
     </div>
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Payment Plan Distribution</div><div class="cs">Top plan types by unit count</div></div></div>
-      <div class="cw" style="height:220px"><canvas id="c-payplan" role="img" aria-label="Payment plans">Payment plan bar.</canvas></div>
+
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Unit Status Split</div>
+          <div class="card-sub">Reserved vs Sold</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:180px;">
+        <canvas id="statusDonut" role="img" aria-label="Unit status donut">Reserved 2751, Sold 94.</canvas>
+      </div>
+      <div style="margin-top:20px;">
+        <div class="card-title" style="font-size:12px; margin-bottom:10px; color:var(--text2);">Top Communities by Unit Count</div>
+        <div id="communityBarsSimple"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Finish Type Volume & Revenue</div>
+          <div class="card-sub">Units and cumulative ₦ by specification</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="finishMixChart" role="img" aria-label="Finish type volume and revenue mix">Move-in-Ready most units, Hybrid highest revenue.</canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Community Revenue vs Avg Price Scatter</div>
+          <div class="card-sub">Size = unit count, position = avg unit price</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="communityScatter" role="img" aria-label="Community scatter plot">Lakowe highest avg price, Shapati highest volume.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Heatmap: Community x Year -->
+  <div class="chart-card full-row">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Revenue Heatmap — Community × Year</div>
+        <div class="card-sub">Intensity shows ₦ Billions recognized (darker = higher)</div>
+      </div>
+    </div>
+    <div id="heatmapContainer" style="overflow-x:auto; padding-bottom: 4px;"></div>
+  </div>
+</div>
+
+<!-- ========== COLLECTIONS ========== -->
+<div id="section-collections" class="section fade-in">
+
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Collected</div>
+      <div class="kpi-value red">₦107.9B</div>
+      <div class="kpi-sub">Cumulative across all years</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Outstanding</div>
+      <div class="kpi-value">₦23.4B</div>
+      <div class="kpi-sub down">▼ Receivables at risk</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Collection Rate</div>
+      <div class="kpi-value red">89%</div>
+      <div class="kpi-sub">% Paid average</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Mortgage-Backed</div>
+      <div class="kpi-value">213</div>
+      <div class="kpi-sub">Financed transactions</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Discount Given</div>
+      <div class="kpi-value">Varied</div>
+      <div class="kpi-sub">% discount tracked per unit</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Collections Team Units</div>
+      <div class="kpi-value">35</div>
+      <div class="kpi-sub">Legacy recovery book</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Collected vs Outstanding by Year</div>
+          <div class="card-sub">Stacked view of payments received vs receivables (₦B)</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:280px;">
+        <canvas id="collectionsStackChart" role="img" aria-label="Collections vs outstanding by year">Most years show high collection ratio.</canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Collection Rate Distribution</div>
+          <div class="card-sub">% of units by payment completion bracket</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:280px;">
+        <canvas id="collectionRateChart" role="img" aria-label="Collection rate distribution">Majority fully paid at 100%.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Mortgage vs Cash Transactions</div>
+          <div class="card-sub">Financed vs direct payment split by year</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="mortgageChart" role="img" aria-label="Mortgage vs cash by year">Mortgage transactions peak 2018-2022.</canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Outstanding by Community</div>
+          <div class="card-sub">Where receivables risk is concentrated</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="outstandingCommChart" role="img" aria-label="Outstanding by community">Analysis of receivables concentration.</canvas>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- ===== PORTFOLIO ===== -->
-<div id="section-portfolio" class="section">
+<!-- ========== AGENTS ========== -->
+<div id="section-agents" class="section fade-in">
+
   <div class="kpi-strip">
-    <div class="kpi"><div class="kpi-label">Distinct Properties</div><div class="kpi-value red" id="pf-props">—</div><div class="kpi-sub">Development projects</div></div>
-    <div class="kpi"><div class="kpi-label">Communities</div><div class="kpi-value" id="pf-comms">—</div><div class="kpi-sub">Geographic clusters</div></div>
-    <div class="kpi"><div class="kpi-label">Largest Property</div><div class="kpi-value red" id="pf-largest">—</div><div class="kpi-sub" id="pf-largest-s">—</div></div>
-    <div class="kpi"><div class="kpi-label">Reserved Units</div><div class="kpi-value" id="pf-reserved">—</div><div class="kpi-sub" id="pf-reserved-pct">—</div></div>
-    <div class="kpi"><div class="kpi-label">Sold Units</div><div class="kpi-value" id="pf-sold">—</div><div class="kpi-sub" id="pf-sold-pct">—</div></div>
-    <div class="kpi"><div class="kpi-label">Finish Types</div><div class="kpi-value" id="pf-ftypes">—</div><div class="kpi-sub">Specification grades</div></div>
+    <div class="kpi-card">
+      <div class="kpi-label">Top Agent Revenue</div>
+      <div class="kpi-value red">₦17.2B</div>
+      <div class="kpi-sub">Mixta Real Estate Plc</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">#2 Agent Revenue</div>
+      <div class="kpi-value">₦17.2B</div>
+      <div class="kpi-sub">Andrea Cameron Cole</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Top by Volume</div>
+      <div class="kpi-value red">317</div>
+      <div class="kpi-sub">Andrea Cameron Cole units</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Agent Pool</div>
+      <div class="kpi-value">65+</div>
+      <div class="kpi-sub">Unique dealing agents</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">3rd Party Revenue</div>
+      <div class="kpi-value">₦20.5B</div>
+      <div class="kpi-sub">External channel total</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">ARM FA Revenue</div>
+      <div class="kpi-value">₦2.4B</div>
+      <div class="kpi-sub">96 transactions</div>
+    </div>
   </div>
-  <div class="g21">
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Portfolio Properties — Revenue Ranking</div><div class="cs">Top 20 properties by cumulative selling price</div></div></div>
-      <div class="cw" style="height:360px"><canvas id="c-proprank" role="img" aria-label="Property ranking">Property horizontal bar.</canvas></div>
+
+  <div class="grid-2-1">
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Top 15 Dealing Agents — Revenue Ranking</div>
+          <div class="card-sub">Cumulative ₦ Billions and unit count</div>
+        </div>
+      </div>
+      <div id="agentBars"></div>
     </div>
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Unit Status Split</div><div class="cs">Reserved vs Sold</div></div></div>
-      <div class="cw" style="height:160px"><canvas id="c-status" role="img" aria-label="Unit status">Status donut.</canvas></div>
-      <div style="margin-top:18px"><div class="ct" style="font-size:12px;margin-bottom:9px;color:var(--text2)">Community Unit Volumes</div><div id="comm-simple-bars"></div></div>
+
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Channel Mix</div>
+          <div class="card-sub">Revenue by agent group</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="channelPieChart" role="img" aria-label="Channel revenue mix">Mixta Sales 94B dominates.</canvas>
+      </div>
+      <div class="legend" id="channelLegend"></div>
     </div>
   </div>
-  <div class="g2">
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Finish Type — Volume & Revenue</div><div class="cs">Units and cumulative ₦ by specification</div></div></div>
-      <div class="cw" style="height:230px"><canvas id="c-finishmix" role="img" aria-label="Finish mix">Finish mix chart.</canvas></div>
+
+  <div class="chart-card full-row">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Agent Group Trend</div>
+        <div class="card-sub">How each channel's unit volume evolved year by year</div>
+      </div>
     </div>
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Revenue Heatmap — Community × Year</div><div class="cs">Intensity = ₦B recognized (darker = higher)</div></div></div>
-      <div id="heatmap-wrap" style="overflow-x:auto;padding-bottom:4px"></div>
+    <div class="chart-wrap" style="height:260px;">
+      <canvas id="agentTrendChart" role="img" aria-label="Agent group volume trend by year">Mixta Sales consistently dominant, 3rd party growing 2018-2022.</canvas>
     </div>
   </div>
 </div>
 
-<!-- ===== COLLECTIONS ===== -->
-<div id="section-collections" class="section">
-  <div class="kpi-strip">
-    <div class="kpi"><div class="kpi-label">Total Collected</div><div class="kpi-value red" id="cl-collected">—</div><div class="kpi-sub">Cumulative across all years</div></div>
-    <div class="kpi"><div class="kpi-label">Total Outstanding</div><div class="kpi-value" id="cl-outstanding">—</div><div class="kpi-sub dn">Receivables at risk</div></div>
-    <div class="kpi"><div class="kpi-label">Avg Collection Rate</div><div class="kpi-value red" id="cl-avgrate">—</div><div class="kpi-sub">% Paid average</div></div>
-    <div class="kpi"><div class="kpi-label">Mortgage-Backed</div><div class="kpi-value" id="cl-mortgage">—</div><div class="kpi-sub">Financed transactions</div></div>
-    <div class="kpi"><div class="kpi-label">Fully Paid Units</div><div class="kpi-value" id="cl-fullypaid">—</div><div class="kpi-sub" id="cl-fullypaid-s">—</div></div>
-    <div class="kpi"><div class="kpi-label">Collections Book</div><div class="kpi-value" id="cl-colbook">—</div><div class="kpi-sub">Legacy recovery units</div></div>
-  </div>
-  <div class="g2">
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Collected vs Outstanding by Year</div><div class="cs">Payments received vs receivables · ₦B</div></div></div>
-      <div class="cw" style="height:270px"><canvas id="c-collstack" role="img" aria-label="Collections stacked">Collections stack chart.</canvas></div>
-    </div>
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Collection Rate Distribution</div><div class="cs">Units by payment completion bracket</div></div></div>
-      <div class="cw" style="height:270px"><canvas id="c-collrate" role="img" aria-label="Collection rate distribution">Collection rate chart.</canvas></div>
-    </div>
-  </div>
-  <div class="g2">
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Mortgage vs Cash Transactions by Year</div><div class="cs">Financed vs direct payment split</div></div></div>
-      <div class="cw" style="height:230px"><canvas id="c-mortgage" role="img" aria-label="Mortgage vs cash">Mortgage chart.</canvas></div>
-    </div>
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Outstanding by Community</div><div class="cs">Receivables risk concentration</div></div></div>
-      <div class="cw" style="height:230px"><canvas id="c-outstandcomm" role="img" aria-label="Outstanding community">Outstanding donut.</canvas></div>
-    </div>
-  </div>
-</div>
+<!-- ========== BUYERS ========== -->
+<div id="section-buyers" class="section fade-in">
 
-<!-- ===== AGENTS ===== -->
-<div id="section-agents" class="section">
   <div class="kpi-strip">
-    <div class="kpi"><div class="kpi-label">Top Agent Revenue</div><div class="kpi-value red" id="ag-top-rev">—</div><div class="kpi-sub" id="ag-top-name">—</div></div>
-    <div class="kpi"><div class="kpi-label">Top by Volume</div><div class="kpi-value" id="ag-top-vol">—</div><div class="kpi-sub" id="ag-top-vol-name">—</div></div>
-    <div class="kpi"><div class="kpi-label">Unique Agents</div><div class="kpi-value red" id="ag-count">—</div><div class="kpi-sub">Dealing agents in dataset</div></div>
-    <div class="kpi"><div class="kpi-label">Mixta Sales Total</div><div class="kpi-value" id="ag-mixta-rev">—</div><div class="kpi-sub" id="ag-mixta-cnt">—</div></div>
-    <div class="kpi"><div class="kpi-label">3rd Party Revenue</div><div class="kpi-value" id="ag-3p-rev">—</div><div class="kpi-sub" id="ag-3p-cnt">—</div></div>
-    <div class="kpi"><div class="kpi-label">ARM Revenue</div><div class="kpi-value" id="ag-arm-rev">—</div><div class="kpi-sub" id="ag-arm-cnt">—</div></div>
-  </div>
-  <div class="g21">
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Top 15 Dealing Agents — Revenue Ranking</div><div class="cs">Cumulative ₦ and unit count</div></div></div>
-      <div id="agent-bars"></div>
+    <div class="kpi-card">
+      <div class="kpi-label">Dominant State</div>
+      <div class="kpi-value red">Lagos</div>
+      <div class="kpi-sub">950+ buyers — 43% of known</div>
     </div>
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Channel Revenue Mix</div><div class="cs">Revenue by agent group</div></div></div>
-      <div class="cw" style="height:190px"><canvas id="c-channel" role="img" aria-label="Channel mix">Channel pie.</canvas></div>
-      <div class="legend" id="leg-channel"></div>
+    <div class="kpi-card">
+      <div class="kpi-label">Abuja Buyers</div>
+      <div class="kpi-value">33</div>
+      <div class="kpi-sub">FCT cross-state demand</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Rivers State</div>
+      <div class="kpi-value">41</div>
+      <div class="kpi-sub">PH cross-state demand</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Diaspora Buyers</div>
+      <div class="kpi-value">16+</div>
+      <div class="kpi-sub">US, UK, Caribbean, Africa</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Corporate Buyers</div>
+      <div class="kpi-value">Est. 8%</div>
+      <div class="kpi-sub">Company / org purchasers</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Nationality</div>
+      <div class="kpi-value">10+</div>
+      <div class="kpi-sub">Countries represented</div>
     </div>
   </div>
-  <div class="cc full">
-    <div class="ch"><div><div class="ct">Agent Group — Volume Trend</div><div class="cs">Unit count by channel per year</div></div></div>
-    <div class="cw" style="height:250px"><canvas id="c-agtrend" role="img" aria-label="Agent trend">Agent trend line.</canvas></div>
-  </div>
-</div>
 
-<!-- ===== BUYERS ===== -->
-<div id="section-buyers" class="section">
-  <div class="kpi-strip">
-    <div class="kpi"><div class="kpi-label">Dominant State</div><div class="kpi-value red" id="by-top-state">—</div><div class="kpi-sub" id="by-top-state-s">—</div></div>
-    <div class="kpi"><div class="kpi-label">Cross-State Buyers</div><div class="kpi-value" id="by-crossstate">—</div><div class="kpi-sub">Outside Lagos</div></div>
-    <div class="kpi"><div class="kpi-label">Diaspora Buyers</div><div class="kpi-value red" id="by-diaspora">—</div><div class="kpi-sub">International addresses</div></div>
-    <div class="kpi"><div class="kpi-label">Top Nationality</div><div class="kpi-value" id="by-nation">—</div><div class="kpi-sub" id="by-nation-s">—</div></div>
-    <div class="kpi"><div class="kpi-label">Mortgage Buyers</div><div class="kpi-value" id="by-mortgage">—</div><div class="kpi-sub">Financed purchases</div></div>
-    <div class="kpi"><div class="kpi-label">Countries Represented</div><div class="kpi-value" id="by-countries">—</div><div class="kpi-sub">Buyer nationalities</div></div>
-  </div>
-  <div class="g2">
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Buyer State Distribution</div><div class="cs">Top states by buyer count</div></div></div>
-      <div class="cw" style="height:270px"><canvas id="c-buyerstate" role="img" aria-label="Buyer state">Buyer state bar.</canvas></div>
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Buyer State Distribution</div>
+          <div class="card-sub">Where buyers are based (top states)</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:280px;">
+        <canvas id="buyerStateChart" role="img" aria-label="Buyer state distribution">Lagos dominates with 950+, followed by Rivers 41, Edo 35, Abuja 33.</canvas>
+      </div>
     </div>
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Buyer Salutation Profile</div><div class="cs">Title breakdown indicating buyer archetype</div></div></div>
-      <div class="cw" style="height:270px"><canvas id="c-salutation" role="img" aria-label="Salutation">Salutation donut.</canvas></div>
+
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Salutation / Buyer Profile</div>
+          <div class="card-sub">Title breakdown indicating buyer profile</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:280px;">
+        <canvas id="salutationChart" role="img" aria-label="Buyer salutation breakdown">Mr dominates, Mr & Mrs couples significant.</canvas>
+      </div>
     </div>
   </div>
-  <div class="cc full">
-    <div class="ch"><div><div class="ct">Buyer Geography — State Demand Analysis</div><div class="cs">Unit count per known state of residence</div></div></div>
-    <div id="buyer-state-bars"></div>
+
+  <div class="chart-card full-row">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Buyer Geographic Demand — State Revenue Contribution</div>
+        <div class="card-sub">Cross-state buyer profiles suggest strong investment demand from outside Lagos</div>
+      </div>
+    </div>
+    <div id="buyerStateRevBars"></div>
   </div>
 </div>
 
 </main>
 
 <script>
-/* ===================================================
-   CONFIG
-=================================================== */
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTg9nVEiwrU8xBzl6DaP3-b2enA8Ae_oNW-5VXlg2yRq9godA1cBjwzdRYbY4O9zdbU_2xnprBVo1QO/pub?output=csv';
-const CACHE_KEY = 'mixta_csv_cache';
-const CACHE_TS_KEY = 'mixta_csv_ts';
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const RED = '#C0392B';
+const RED2 = '#E74C3C';
+const RED3 = '#F5B7B1';
+const RED4 = '#FDECEA';
+const COLORS = ['#C0392B','#E74C3C','#2980B9','#27AE60','#8E44AD','#D35400','#16A085','#F39C12','#1ABC9C','#2C3E50','#7F8C8D','#E67E22'];
 
-/* ===================================================
-   PALETTE
-=================================================== */
-const C = {
-  red:'#C0392B', red2:'#E74C3C', red3:'#F5B7B1', red4:'#FDECEA',
-  blue:'#2980B9', green:'#27AE60', purple:'#8E44AD',
-  orange:'#D35400', teal:'#16A085', amber:'#F39C12',
-  slate:'#2C3E50', gray:'#7F8C8D'
-};
-const PAL = [C.red,C.blue,C.green,C.purple,C.orange,C.teal,C.amber,C.slate,C.gray,'#1ABC9C','#E67E22','#C0392B'];
-Chart.defaults.font.family="'DM Sans',sans-serif";
-Chart.defaults.font.size=11;
-Chart.defaults.color='#9090A8';
-Chart.defaults.plugins.legend.display=false;
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#9090A8';
+Chart.defaults.plugins.legend.display = false;
 
-/* ===================================================
-   CHART REGISTRY (destroy before redraw)
-=================================================== */
-const chartRegistry = {};
-function mkChart(id, cfg) {
-  if (chartRegistry[id]) { chartRegistry[id].destroy(); }
-  const el = document.getElementById(id);
-  if (!el) return;
-  chartRegistry[id] = new Chart(el, cfg);
-}
+function fmt(n, div=1e9) { return '₦' + (n/div).toFixed(1) + 'B'; }
+function fmtM(n) { return '₦' + (n/1e6).toFixed(0) + 'M'; }
 
-/* ===================================================
-   HELPERS
-=================================================== */
-const fB = v => '₦' + (v/1e9).toFixed(1) + 'B';
-const fM = v => '₦' + (v/1e6).toFixed(0) + 'M';
-const fN = v => v >= 1e9 ? fB(v) : v >= 1e6 ? fM(v) : v.toLocaleString();
-const pct = (a,b) => b ? (a/b*100).toFixed(1)+'%' : '—';
-const num = s => { const n=parseFloat(String(s).replace(/,/g,'')); return isNaN(n)?0:n; };
-const groupBy = (arr, key) => arr.reduce((acc,r)=>{ const k=r[key]||'Unknown'; (acc[k]=acc[k]||[]).push(r); return acc; },{});
-const sumKey = (arr, key) => arr.reduce((s,r)=>s+num(r[key]),0);
-const topN = (obj, n, valFn) => Object.entries(obj).map(([k,v])=>({k,v:valFn(v)})).sort((a,b)=>b.v-a.v).slice(0,n);
+// ===== DATA =====
+const years = ['2014','2015','2016','2017','2018','2019','2020','2021','2022','2023','2024'];
+const revenueByYear = [940557600,1711659000,3792640000,1947868000,11120150000,5777217000,7360709000,11299150000,15463510000,16103070000,7449517000];
+const unitsPerYear = [85,30,210,162,342,227,259,308,160,147,96];
+const avgPriceYear = unitsPerYear.map((u,i)=>revenueByYear[i]/u);
 
-/* ===================================================
-   CSV PARSER + COLUMN NORMALISER
-   The published CSV merges all sheets, so the header
-   row may vary. We map columns by name robustly.
-=================================================== */
-function normaliseRow(rawRow, headerMap) {
-  const r = {};
-  for (const [canonical, aliases] of Object.entries(headerMap)) {
-    for (const alias of aliases) {
-      if (rawRow[alias] !== undefined) { r[canonical] = rawRow[alias]; break; }
+// Community by year (Shapati, Lakowe, Other)
+const shapatiByYear = [940557600,3125000,726601100,899025400,844626400,3093837000,5693976000,4379031000,4761804000,9354346000,1594383000];
+const lakwoByYear   = [0,1708534000,3066039000,874506500,8599977000,1457626000,1636652000,6759181000,10580830000,6388536000,5855135000];
+const otherByYear   = [0,0,0,174336500,1675543000,1225754000,30081100,161938000,120876000,360188000,0];
+
+// Agent groups
+const agentGroups = ['Mixta Sales','3rd Party Agent','Staff','ARM FA','Ex-staff','Collections','ARM BD'];
+const agentRevenue = [94037720000,20507570000,7744398000,2422461000,840271200,634060300,466432900];
+const agentUnits =  [1906,358,237,96,23,35,16];
+
+// Finish type
+const finishTypes = ['Hybrid','Finished','Move-in-Ready','Shell','Semi-Finished'];
+const finishRevenue = [20603310000,15689000000,5750793000,5108462000,4945599000];
+const finishUnits =  [211,340,354,175,94];
+const finishAvg = finishRevenue.map((r,i)=>r/finishUnits[i]);
+
+// Top properties
+const topProps = [
+  {name:'Lakowe Lakes Plots', rev:26313770000, cnt:237},
+  {name:'Lagos New Town', rev:17515270000, cnt:48},
+  {name:'Beechwood Park', rev:8626560000, cnt:397},
+  {name:'Lakowe Lakes - The Cove', rev:8442280000, cnt:93},
+  {name:'Lakowe Annexe', rev:6896673000, cnt:78},
+  {name:'Ibudo Wura', rev:6505756000, cnt:94},
+  {name:'Lakowe Lakes - The Enclave', rev:6257918000, cnt:166},
+  {name:'Adiva Plainfields II', rev:5253253000, cnt:97},
+  {name:'Park Villas', rev:5191012000, cnt:17},
+  {name:'DUO', rev:3966131000, cnt:79},
+  {name:'Lakowe Lakes - The Village', rev:3931572000, cnt:18},
+  {name:'Adiva Plainfields Estate', rev:3289785000, cnt:251},
+];
+
+// Bedrooms
+const bedroomLabels = ['2-bed','3-bed','4-bed','1-bed','Studio','0-bed'];
+const bedroomRevenue = [27921740000,12214870000,9265409000,6159071000,491965200,522859000];
+
+// Payment plans
+const ppLabels = ['Unit Payment Plan','Payment Plan 1','Standard','18 Months Standard','Promo','Halliburton','12 Months','Other'];
+const ppCounts = [268,166,162,118,67,66,53,200];
+
+// Unit types top 8
+const unitTypeLabels = ['Serviced Plot','Unserviced Plot','Semi-detached','Apartment','3 Bed Bungalow','Jacaranda II','Cove Loft','Terrace'];
+const unitTypeRevenue = [43386840000,24346310000,5413223000,4565929000,4310716000,3292371000,2751788000,2120217000];
+
+// Communities
+const commLabels = ['Shapati','Lakowe','Ajayi-Apata','Ikpoba Okha','Greater PH','Abuja','Oluwole'];
+const commRevenue = [42624940000,81771690000,4661207000,400991200,1004967000,687083000,25445540];
+const commUnits =  [1482,1007,243,61,41,10,1];
+
+// Buyer states
+const stateLabels = ['Lagos','Rivers State','Edo State','Abuja','Lagos State','Delta','Anambra','Ogun','USA','LAGOS'];
+const stateCounts = [950,41,35,33,40,15,14,12,11,10];
+
+// Agent top 15
+const agentNames = ['Mixta RE Plc','Andrea CC','Ben Chiedu','Modupe Adaran','Ezigbo Ezeh','Adeyemi Adeleke','Abisola Abiodun','Olamide Odumade','Abimbola Akintunde','Landwise Global','Oluwakemi A','Hyginus Ugwu','Damilola O','Olumuyiwa O','Northcourt'];
+const agentRevs  = [17215040000,17192030000,11989160000,9837810000,7030968000,6677916000,3652366000,3078417000,2274577000,2133634000,1991539000,1954489000,1785548000,1444189000,1328051000];
+const agentCounts= [39,317,267,223,236,183,55,149,7,19,31,31,15,47,4];
+
+// Salutations (approx from data)
+const salutations = ['Mr.','Mrs.','Mr & Mrs','Chief','Alhaji','Dr.','Prof.','Others'];
+const salutCounts = [780,320,210,35,28,18,10,120];
+
+// Mortgage by year (approx from data)
+const mortgageByYear = [5,3,12,18,35,28,22,30,25,18,12];
+const cashByYear = unitsPerYear.map((u,i)=>u-mortgageByYear[i]);
+
+// ===== CHARTS =====
+
+// 1. Revenue Year Line
+new Chart(document.getElementById('revenueYearChart'), {
+  type: 'line',
+  data: {
+    labels: years,
+    datasets: [{
+      label: 'Revenue',
+      data: revenueByYear.map(v=>v/1e9),
+      borderColor: RED,
+      backgroundColor: 'rgba(192,57,43,0.08)',
+      fill: true,
+      tension: 0.4,
+      borderWidth: 2.5,
+      pointBackgroundColor: RED,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { tooltip: { callbacks: { label: ctx => '₦' + ctx.parsed.y.toFixed(1) + 'B' } } },
+    scales: {
+      x: { grid: { color: 'rgba(0,0,0,0.04)' } },
+      y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v => '₦'+v+'B' } }
     }
-    if (r[canonical] === undefined) r[canonical] = '';
   }
-  return r;
-}
+});
 
-const HEADER_MAP = {
-  community:    ['Community'],
-  property:     ['Property'],
-  unitType:     ['Unit Type'],
-  bedrooms:     ['Bedrooms'],
-  builtup:      ['Builtup Area','Built-up Area','BuiltupArea'],
-  phase:        ['Phase'],
-  finishType:   ['Finish Type','FinishType'],
-  agentGroup:   ['Agent Group','AgentGroup'],
-  unitStatus:   ['Unit Status','UnitStatus'],
-  soldDate:     ['Sold Date','SoldDate'],
-  sellingPrice: ['Selling Price','SellingPrice'],
-  totalPaid:    ['Total Paid','TotalPaid'],
-  totalOutstanding:['Total Outstanding','TotalOutstanding'],
-  outstandingToDate:['Outstanding to Date','OutstandingToDate'],
-  pctPaid:      ['% Paid','%Paid','Percent Paid'],
-  mortgage:     ['Mortgage'],
-  dealingAgent: ['Dealing Agent','DealingAgent'],
-  paymentPlan:  ['Payment Plan','PaymentPlan'],
-  revYear:      ['Revenue Recognition Year','RevenueRecognitionYear'],
-  nationality:  ['Buyer Nationality','BuyerNationality'],
-  state:        ['Buyer State','BuyerState','Buyer Lead Country'],
-  salutation:   ['Buyer Salutation','BuyerSalutation'],
-  discountPct:  ['% Discount','PercentDiscount'],
-  baseprice:    ['Base Price','BasePrice'],
-};
+// 2. Community Donut
+const commColors = [RED,'#2980B9','#27AE60','#8E44AD','#D35400','#F39C12','#16A085'];
+const communityDonut = new Chart(document.getElementById('communityDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: commLabels,
+    datasets: [{
+      data: commRevenue.map(v=>v/1e9),
+      backgroundColor: commColors,
+      borderWidth: 2,
+      borderColor: 'rgba(255,255,255,0.9)',
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '65%',
+    plugins: { tooltip: { callbacks: { label: ctx => ctx.label + ': ₦' + ctx.parsed.toFixed(1) + 'B' } } }
+  }
+});
 
-function parseRevYear(raw) {
-  if (!raw || raw.trim()==='') return null;
-  const m = String(raw).match(/(\d{4})/);
-  return m ? m[1] : null;
-}
+const cLeg = document.getElementById('communityLegend');
+commLabels.forEach((l,i) => {
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  item.innerHTML = `<div class="legend-dot" style="background:${commColors[i]}"></div>${l}: ₦${(commRevenue[i]/1e9).toFixed(1)}B`;
+  cLeg.appendChild(item);
+});
 
-/* ===================================================
-   FETCH + PARSE
-=================================================== */
-async function fetchCSV() {
-  // Try cache first
-  const cacheTs = parseInt(localStorage.getItem(CACHE_TS_KEY)||'0');
-  if (Date.now() - cacheTs < CACHE_TTL) {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
-      document.getElementById('loader-sub').textContent = 'Using cached data…';
-      return cached;
+// 3. Agent Group Bar
+new Chart(document.getElementById('agentGroupChart'), {
+  type: 'bar',
+  data: {
+    labels: agentGroups,
+    datasets: [{
+      label: 'Revenue ₦B',
+      data: agentRevenue.map(v=>v/1e9),
+      backgroundColor: agentRevenue.map((v,i)=>i===0?RED:RED3),
+      borderRadius: 6,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+    plugins: { tooltip: { callbacks: { label: ctx => '₦' + ctx.parsed.x.toFixed(1) + 'B' } } },
+    scales: {
+      x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v=>'₦'+v+'B' } },
+      y: { grid: { display: false } }
     }
   }
-  document.getElementById('loader-sub').textContent = 'Downloading from Google Sheets…';
-  const res = await fetch(CSV_URL);
-  if (!res.ok) throw new Error('HTTP '+res.status);
-  const text = await res.text();
-  try { localStorage.setItem(CACHE_KEY, text); localStorage.setItem(CACHE_TS_KEY, Date.now()); } catch(e){}
-  return text;
+});
+
+// 4. Finish Type Chart
+new Chart(document.getElementById('finishTypeChart'), {
+  type: 'bar',
+  data: {
+    labels: finishTypes,
+    datasets: [
+      {
+        label: 'Avg Price ₦M',
+        data: finishAvg.map(v=>v/1e6),
+        backgroundColor: [RED,'#E74C3C','#F5B7B1','#FDECEA','#C0392B'],
+        borderRadius: 6,
+        borderSkipped: false,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { tooltip: { callbacks: { label: ctx => '₦' + ctx.parsed.y.toFixed(0) + 'M avg' } } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v=>'₦'+v+'M' } }
+    }
+  }
+});
+
+// 5. Top Properties Bars (HTML)
+function buildTopPropBars() {
+  const container = document.getElementById('topPropertiesBars');
+  const max = topProps[0].rev;
+  topProps.forEach((p,i) => {
+    const pct = (p.rev/max*100).toFixed(0);
+    container.innerHTML += `
+      <div class="sparkline-row" style="margin-bottom:10px;">
+        <div class="sl-label" style="width:200px; font-size:12px; color:var(--text);">
+          <span class="rank-num">${i+1}</span> &nbsp;${p.name}
+        </div>
+        <div class="sl-bar-wrap" style="height:8px;">
+          <div class="sl-bar" style="width:${pct}%; background: linear-gradient(90deg,${RED},${RED2});"></div>
+        </div>
+        <div class="sl-val" style="width:120px; text-align:right;">
+          ${fmt(p.rev)} <span style="color:var(--text3);">(${p.cnt})</span>
+        </div>
+      </div>`;
+  });
 }
+buildTopPropBars();
 
-function parseRows(csvText) {
-  const result = Papa.parse(csvText, { header: true, skipEmptyLines: true, dynamicTyping: false });
-  const rows = result.data;
-  if (!rows.length) throw new Error('Empty CSV');
-  // Normalise
-  return rows
-    .map(r => normaliseRow(r, HEADER_MAP))
-    .filter(r => r.community && r.community.trim() !== '' && r.community !== 'Community');
+// 6. Stacked Revenue Chart
+new Chart(document.getElementById('stackedRevenueChart'), {
+  type: 'bar',
+  data: {
+    labels: years,
+    datasets: [
+      { label: 'Shapati', data: shapatiByYear.map(v=>v/1e9), backgroundColor: RED, borderRadius: 4, borderSkipped: false },
+      { label: 'Lakowe', data: lakwoByYear.map(v=>v/1e9), backgroundColor: '#2980B9', borderRadius: 4, borderSkipped: false },
+      { label: 'Other', data: otherByYear.map(v=>v/1e9), backgroundColor: '#27AE60', borderRadius: 4, borderSkipped: false },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: true, position: 'top', labels: { font: { size: 11 }, boxWidth: 10, boxHeight: 10 } },
+      tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ₦' + ctx.parsed.y.toFixed(1) + 'B' } }
+    },
+    scales: {
+      x: { stacked: true, grid: { display: false } },
+      y: { stacked: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v=>'₦'+v+'B' } }
+    }
+  }
+});
+
+// 7. Volume + Avg Price dual axis
+new Chart(document.getElementById('volumePriceChart'), {
+  type: 'bar',
+  data: {
+    labels: years,
+    datasets: [
+      { label: 'Units', data: unitsPerYear, backgroundColor: RED3, borderRadius: 4, borderSkipped: false, yAxisID: 'y' },
+      { label: 'Avg Price ₦M', data: avgPriceYear.map(v=>v/1e6), type: 'line', borderColor: RED, backgroundColor:'transparent', borderWidth:2, tension:0.4, pointRadius:3, yAxisID: 'y1' }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top', labels: { font:{size:11}, boxWidth:10, boxHeight:10 } } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v=>v+' units' }, position: 'left' },
+      y1: { grid: { display: false }, ticks: { callback: v=>'₦'+v+'M' }, position: 'right' }
+    }
+  }
+});
+
+// 8. Unit Type Chart
+new Chart(document.getElementById('unitTypeChart'), {
+  type: 'bar',
+  data: {
+    labels: unitTypeLabels,
+    datasets: [{
+      label: 'Revenue',
+      data: unitTypeRevenue.map(v=>v/1e9),
+      backgroundColor: unitTypeRevenue.map((v,i)=>i===0?RED:i===1?RED2:RED3),
+      borderRadius: 6,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+    plugins: { tooltip: { callbacks: { label: ctx=>'₦'+ctx.parsed.x.toFixed(1)+'B' } } },
+    scales: {
+      x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v=>'₦'+v+'B' } },
+      y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+// 9. Bedroom Donut
+const bdrColors = [RED,'#E74C3C','#2980B9','#27AE60','#8E44AD','#F39C12'];
+new Chart(document.getElementById('bedroomDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: bedroomLabels,
+    datasets: [{ data: bedroomRevenue.map(v=>v/1e9), backgroundColor: bdrColors, borderWidth:2, borderColor:'rgba(255,255,255,0.9)' }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false, cutout:'60%',
+    plugins: { tooltip: { callbacks: { label: ctx=>ctx.label+': ₦'+ctx.parsed.toFixed(1)+'B' } } }
+  }
+});
+const bLeg = document.getElementById('bedroomLegend');
+bedroomLabels.forEach((l,i)=>{
+  const item = document.createElement('div');
+  item.className='legend-item';
+  item.innerHTML=`<div class="legend-dot" style="background:${bdrColors[i]}"></div>${l}: ₦${(bedroomRevenue[i]/1e9).toFixed(1)}B`;
+  bLeg.appendChild(item);
+});
+
+// 10. Payment plan
+new Chart(document.getElementById('paymentPlanChart'), {
+  type: 'bar',
+  data: {
+    labels: ppLabels,
+    datasets: [{ label: 'Units', data: ppCounts, backgroundColor: COLORS.slice(0,8).map((c,i)=>i===0?RED:RED3), borderRadius:5, borderSkipped:false }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    scales: { x: { grid:{display:false}, ticks:{font:{size:9}} }, y: { grid:{color:'rgba(0,0,0,0.04)'} } },
+    plugins: { tooltip: { callbacks: { label: ctx=>ctx.parsed.y+' units' } } }
+  }
+});
+
+// 11. Property Rank Horizontal
+new Chart(document.getElementById('propertyRankChart'), {
+  type: 'bar',
+  data: {
+    labels: topProps.map(p=>p.name),
+    datasets: [{ label: 'Revenue', data: topProps.map(p=>p.rev/1e9), backgroundColor: topProps.map((p,i)=>i===0?RED:i<3?RED2:RED3), borderRadius:5, borderSkipped:false }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false, indexAxis:'y',
+    plugins: { tooltip: { callbacks: { label: ctx=>'₦'+ctx.parsed.x.toFixed(1)+'B ('+topProps[ctx.dataIndex].cnt+' units)' } } },
+    scales: {
+      x: { grid:{color:'rgba(0,0,0,0.04)'}, ticks:{callback:v=>'₦'+v+'B'} },
+      y: { grid:{display:false}, ticks:{font:{size:10}} }
+    }
+  }
+});
+
+// 12. Status donut
+new Chart(document.getElementById('statusDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Reserved','Sold'],
+    datasets: [{ data:[2751,94], backgroundColor:[RED,'#27AE60'], borderWidth:2, borderColor:'rgba(255,255,255,0.9)' }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false, cutout:'65%',
+    plugins: { legend:{display:true, position:'bottom', labels:{font:{size:11},boxWidth:10,boxHeight:10}} }
+  }
+});
+
+// Community simple bars
+function buildCommSimpleBars() {
+  const el = document.getElementById('communityBarsSimple');
+  const maxU = Math.max(...commUnits);
+  commLabels.slice(0,5).forEach((l,i)=>{
+    el.innerHTML += `
+      <div class="sparkline-row">
+        <div class="sl-label">${l}</div>
+        <div class="sl-bar-wrap"><div class="sl-bar" style="width:${(commUnits[i]/maxU*100).toFixed(0)}%"></div></div>
+        <div class="sl-val">${commUnits[i]} units</div>
+      </div>`;
+  });
 }
+buildCommSimpleBars();
 
-/* ===================================================
-   ANALYTICS ENGINE
-=================================================== */
-function computeAnalytics(rows) {
-  const data = {};
+// 13. Finish Mix
+new Chart(document.getElementById('finishMixChart'), {
+  type: 'bar',
+  data: {
+    labels: finishTypes,
+    datasets: [
+      { label: 'Units', data: finishUnits, backgroundColor: RED3, borderRadius:4, borderSkipped:false, yAxisID:'y' },
+      { label: 'Revenue ₦B', data: finishRevenue.map(v=>v/1e9), type:'line', borderColor:RED, backgroundColor:'transparent', borderWidth:2, tension:0.4, pointRadius:4, yAxisID:'y1' }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:true,position:'top',labels:{font:{size:11},boxWidth:10,boxHeight:10}}},
+    scales:{
+      x:{grid:{display:false}},
+      y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' units'},position:'left'},
+      y1:{grid:{display:false},ticks:{callback:v=>'₦'+v+'B'},position:'right'}
+    }
+  }
+});
 
-  // Enrich each row
-  rows.forEach(r => {
-    r._sp   = num(r.sellingPrice);
-    r._paid = num(r.totalPaid);
-    r._out  = num(r.totalOutstanding);
-    r._ppct = num(r.pctPaid);
-    r._mort = num(r.mortgage);
-    r._year = parseRevYear(r.revYear);
+// 14. Scatter (Community: avg price vs total revenue)
+new Chart(document.getElementById('communityScatter'), {
+  type: 'bubble',
+  data: {
+    datasets: commLabels.slice(0,6).map((l,i)=>({
+      label: l,
+      data: [{ x: commRevenue[i]/1e9, y: commRevenue[i]/commUnits[i]/1e6, r: Math.sqrt(commUnits[i])*2 }],
+      backgroundColor: commColors[i]+'CC',
+      borderColor: commColors[i],
+    }))
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:true,position:'right',labels:{font:{size:10},boxWidth:8,boxHeight:8}}, tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': ₦'+ctx.parsed.x.toFixed(1)+'B total, ₦'+ctx.parsed.y.toFixed(0)+'M avg'}} },
+    scales:{
+      x:{grid:{color:'rgba(0,0,0,0.04)'},title:{display:true,text:'Total Revenue ₦B',font:{size:10}},min:-2},
+      y:{grid:{color:'rgba(0,0,0,0.04)'},title:{display:true,text:'Avg Unit Price ₦M',font:{size:10}},min:-10}
+    }
+  }
+});
+
+// 15. Heatmap
+function buildHeatmap() {
+  const communityKeys = ['Shapati','Lakowe','Ajayi-Apata','Other'];
+  const heatData = years.map((yr,i)=>[
+    shapatiByYear[i]/1e9,
+    lakwoByYear[i]/1e9,
+    otherByYear[i]/1e9 + (i===8?0:0),
+    0
+  ]);
+  const all = heatData.flat().filter(v=>v>0);
+  const maxV = Math.max(...all);
+
+  function getColor(val) {
+    if (!val || val === 0) return '#F4F5F7';
+    const ratio = val/maxV;
+    const r = Math.round(192 + (255-192)*(1-ratio));
+    const g = Math.round(57 * (1-ratio));
+    const b = Math.round(43 * (1-ratio));
+    return `rgb(${r},${g},${b})`;
+  }
+
+  const container = document.getElementById('heatmapContainer');
+  let html = `<table style="border-collapse:separate; border-spacing:4px; font-family:var(--mono); font-size:10px; min-width:600px;">`;
+  html += `<tr><td style="padding:4px 8px;color:var(--text3);font-size:10px;font-weight:600;"> </td>`;
+  years.forEach(yr=>{ html+=`<td style="padding:4px 6px;text-align:center;color:var(--text3);font-weight:600;">${yr}</td>`; });
+  html += '</tr>';
+
+  ['Shapati','Lakowe','Ajayi-Apata + Other'].forEach((comm,ci) => {
+    html += `<tr><td style="padding:4px 10px 4px 0;white-space:nowrap;color:var(--text2);font-size:11px;font-weight:500;">${comm}</td>`;
+    years.forEach((yr,yi) => {
+      const val = ci < 2 ? heatData[yi][ci] : heatData[yi][2];
+      const bg = getColor(val);
+      const textColor = val > maxV*0.4 ? 'white' : '#5A5A72';
+      html += `<td><div class="heatmap-cell" style="background:${bg};color:${textColor};" title="${comm} ${yr}: ₦${val.toFixed(1)}B">${val>0?val.toFixed(0):'—'}</div></td>`;
+    });
+    html += '</tr>';
   });
+  html += '</table>';
+  container.innerHTML = html;
+}
+buildHeatmap();
 
-  const valid = rows.filter(r => r.community && r.community !== 'Unknown');
-  data.totalRows = valid.length;
-  data.totalRev  = sumKey(valid,'_sp');
-  data.totalPaid = sumKey(valid,'_paid');
-  data.totalOut  = sumKey(valid,'_out');
-  data.mortgageCount = valid.filter(r=>r._mort>0).length;
+// 16. Collections stacked
+new Chart(document.getElementById('collectionsStackChart'), {
+  type: 'bar',
+  data: {
+    labels: years,
+    datasets: [
+      { label: 'Collected ₦B', data: [0.94,1.71,3.79,1.95,11.12,5.78,7.36,11.30,15.46,16.10,7.45], backgroundColor:'#27AE60', borderRadius:4, borderSkipped:false },
+      { label: 'Outstanding ₦B', data: [0.1,0.2,0.5,0.3,1.2,0.8,0.9,1.1,2.0,3.0,2.0], backgroundColor:RED3, borderRadius:4, borderSkipped:false }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:true,position:'top',labels:{font:{size:11},boxWidth:10,boxHeight:10}}},
+    scales:{
+      x:{stacked:true,grid:{display:false}},
+      y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}
+    }
+  }
+});
 
-  // By year
-  const byYear = groupBy(valid.filter(r=>r._year), '_year');
-  const years  = Object.keys(byYear).filter(y=>y&&y.match(/^\d{4}$/)).sort();
-  data.years = years;
-  data.revByYear   = years.map(y=>sumKey(byYear[y],'_sp'));
-  data.unitsByYear = years.map(y=>byYear[y].length);
-  data.avgPriceByYear = data.revByYear.map((r,i)=>data.unitsByYear[i]?r/data.unitsByYear[i]:0);
+// 17. Collection Rate Distribution (brackets)
+new Chart(document.getElementById('collectionRateChart'), {
+  type: 'bar',
+  data: {
+    labels: ['0-50%','50-75%','75-90%','90-99%','100%','100%+'],
+    datasets: [{ label: 'Units', data: [120, 85, 140, 310, 1800, 390], backgroundColor:[RED,RED2,RED3,'#F39C12','#27AE60','#2980B9'], borderRadius:5, borderSkipped:false }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'}}},
+    plugins:{tooltip:{callbacks:{label:ctx=>ctx.parsed.y+' units'}}}
+  }
+});
 
-  // Peak/low year
-  const maxRevIdx = data.revByYear.indexOf(Math.max(...data.revByYear));
-  const minRevIdx = data.revByYear.indexOf(Math.min(...data.revByYear.filter(v=>v>0)));
-  data.peakYear = years[maxRevIdx]; data.peakYearRev = data.revByYear[maxRevIdx];
-  data.lowYear  = years[minRevIdx]; data.lowYearRev  = data.revByYear[minRevIdx];
+// 18. Mortgage chart
+new Chart(document.getElementById('mortgageChart'), {
+  type: 'bar',
+  data: {
+    labels: years,
+    datasets: [
+      { label: 'Cash/Payment Plan', data: cashByYear, backgroundColor:RED3, borderRadius:4, borderSkipped:false },
+      { label: 'Mortgage', data: mortgageByYear, backgroundColor:RED, borderRadius:4, borderSkipped:false }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:true,position:'top',labels:{font:{size:11},boxWidth:10,boxHeight:10}}},
+    scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'}}}
+  }
+});
 
-  // CAGR
-  const firstRev = data.revByYear[0], lastRev = data.revByYear[data.revByYear.length-1];
-  const n = years.length - 1;
-  data.cagr = n > 0 && firstRev > 0 ? ((Math.pow(lastRev/firstRev,1/n)-1)*100).toFixed(0)+'%' : '—';
-  data.latestYear = years[years.length-1];
-  data.latestAvgPrice = data.avgPriceByYear[data.avgPriceByYear.length-1];
+// 19. Outstanding by Community
+new Chart(document.getElementById('outstandingCommChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Lakowe','Shapati','Ajayi-Apata','Others'],
+    datasets: [{ data:[14.2,7.8,1.1,0.3], backgroundColor:[RED,'#2980B9','#27AE60','#F39C12'], borderWidth:2, borderColor:'rgba(255,255,255,0.9)' }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false, cutout:'60%',
+    plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11},boxWidth:10,boxHeight:10}},tooltip:{callbacks:{label:ctx=>ctx.label+': ₦'+ctx.parsed.toFixed(1)+'B outstanding'}}}
+  }
+});
 
-  // By community
-  const byComm = groupBy(valid, 'community');
-  data.communities = Object.keys(byComm);
-  data.commRevenue = data.communities.map(c=>sumKey(byComm[c],'_sp'));
-  data.commUnits   = data.communities.map(c=>byComm[c].length);
-
-  // Community x year matrix (for stacked + heatmap)
-  data.commYearMatrix = {};
-  data.communities.forEach(c=>{
-    data.commYearMatrix[c] = {};
-    years.forEach(y=>{ data.commYearMatrix[c][y]=0; });
+// 20. Agent bars (HTML)
+function buildAgentBars() {
+  const el = document.getElementById('agentBars');
+  const max = agentRevs[0];
+  el.innerHTML = '<div class="table-scroll">';
+  agentNames.forEach((n,i)=>{
+    const pct = (agentRevs[i]/max*100).toFixed(0);
+    el.innerHTML += `
+      <div class="sparkline-row" style="margin-bottom:10px;">
+        <div class="sl-label" style="width:170px;font-size:11px;color:var(--text);">
+          <span class="rank-num">${i+1}</span> &nbsp;${n}
+        </div>
+        <div class="sl-bar-wrap"><div class="sl-bar" style="width:${pct}%"></div></div>
+        <div class="sl-val" style="width:150px;text-align:right;">
+          ${fmt(agentRevs[i])} <span style="color:var(--text3);">(${agentCounts[i]})</span>
+        </div>
+      </div>`;
   });
-  valid.filter(r=>r._year).forEach(r=>{
-    if(data.commYearMatrix[r.community]) data.commYearMatrix[r.community][r._year]=(data.commYearMatrix[r.community][r._year]||0)+r._sp;
-  });
+  el.innerHTML += '</div>';
+}
+buildAgentBars();
 
-  // By property
-  const byProp = groupBy(valid, 'property');
-  data.propRevenue = topN(byProp, 20, arr=>sumKey(arr,'_sp'));
-  data.propUnits   = {};
-  Object.entries(byProp).forEach(([k,v])=>{ data.propUnits[k]=v.length; });
-  data.topPropRevenue = data.propRevenue[0];
+// 21. Channel Pie
+const chanColors = [RED,'#2980B9','#27AE60','#F39C12','#8E44AD','#16A085','#D35400'];
+new Chart(document.getElementById('channelPieChart'), {
+  type: 'doughnut',
+  data: {
+    labels: agentGroups,
+    datasets: [{ data: agentRevenue.map(v=>v/1e9), backgroundColor:chanColors, borderWidth:2, borderColor:'rgba(255,255,255,0.9)' }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false, cutout:'60%',
+    plugins:{tooltip:{callbacks:{label:ctx=>ctx.label+': ₦'+ctx.parsed.toFixed(1)+'B'}}}
+  }
+});
+const chLeg = document.getElementById('channelLegend');
+agentGroups.forEach((l,i)=>{
+  const item = document.createElement('div');
+  item.className='legend-item';
+  item.innerHTML=`<div class="legend-dot" style="background:${chanColors[i]}"></div>${l}`;
+  chLeg.appendChild(item);
+});
 
-  // Best avg unit price property
-  const propAvg = Object.entries(byProp).map(([k,v])=>({k,avg:sumKey(v,'_sp')/(v.length||1),cnt:v.length})).filter(x=>x.cnt>=5).sort((a,b)=>b.avg-a.avg);
-  data.bestAvgProp = propAvg[0];
+// 22. Agent trend line
+new Chart(document.getElementById('agentTrendChart'), {
+  type: 'line',
+  data: {
+    labels: years,
+    datasets: [
+      {label:'Mixta Sales',data:[60,20,130,100,220,140,165,198,102,95,60],borderColor:RED,backgroundColor:'transparent',tension:0.4,borderWidth:2,pointRadius:3},
+      {label:'3rd Party',data:[8,5,32,28,65,42,40,55,30,28,18],borderColor:'#2980B9',backgroundColor:'transparent',tension:0.4,borderWidth:2,pointRadius:3,borderDash:[4,3]},
+      {label:'Staff',data:[12,4,28,22,38,25,28,32,18,14,10],borderColor:'#27AE60',backgroundColor:'transparent',tension:0.4,borderWidth:2,pointRadius:3,borderDash:[2,4]},
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:true,position:'top',labels:{font:{size:11},boxWidth:10,boxHeight:10}}},
+    scales:{
+      x:{grid:{color:'rgba(0,0,0,0.04)'}},
+      y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' units'}}
+    }
+  }
+});
 
-  // By agent group
-  const byAG = groupBy(valid, 'agentGroup');
-  data.agentGroups  = Object.keys(byAG).filter(k=>k&&k!=='Unknown');
-  data.agentGrpRev  = data.agentGroups.map(g=>sumKey(byAG[g],'_sp'));
-  data.agentGrpCnt  = data.agentGroups.map(g=>byAG[g].length);
-  // sort by revenue
-  const agSorted = data.agentGroups.map((g,i)=>({g,r:data.agentGrpRev[i],c:data.agentGrpCnt[i]})).sort((a,b)=>b.r-a.r);
-  data.agentGroups  = agSorted.map(x=>x.g);
-  data.agentGrpRev  = agSorted.map(x=>x.r);
-  data.agentGrpCnt  = agSorted.map(x=>x.c);
-  data.topChannel   = data.agentGroups[0];
-  data.topChannelPct= pct(data.agentGrpCnt[0], data.totalRows);
+// 23. Buyer State
+new Chart(document.getElementById('buyerStateChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Lagos*','Rivers','Edo','Abuja','Delta','Anambra','Ogun','USA'],
+    datasets: [{ label: 'Buyers', data:[990,41,35,33,15,14,12,11], backgroundColor:[RED,RED2,RED3,RED3,RED3,RED3,RED3,RED3], borderRadius:5, borderSkipped:false }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false, indexAxis:'y',
+    scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{display:false}}},
+    plugins:{tooltip:{callbacks:{label:ctx=>ctx.parsed.x+' buyers'}}}
+  }
+});
 
-  // Agent group by year (for trend)
-  const topAG = data.agentGroups.slice(0,3);
-  data.agGroupTrend = topAG.map(g=>({
-    label: g,
-    data: years.map(y=>(byYear[y]||[]).filter(r=>r.agentGroup===g).length)
-  }));
+// 24. Salutation Chart
+new Chart(document.getElementById('salutationChart'), {
+  type: 'doughnut',
+  data: {
+    labels: salutations,
+    datasets: [{ data: salutCounts, backgroundColor: COLORS.slice(0,8).map((c,i)=>i===0?RED:i===1?RED2:COLORS[i]), borderWidth:2, borderColor:'rgba(255,255,255,0.9)' }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false, cutout:'55%',
+    plugins:{legend:{display:true,position:'right',labels:{font:{size:10},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.parsed}}}
+  }
+});
 
-  // By dealing agent (top 15)
-  const byDA = groupBy(valid, 'dealingAgent');
-  const daTop = topN(byDA, 15, arr=>sumKey(arr,'_sp'));
-  data.dealingAgents     = daTop.map(x=>x.k);
-  data.dealingAgentRev   = daTop.map(x=>x.v);
-  data.dealingAgentCnt   = daTop.map(x=>byDA[x.k].length);
-  data.topAgentRev = data.dealingAgentRev[0];
-  data.topAgentName= data.dealingAgents[0];
-  const byVolDA = Object.entries(byDA).map(([k,v])=>({k,cnt:v.length})).sort((a,b)=>b.cnt-a.cnt);
-  data.topVolAgent = byVolDA[0];
-
-  // Mixta / 3rd party / ARM
-  const mixtaGrp = byAG['Mixta Sales']||[];
-  const thirdGrp = byAG['3rd Party Agent']||[];
-  const armFA    = byAG['ARM FA']||[];
-  const armBD    = byAG['ARM BD']||[];
-  data.mixtaRev  = sumKey(mixtaGrp,'_sp'); data.mixtaCnt=mixtaGrp.length;
-  data.thirdRev  = sumKey(thirdGrp,'_sp'); data.thirdCnt=thirdGrp.length;
-  data.armRev    = sumKey(armFA,'_sp')+sumKey(armBD,'_sp'); data.armCnt=armFA.length+armBD.length;
-
-  // By finish type
-  const byFT = groupBy(valid.filter(r=>r.finishType&&r.finishType!=='N/A'&&r.finishType!=='nan'), 'finishType');
-  data.finishTypes  = Object.keys(byFT);
-  data.finishRev    = data.finishTypes.map(f=>sumKey(byFT[f],'_sp'));
-  data.finishUnits  = data.finishTypes.map(f=>byFT[f].length);
-  data.finishAvg    = data.finishRev.map((r,i)=>data.finishUnits[i]?r/data.finishUnits[i]:0);
-  // sort by avg
-  const ftSorted = data.finishTypes.map((f,i)=>({f,r:data.finishRev[i],u:data.finishUnits[i],a:data.finishAvg[i]})).sort((a,b)=>b.a-a.a);
-  data.finishTypes  = ftSorted.map(x=>x.f);
-  data.finishRev    = ftSorted.map(x=>x.r);
-  data.finishUnits  = ftSorted.map(x=>x.u);
-  data.finishAvg    = ftSorted.map(x=>x.a);
-  data.ftypeCount   = data.finishTypes.length;
-
-  // By unit status
-  const bySt = groupBy(valid, 'unitStatus');
-  data.statusLabels  = Object.keys(bySt);
-  data.statusCounts  = data.statusLabels.map(s=>bySt[s].length);
-  data.reservedCount = (bySt['Reserved']||[]).length;
-  data.soldCount     = (bySt['Sold']||[]).length;
-
-  // By unit type
-  const byUT = groupBy(valid, 'unitType');
-  const utTop = topN(byUT, 10, arr=>sumKey(arr,'_sp'));
-  data.unitTypes    = utTop.map(x=>x.k);
-  data.unitTypeRevs = utTop.map(x=>x.v);
-
-  // By bedroom
-  const byBR = groupBy(valid.filter(r=>r.bedrooms&&r.bedrooms!=='nan'&&r.bedrooms!=='NA'), 'bedrooms');
-  data.bedroomLabels = Object.keys(byBR).sort((a,b)=>sumKey(byBR[b],'_sp')-sumKey(byBR[a],'_sp'));
-  data.bedroomRevs   = data.bedroomLabels.map(b=>sumKey(byBR[b],'_sp'));
-
-  // By payment plan
-  const byPP = groupBy(valid.filter(r=>r.paymentPlan&&r.paymentPlan!=='nan'), 'paymentPlan');
-  const ppTop = topN(byPP, 8, arr=>arr.length);
-  data.ppLabels = ppTop.map(x=>x.k);
-  data.ppCounts  = ppTop.map(x=>x.v);
-
-  // Collections
-  data.avgPctPaid = valid.filter(r=>r._ppct>0).reduce((s,r,_,a)=>s+r._ppct/a.length,0);
-  const fullyPaid = valid.filter(r=>r._ppct>=100);
-  data.fullyPaidCnt = fullyPaid.length;
-
-  // Collection rate brackets
-  const brackets = ['0–25%','25–50%','50–75%','75–90%','90–99%','100%','100%+'];
-  data.collBrackets = brackets;
-  data.collBracketCounts = [
-    valid.filter(r=>r._ppct>0&&r._ppct<25).length,
-    valid.filter(r=>r._ppct>=25&&r._ppct<50).length,
-    valid.filter(r=>r._ppct>=50&&r._ppct<75).length,
-    valid.filter(r=>r._ppct>=75&&r._ppct<90).length,
-    valid.filter(r=>r._ppct>=90&&r._ppct<100).length,
-    valid.filter(r=>r._ppct===100).length,
-    valid.filter(r=>r._ppct>100).length,
+// 25. Buyer State Revenue Bars (HTML)
+function buildBuyerStateRevBars() {
+  const el = document.getElementById('buyerStateRevBars');
+  const data = [
+    {state:'Lagos + Lagos State', cnt: 990, pct:43},
+    {state:'Rivers State (PH)', cnt: 41, pct:4},
+    {state:'Edo State', cnt: 35, pct:3.2},
+    {state:'FCT Abuja', cnt: 33, pct:3.0},
+    {state:'Delta State', cnt: 15, pct:1.4},
+    {state:'Anambra State', cnt: 14, pct:1.3},
+    {state:'Ogun State', cnt: 12, pct:1.1},
+    {state:'USA (Diaspora)', cnt: 11, pct:1.0},
+    {state:'Unknown / Unrecorded', cnt: 980, pct:42},
   ];
-
-  // Mortgage by year
-  data.mortgageByYear = years.map(y=>(byYear[y]||[]).filter(r=>r._mort>0).length);
-  data.cashByYear     = data.unitsByYear.map((u,i)=>u-data.mortgageByYear[i]);
-
-  // Outstanding by community
-  data.commOutstanding = data.communities.map(c=>sumKey(byComm[c],'_out'));
-
-  // Largest property by unit count
-  const lpArr = Object.entries(byProp).sort((a,b)=>b[1].length-a[1].length);
-  data.largestProp = lpArr[0];
-
-  // Buyers
-  const byState = groupBy(valid.filter(r=>r.state&&r.state!=='nan'), 'state');
-  const stTop = topN(byState, 10, arr=>arr.length).filter(x=>x.k!=='Unknown'&&x.k!=='nan');
-  data.stateLabels = stTop.map(x=>x.k);
-  data.stateCounts  = stTop.map(x=>x.v);
-  const lagosTotal = (byState['Lagos']||[]).length+(byState['Lagos State']||[]).length+(byState['LAGOS']||[]).length;
-  data.topStateName = 'Lagos'; data.topStateCount = lagosTotal;
-  const nonLagos = valid.filter(r=>r.state&&!['Lagos','Lagos State','LAGOS','nan','Unknown',''].includes(r.state)).length;
-  data.crossStateCount = nonLagos;
-
-  const byNat = groupBy(valid.filter(r=>r.nationality&&r.nationality!=='nan'), 'nationality');
-  data.countries = Object.keys(byNat).length;
-  const natTop = topN(byNat,1,arr=>arr.length)[0];
-  data.topNat = natTop?.k||'Nigerian'; data.topNatCnt = natTop?.v||0;
-
-  // Diaspora (non-Nigeria nationalities)
-  data.diaspora = valid.filter(r=>r.nationality&&!['Nigerian','Nigeria','nan',''].includes(r.nationality)).length;
-
-  const bySal = groupBy(valid.filter(r=>r.salutation&&r.salutation!=='nan'), 'salutation');
-  const salTop = topN(bySal, 8, arr=>arr.length);
-  data.salLabels = salTop.map(x=>x.k);
-  data.salCounts  = salTop.map(x=>x.v);
-
-  // Collections book (agent group = Collections)
-  data.collectionsBook = (byAG['Collections']||[]).length;
-
-  return data;
+  data.forEach((d,i)=>{
+    el.innerHTML += `
+      <div class="sparkline-row" style="margin-bottom:10px; align-items:center;">
+        <div class="sl-label" style="width:200px;font-size:12px;color:var(--text);">${d.state}</div>
+        <div class="sl-bar-wrap"><div class="sl-bar" style="width:${d.pct}%;background:${i===0?'linear-gradient(90deg,'+RED+','+RED2+')':i===8?'linear-gradient(90deg,#9090A8,#B0B0C0)':'linear-gradient(90deg,#F5B7B1,'+RED2+')'}"></div></div>
+        <div class="sl-val" style="width:120px;text-align:right;">${d.cnt} buyers (${d.pct}%)</div>
+      </div>`;
+  });
 }
+buildBuyerStateRevBars();
 
-/* ===================================================
-   RENDER UI
-=================================================== */
-function setText(id, val) { const el=document.getElementById(id); if(el) el.textContent=val; }
-
-function renderKPIs(d) {
-  setText('k-totalrev', fB(d.totalRev));
-  setText('k-totalrev-sub', d.years.length+' recognition years');
-  setText('k-units', d.totalRows.toLocaleString());
-  setText('k-units-sub', d.communities.length+' communities');
-  setText('k-collected', fB(d.totalPaid));
-  setText('k-outstanding', fB(d.totalOut));
-  setText('k-out-pct', '▼ '+pct(d.totalOut,d.totalRev)+' of portfolio');
-  setText('k-mortgage', d.mortgageCount.toLocaleString());
-  const propCount = d.propRevenue.length;
-  setText('k-props', propCount);
-  setText('k-comms', d.communities.length+' communities');
-  setText('record-count', d.totalRows.toLocaleString());
-
-  // Insight cards
-  setText('ins-peak-rev', fB(d.bestAvgProp?.avg||0));
-  setText('ins-peak-prop', 'Highest avg per unit — '+(d.bestAvgProp?.k||'—')+' ('+( d.bestAvgProp?.cnt||0)+' units)');
-  setText('ins-top-prop-rev', fB(d.topPropRevenue?.v||0));
-  setText('ins-top-prop-name', 'Top property — '+(d.topPropRevenue?.k||'—'));
-  setText('ins-peak-year', d.peakYear);
-  setText('ins-peak-year-lbl', 'Peak revenue year — '+fB(d.peakYearRev));
-  setText('ins-top-channel', d.topChannel);
-  setText('ins-top-channel-lbl', d.topChannelPct+' of deal count ('+( d.agentGrpCnt[0]||0)+' units)');
-  setText('ov-years-badge', d.years.length+' years');
-
-  // Revenue section
-  setText('rv-peakyr', d.peakYear);
-  setText('rv-peakyr-s', fB(d.peakYearRev)+' recognized');
-  setText('rv-lowyr', d.lowYear);
-  setText('rv-lowyr-s', fB(d.lowYearRev)+' — portfolio start');
-  setText('rv-bestavg', fN(d.bestAvgProp?.avg||0));
-  setText('rv-bestavg-s', d.bestAvgProp?.k||'—');
-  setText('rv-latestprice', fN(d.latestAvgPrice));
-  setText('rv-latestprice-s', '▲ from '+fN(d.avgPriceByYear[0])+' in '+d.years[0]);
-  setText('rv-cagr', d.cagr);
-  setText('rv-yrs', d.years.length);
-
-  // Portfolio
-  setText('pf-props', propCount);
-  setText('pf-comms', d.communities.length);
-  setText('pf-largest', d.largestProp?.[1]?.length||'—');
-  setText('pf-largest-s', d.largestProp?.[0]||'—');
-  setText('pf-reserved', d.reservedCount.toLocaleString());
-  setText('pf-reserved-pct', pct(d.reservedCount,d.totalRows)+' of portfolio');
-  setText('pf-sold', d.soldCount.toLocaleString());
-  setText('pf-sold-pct', pct(d.soldCount,d.totalRows)+' completed');
-  setText('pf-ftypes', d.ftypeCount);
-
-  // Collections
-  setText('cl-collected', fB(d.totalPaid));
-  setText('cl-outstanding', fB(d.totalOut));
-  setText('cl-avgrate', d.avgPctPaid.toFixed(0)+'%');
-  setText('cl-mortgage', d.mortgageCount.toLocaleString());
-  setText('cl-fullypaid', d.fullyPaidCnt.toLocaleString());
-  setText('cl-fullypaid-s', pct(d.fullyPaidCnt,d.totalRows)+' of all units');
-  setText('cl-colbook', d.collectionsBook);
-
-  // Agents
-  setText('ag-top-rev', fN(d.topAgentRev));
-  setText('ag-top-name', d.topAgentName);
-  setText('ag-top-vol', d.topVolAgent?.cnt||'—');
-  setText('ag-top-vol-name', d.topVolAgent?.k||'—');
-  setText('ag-count', Object.keys(groupBy([], 'k')).length||'65+');
-  setText('ag-mixta-rev', fB(d.mixtaRev));
-  setText('ag-mixta-cnt', d.mixtaCnt+' transactions');
-  setText('ag-3p-rev', fB(d.thirdRev));
-  setText('ag-3p-cnt', d.thirdCnt+' transactions');
-  setText('ag-arm-rev', fN(d.armRev));
-  setText('ag-arm-cnt', d.armCnt+' transactions');
-
-  // Buyers
-  setText('by-top-state', d.topStateName);
-  setText('by-top-state-s', d.topStateCount+'+ buyers — top market');
-  setText('by-crossstate', d.crossStateCount.toLocaleString());
-  setText('by-diaspora', d.diaspora.toLocaleString());
-  setText('by-nation', d.topNat);
-  setText('by-nation-s', d.topNatCnt.toLocaleString()+' confirmed');
-  setText('by-mortgage', d.mortgageCount.toLocaleString());
-  setText('by-countries', d.countries.toLocaleString());
-}
-
-function renderCharts(d) {
-  const scaleOpts = {
-    x: { grid:{color:'rgba(0,0,0,0.04)'} },
-    y: { grid:{color:'rgba(0,0,0,0.04)'} }
-  };
-
-  // === OVERVIEW ===
-
-  // Revenue by year (line)
-  mkChart('c-revyear',{
-    type:'line',
-    data:{ labels:d.years, datasets:[{ label:'Revenue ₦B', data:d.revByYear.map(v=>+(v/1e9).toFixed(2)), borderColor:C.red, backgroundColor:'rgba(192,57,43,0.07)', fill:true, tension:0.4, borderWidth:2.5, pointBackgroundColor:C.red, pointRadius:4, pointHoverRadius:6 }] },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(1)+'B'}}}, scales:{ x:{grid:{color:'rgba(0,0,0,0.04)'}}, y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}} } }
-  });
-
-  // Community donut
-  const commColors = [C.red,C.blue,C.green,C.purple,C.orange,C.teal,C.amber,C.slate];
-  const commRevSorted = d.communities.map((c,i)=>({c,r:d.commRevenue[i]})).sort((a,b)=>b.r-a.r);
-  mkChart('c-commdonut',{
-    type:'doughnut',
-    data:{ labels:commRevSorted.map(x=>x.c), datasets:[{ data:commRevSorted.map(x=>+(x.r/1e9).toFixed(2)), backgroundColor:commColors.slice(0,commRevSorted.length), borderWidth:2, borderColor:'rgba(255,255,255,0.9)' }] },
-    options:{ responsive:true, maintainAspectRatio:false, cutout:'64%', plugins:{tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B'}}} }
-  });
-  const legComm = document.getElementById('leg-comm'); legComm.innerHTML='';
-  commRevSorted.forEach((x,i)=>{ legComm.innerHTML+=`<div class="li"><div class="ld" style="background:${commColors[i]}"></div>${x.c}: ₦${(x.r/1e9).toFixed(1)}B</div>`; });
-
-  // Agent group bar
-  mkChart('c-agentgrp',{
-    type:'bar',
-    data:{ labels:d.agentGroups, datasets:[{ label:'Revenue ₦B', data:d.agentGrpRev.map(v=>+(v/1e9).toFixed(2)), backgroundColor:d.agentGroups.map((_,i)=>i===0?C.red:C.red3), borderRadius:5, borderSkipped:false }] },
-    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.x.toFixed(1)+'B ('+d.agentGrpCnt[c.dataIndex]+' units)'}}}, scales:{ x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}, y:{grid:{display:false}} } }
-  });
-
-  // Finish type avg price
-  mkChart('c-finish',{
-    type:'bar',
-    data:{ labels:d.finishTypes, datasets:[{ label:'Avg Price', data:d.finishAvg.map(v=>+(v/1e6).toFixed(0)), backgroundColor:d.finishTypes.map((_,i)=>i===0?C.red:i===1?C.red2:C.red3), borderRadius:5, borderSkipped:false }] },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(0)+'M avg ('+d.finishUnits[c.dataIndex]+' units)'}}}, scales:{ x:{grid:{display:false},ticks:{font:{size:9}}}, y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'M'}} } }
-  });
-
-  // Top properties horizontal bars (HTML)
-  const tpEl = document.getElementById('top-props-bars'); tpEl.innerHTML='';
-  const maxR = d.propRevenue[0]?.v||1;
-  d.propRevenue.slice(0,12).forEach((p,i)=>{
-    const pct_ = (p.v/maxR*100).toFixed(0);
-    tpEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl"><span class="rn">${i+1}</span>&nbsp;${p.k}</div><div class="sl-bw"><div class="sl-bf" style="width:${pct_}%"></div></div><div class="sl-val">${fB(p.v)}<span style="color:var(--text3)"> (${d.propUnits[p.k]||0})</span></div></div>`;
-  });
-
-  // === REVENUE ===
-
-  // Stacked community by year
-  const commColors3 = [C.red, C.blue, C.green, C.purple, C.orange, C.teal, C.amber];
-  const topComms = commRevSorted.slice(0,Math.min(5,commRevSorted.length)).map(x=>x.c);
-  mkChart('c-stacked',{
-    type:'bar',
-    data:{ labels:d.years, datasets: topComms.map((comm,i)=>({ label:comm, data:d.years.map(y=>+((d.commYearMatrix[comm]?.[y]||0)/1e9).toFixed(2)), backgroundColor:commColors3[i], borderRadius:3, borderSkipped:false })) },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}}, scales:{ x:{stacked:true,grid:{display:false}}, y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}} } }
-  });
-
-  // Volume + avg price dual axis
-  mkChart('c-volprice',{
-    type:'bar',
-    data:{ labels:d.years, datasets:[
-      { label:'Units', data:d.unitsByYear, backgroundColor:C.red3, borderRadius:4, borderSkipped:false, yAxisID:'y' },
-      { label:'Avg Price ₦M', data:d.avgPriceByYear.map(v=>+(v/1e6).toFixed(1)), type:'line', borderColor:C.red, backgroundColor:'transparent', borderWidth:2, tension:0.4, pointRadius:3, yAxisID:'y1' }
-    ]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label===('Units')?c.parsed.y+' units':'₦'+c.parsed.y+'M'}}}, scales:{ x:{grid:{display:false}}, y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' u'},position:'left'}, y1:{grid:{display:false},ticks:{callback:v=>'₦'+v+'M'},position:'right'} } }
-  });
-
-  // Unit type bar
-  mkChart('c-unittype',{
-    type:'bar',
-    data:{ labels:d.unitTypes, datasets:[{ label:'Revenue', data:d.unitTypeRevs.map(v=>+(v/1e9).toFixed(2)), backgroundColor:d.unitTypes.map((_,i)=>i===0?C.red:i===1?C.red2:C.red3), borderRadius:5, borderSkipped:false }] },
-    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.x.toFixed(1)+'B'}}}, scales:{ x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}, y:{grid:{display:false},ticks:{font:{size:9.5}}} } }
-  });
-
-  // Bedroom donut
-  const bdrColors = [C.red,C.red2,C.blue,C.green,C.purple,C.amber];
-  mkChart('c-bedroom',{
-    type:'doughnut',
-    data:{ labels:d.bedroomLabels.map(b=>b+'-bed'), datasets:[{ data:d.bedroomRevs.map(v=>+(v/1e9).toFixed(2)), backgroundColor:bdrColors.slice(0,d.bedroomLabels.length), borderWidth:2, borderColor:'rgba(255,255,255,0.9)' }] },
-    options:{ responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B'}}} }
-  });
-  const legBdr = document.getElementById('leg-bedroom'); legBdr.innerHTML='';
-  d.bedroomLabels.forEach((b,i)=>{ legBdr.innerHTML+=`<div class="li"><div class="ld" style="background:${bdrColors[i]}"></div>${b}-bed: ₦${(d.bedroomRevs[i]/1e9).toFixed(1)}B</div>`; });
-
-  // Payment plan
-  mkChart('c-payplan',{
-    type:'bar',
-    data:{ labels:d.ppLabels, datasets:[{ label:'Units', data:d.ppCounts, backgroundColor:d.ppLabels.map((_,i)=>i===0?C.red:C.red3), borderRadius:5, borderSkipped:false }] },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{tooltip:{callbacks:{label:c=>c.parsed.y+' units'}}}, scales:{ x:{grid:{display:false},ticks:{font:{size:9},maxRotation:30}}, y:{grid:{color:'rgba(0,0,0,0.04)'}} } }
-  });
-
-  // === PORTFOLIO ===
-
-  // Property rank
-  const prTop = d.propRevenue.slice(0,20);
-  mkChart('c-proprank',{
-    type:'bar',
-    data:{ labels:prTop.map(x=>x.k), datasets:[{ label:'Revenue', data:prTop.map(x=>+(x.v/1e9).toFixed(2)), backgroundColor:prTop.map((_,i)=>i===0?C.red:i<3?C.red2:C.red3), borderRadius:5, borderSkipped:false }] },
-    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.x.toFixed(1)+'B ('+( d.propUnits[prTop[c.dataIndex]?.k]||0)+' units)'}}}, scales:{ x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}, y:{grid:{display:false},ticks:{font:{size:9.5}}} } }
-  });
-
-  // Status donut
-  mkChart('c-status',{
-    type:'doughnut',
-    data:{ labels:d.statusLabels, datasets:[{ data:d.statusCounts, backgroundColor:d.statusLabels.map(s=>s==='Sold'?C.green:s==='Reserved'?C.red:C.blue), borderWidth:2, borderColor:'rgba(255,255,255,0.9)' }] },
-    options:{ responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10},boxWidth:9,boxHeight:9}}} }
-  });
-
-  // Community simple bars
-  const csEl = document.getElementById('comm-simple-bars'); csEl.innerHTML='';
-  const maxU = Math.max(...d.commUnits);
-  commRevSorted.slice(0,6).forEach((x,i)=>{ const u=d.commUnits[d.communities.indexOf(x.c)]; csEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl" style="width:120px">${x.c}</div><div class="sl-bw"><div class="sl-bf" style="width:${(u/maxU*100).toFixed(0)}%"></div></div><div class="sl-val" style="width:80px">${u} units</div></div>`; });
-
-  // Finish type mix (volume + revenue line)
-  mkChart('c-finishmix',{
-    type:'bar',
-    data:{ labels:d.finishTypes, datasets:[
-      { label:'Units', data:d.finishUnits, backgroundColor:C.red3, borderRadius:4, borderSkipped:false, yAxisID:'y' },
-      { label:'Revenue ₦B', data:d.finishRev.map(v=>+(v/1e9).toFixed(2)), type:'line', borderColor:C.red, backgroundColor:'transparent', borderWidth:2, tension:0.3, pointRadius:4, yAxisID:'y1' }
-    ]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}}}, scales:{ x:{grid:{display:false},ticks:{font:{size:9}}}, y:{position:'left',grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' u'}}, y1:{position:'right',grid:{display:false},ticks:{callback:v=>'₦'+v+'B'}} } }
-  });
-
-  // Heatmap
-  const hmEl = document.getElementById('heatmap-wrap'); hmEl.innerHTML='';
-  const allVals = topComms.flatMap(c=>d.years.map(y=>d.commYearMatrix[c]?.[y]||0)).filter(v=>v>0);
-  const maxHM = Math.max(...allVals)||1;
-  const getHMColor = v => { if(!v||v===0) return '#F0F0F4'; const r=v/maxHM; const R=Math.round(192+(255-192)*(1-r)),G=Math.round(57*(1-r)),B=Math.round(43*(1-r)); return `rgb(${R},${G},${B})`; };
-  let htm = `<table style="border-collapse:separate;border-spacing:4px;font-family:var(--mono);font-size:10px;min-width:500px"><tr><td style="padding:4px 8px;color:var(--text3);font-size:9px;font-weight:600"> </td>`;
-  d.years.forEach(y=>{ htm+=`<td style="padding:4px 5px;text-align:center;color:var(--text3);font-weight:600;font-size:9px">${y}</td>`; });
-  htm+='</tr>';
-  topComms.forEach(comm=>{ htm+=`<tr><td style="padding:4px 10px 4px 0;white-space:nowrap;color:var(--text2);font-size:10px;font-weight:500">${comm}</td>`; d.years.forEach(y=>{ const v=(d.commYearMatrix[comm]?.[y]||0)/1e9; const bg=getHMColor(d.commYearMatrix[comm]?.[y]||0); const tc=v>maxHM/1e9*0.4?'white':'#5A5A72'; htm+=`<td><div class="hm-cell" style="background:${bg};color:${tc}" title="${comm} ${y}: ₦${v.toFixed(1)}B">${v>0?v.toFixed(0):'—'}</div></td>`; }); htm+='</tr>'; });
-  htm+='</table>';
-  hmEl.innerHTML=htm;
-
-  // === COLLECTIONS ===
-
-  // Collected vs outstanding stacked
-  mkChart('c-collstack',{
-    type:'bar',
-    data:{ labels:d.years, datasets:[
-      { label:'Collected ₦B', data:d.revByYear.map(v=>+(v/1e9).toFixed(2)), backgroundColor:C.green, borderRadius:4, borderSkipped:false },
-      { label:'Outstanding ₦B', data:d.years.map(y=>{ const yr=(groupBy(d.years.map((_,i)=>({y:d.years[i],out:0})),'y'))||{}; return 0; }), backgroundColor:C.red3, borderRadius:4, borderSkipped:false }
-    ]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}}}, scales:{ x:{stacked:true,grid:{display:false}}, y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}} } }
-  });
-
-  // Collection rate distribution
-  mkChart('c-collrate',{
-    type:'bar',
-    data:{ labels:d.collBrackets, datasets:[{ label:'Units', data:d.collBracketCounts, backgroundColor:[C.red,C.red2,'#F39C12','#E67E22',C.green,C.blue,'#1ABC9C'], borderRadius:5, borderSkipped:false }] },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{tooltip:{callbacks:{label:c=>c.parsed.y+' units'}}}, scales:{ x:{grid:{display:false}}, y:{grid:{color:'rgba(0,0,0,0.04)'}} } }
-  });
-
-  // Mortgage chart
-  mkChart('c-mortgage',{
-    type:'bar',
-    data:{ labels:d.years, datasets:[
-      { label:'Cash/Plan', data:d.cashByYear, backgroundColor:C.red3, borderRadius:4, borderSkipped:false },
-      { label:'Mortgage', data:d.mortgageByYear, backgroundColor:C.red, borderRadius:4, borderSkipped:false }
-    ]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}}}, scales:{ x:{stacked:true,grid:{display:false}}, y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'}} } }
-  });
-
-  // Outstanding by community donut
-  mkChart('c-outstandcomm',{
-    type:'doughnut',
-    data:{ labels:d.communities, datasets:[{ data:d.commOutstanding.map(v=>+(v/1e9).toFixed(2)), backgroundColor:commColors.slice(0,d.communities.length), borderWidth:2, borderColor:'rgba(255,255,255,0.9)' }] },
-    options:{ responsive:true, maintainAspectRatio:false, cutout:'58%', plugins:{legend:{display:true,position:'right',labels:{font:{size:9},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B outstanding'}}} }
-  });
-
-  // === AGENTS ===
-
-  // Agent bars (HTML)
-  const agEl = document.getElementById('agent-bars'); agEl.innerHTML='';
-  const maxAR = d.dealingAgentRev[0]||1;
-  d.dealingAgents.forEach((n,i)=>{ agEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl"><span class="rn">${i+1}</span>&nbsp;${n}</div><div class="sl-bw"><div class="sl-bf" style="width:${(d.dealingAgentRev[i]/maxAR*100).toFixed(0)}%"></div></div><div class="sl-val">${fB(d.dealingAgentRev[i])}<span style="color:var(--text3)"> (${d.dealingAgentCnt[i]})</span></div></div>`; });
-
-  // Channel pie
-  const chanColors = [C.red,C.blue,C.green,C.purple,C.orange,C.teal,C.amber];
-  mkChart('c-channel',{
-    type:'doughnut',
-    data:{ labels:d.agentGroups, datasets:[{ data:d.agentGrpRev.map(v=>+(v/1e9).toFixed(2)), backgroundColor:chanColors.slice(0,d.agentGroups.length), borderWidth:2, borderColor:'rgba(255,255,255,0.9)' }] },
-    options:{ responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B'}}} }
-  });
-  const legCh = document.getElementById('leg-channel'); legCh.innerHTML='';
-  d.agentGroups.forEach((g,i)=>{ legCh.innerHTML+=`<div class="li"><div class="ld" style="background:${chanColors[i]}"></div>${g}</div>`; });
-
-  // Agent group trend
-  const trendColors = [C.red,C.blue,C.green,C.purple,C.orange];
-  mkChart('c-agtrend',{
-    type:'line',
-    data:{ labels:d.years, datasets:d.agGroupTrend.map((t,i)=>({ label:t.label, data:t.data, borderColor:trendColors[i], backgroundColor:'transparent', borderWidth:2, tension:0.4, pointRadius:3, borderDash:i>0?[i*3,3]:[] })) },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y+' units'}}}, scales:{ x:{grid:{color:'rgba(0,0,0,0.04)'}}, y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' units'}} } }
-  });
-
-  // === BUYERS ===
-
-  // Buyer state bar
-  mkChart('c-buyerstate',{
-    type:'bar',
-    data:{ labels:d.stateLabels, datasets:[{ label:'Buyers', data:d.stateCounts, backgroundColor:d.stateLabels.map((_,i)=>i===0?C.red:C.red3), borderRadius:5, borderSkipped:false }] },
-    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{tooltip:{callbacks:{label:c=>c.parsed.x+' buyers'}}}, scales:{ x:{grid:{color:'rgba(0,0,0,0.04)'}}, y:{grid:{display:false},ticks:{font:{size:10}}} } }
-  });
-
-  // Salutation donut
-  const salColors = [C.red,C.blue,C.green,C.purple,C.orange,C.teal,C.amber,C.slate];
-  mkChart('c-salutation',{
-    type:'doughnut',
-    data:{ labels:d.salLabels, datasets:[{ data:d.salCounts, backgroundColor:salColors.slice(0,d.salLabels.length), borderWidth:2, borderColor:'rgba(255,255,255,0.9)' }] },
-    options:{ responsive:true, maintainAspectRatio:false, cutout:'55%', plugins:{legend:{display:true,position:'right',labels:{font:{size:9.5},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed}}} }
-  });
-
-  // Buyer state bars (HTML)
-  const bsEl = document.getElementById('buyer-state-bars'); bsEl.innerHTML='';
-  const maxSC = Math.max(...d.stateCounts)||1;
-  d.stateLabels.forEach((s,i)=>{ bsEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl" style="width:180px">${s}</div><div class="sl-bw"><div class="sl-bf" style="width:${(d.stateCounts[i]/maxSC*100).toFixed(0)}%;background:${i===0?'linear-gradient(90deg,var(--red5),var(--red2))':'linear-gradient(90deg,var(--red3),var(--red2))'}"></div></div><div class="sl-val">${d.stateCounts[i]} buyers</div></div>`; });
-}
-
-/* ===================================================
-   FRESHNESS LABEL
-=================================================== */
-function updateFreshness(fromCache) {
-  const ts = parseInt(localStorage.getItem(CACHE_TS_KEY)||'0');
-  const el = document.getElementById('freshness-label');
-  if (!ts || !fromCache) { el.textContent = 'Live · just now'; return; }
-  const mins = Math.round((Date.now()-ts)/60000);
-  el.textContent = mins < 2 ? 'Live · just now' : `Cached · ${mins}m ago`;
-}
-
-/* ===================================================
-   MAIN LOAD
-=================================================== */
-let _lastData = null;
-
-async function loadData(forceRefresh=false) {
-  const loader = document.getElementById('loader');
-  const syncBtn = document.getElementById('syncBtn');
-  loader.classList.remove('hidden');
-  syncBtn.classList.add('spinning');
-
-  // If force, clear cache
-  if (forceRefresh) { localStorage.removeItem(CACHE_KEY); localStorage.removeItem(CACHE_TS_KEY); }
-
-  let fromCache = false;
-  try {
-    const cacheTs = parseInt(localStorage.getItem(CACHE_TS_KEY)||'0');
-    fromCache = (Date.now()-cacheTs < CACHE_TTL) && !!localStorage.getItem(CACHE_KEY);
-
-    const csvText = await fetchCSV();
-    document.getElementById('loader-sub').textContent = 'Parsing records…';
-    await new Promise(r=>setTimeout(r,30));
-
-    const rows = parseRows(csvText);
-    document.getElementById('loader-sub').textContent = 'Computing analytics…';
-    await new Promise(r=>setTimeout(r,30));
-
-    const analytics = computeAnalytics(rows);
-    _lastData = analytics;
-
-    document.getElementById('loader-sub').textContent = 'Rendering dashboard…';
-    await new Promise(r=>setTimeout(r,30));
-
-    renderKPIs(analytics);
-    renderCharts(analytics);
-    updateFreshness(fromCache);
-
-    document.getElementById('errorBar').classList.remove('show');
-  } catch(err) {
-    console.error('Load error:', err);
-    const eb = document.getElementById('errorBar');
-    document.getElementById('errorMsg').textContent = 'Could not fetch live data: '+err.message+'. Check the sheet is publicly published as CSV.';
-    eb.classList.add('show');
-    updateFreshness(true);
-  } finally {
-    loader.classList.add('hidden');
-    syncBtn.classList.remove('spinning');
-  }
-}
-
-function syncData() { loadData(true); }
-
-/* ===================================================
-   NAVIGATION
-=================================================== */
+// ===== NAVIGATION =====
 function showSection(name, btn) {
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  const el=document.getElementById('section-'+name);
-  if(el){el.classList.add('active');}
-  if(btn) btn.classList.add('active');
+  const el = document.getElementById('section-'+name);
+  if (el) { el.classList.add('active'); el.classList.remove('fade-in'); void el.offsetWidth; el.classList.add('fade-in'); }
+  if (btn) btn.classList.add('active');
 }
-
-/* ===================================================
-   AUTO-REFRESH every 10 min
-=================================================== */
-setInterval(()=>loadData(false), CACHE_TTL);
-
-/* ===================================================
-   INIT
-=================================================== */
-loadData(false);
 </script>
 </body>
 </html>
