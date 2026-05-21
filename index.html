@@ -1,13 +1,1858 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>data-dashboard</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mixta Africa — Portfolio Intelligence Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red: #C0392B;
+    --red-light: #E74C3C;
+    --red-pale: #FDECEA;
+    --red-mid: #F5B7B1;
+    --red-dark: #922B21;
+    --white: #FFFFFF;
+    --bg: #F4F5F7;
+    --bg2: #ECEEF2;
+    --card: rgba(255,255,255,0.78);
+    --card-border: rgba(255,255,255,0.9);
+    --text: #1A1A2E;
+    --text2: #5A5A72;
+    --text3: #9090A8;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.06), 0 0 0 0.5px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 24px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.06);
+    --shadow-lg: 0 8px 48px rgba(0,0,0,0.10), 0 0 0 0.5px rgba(0,0,0,0.06);
+    --radius: 18px;
+    --radius-sm: 10px;
+    --radius-xs: 6px;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+    --transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GLASS EFFECT */
+  .glass {
+    background: var(--card);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+  }
+
+  .glass-sm {
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.85);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* HEADER */
+  .header {
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(32px) saturate(200%);
+    -webkit-backdrop-filter: blur(32px) saturate(200%);
+    border-bottom: 1px solid rgba(255,255,255,0.9);
+    box-shadow: 0 1px 24px rgba(0,0,0,0.06);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+  }
+
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .brand-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--red) 0%, var(--red-light) 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(192,57,43,0.35);
+  }
+
+  .brand-icon svg { width: 18px; height: 18px; fill: white; }
+
+  .brand-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  .brand-sub {
+    font-size: 11px;
+    color: var(--text3);
+    font-weight: 400;
+  }
+
+  .header-nav {
+    display: flex;
+    gap: 4px;
+  }
+
+  .nav-btn {
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: var(--font);
+  }
+
+  .nav-btn:hover, .nav-btn.active {
+    background: var(--red-pale);
+    color: var(--red);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--red-pale);
+    border: 1px solid var(--red-mid);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--red);
+    letter-spacing: 0.3px;
+  }
+
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--red);
+    border-radius: 50%;
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  /* MAIN LAYOUT */
+  .main {
+    padding: 28px 32px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  /* PAGE SECTIONS */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* KPI STRIP */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .kpi-card {
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.92);
+    border-radius: 16px;
+    box-shadow: var(--shadow-sm);
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .kpi-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--red) 0%, var(--red-light) 100%);
+    border-radius: 16px 16px 0 0;
+  }
+
+  .kpi-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+  }
+
+  .kpi-value.red { color: var(--red); }
+
+  .kpi-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .kpi-sub.up { color: #27AE60; }
+  .kpi-sub.down { color: var(--red); }
+
+  /* GRID LAYOUTS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-bottom: 16px; }
+  .grid-3-2 { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; margin-bottom: 16px; }
+  .full-row { margin-bottom: 16px; }
+
+  .chart-card {
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.92);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 22px 24px;
+    transition: box-shadow 0.2s ease;
+  }
+
+  .chart-card:hover { box-shadow: var(--shadow-md); }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.2px;
+  }
+
+  .card-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+    font-weight: 400;
+  }
+
+  .badge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .badge-red { background: var(--red-pale); color: var(--red); border: 1px solid var(--red-mid); }
+  .badge-gray { background: #F0F0F4; color: var(--text2); border: 1px solid #E0E0E8; }
+  .badge-green { background: #EAFAF1; color: #1E8449; border: 1px solid #A9DFBF; }
+
+  /* CHART CONTAINERS */
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* FILTER BAR */
+  .filter-bar {
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.92);
+    border-radius: 12px;
+    padding: 12px 20px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .filter-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    white-space: nowrap;
+  }
+
+  select.filter-sel {
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+    padding: 5px 10px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  select.filter-sel:focus { border-color: var(--red); }
+
+  /* TABLE */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .data-table th {
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text3);
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+
+  .data-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+    color: var(--text);
+    font-size: 12px;
+  }
+
+  .data-table tr:hover td { background: rgba(192,57,43,0.03); }
+  .data-table tr:last-child td { border-bottom: none; }
+
+  .rank-num {
+    width: 22px;
+    height: 22px;
+    background: var(--red-pale);
+    color: var(--red);
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: var(--mono);
+  }
+
+  /* PROGRESS BAR */
+  .progress-bar {
+    width: 100%;
+    height: 4px;
+    background: #F0F0F4;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--red-dark) 0%, var(--red-light) 100%);
+    transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .progress-fill.green { background: linear-gradient(90deg, #1E8449, #27AE60); }
+  .progress-fill.amber { background: linear-gradient(90deg, #D68910, #F39C12); }
+
+  /* DONUT LEGEND */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-top: 12px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text2);
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* INSIGHT CARDS */
+  .insight-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .insight-card {
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.92);
+    border-radius: 14px;
+    box-shadow: var(--shadow-sm);
+    padding: 16px 18px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .insight-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .insight-icon.red { background: var(--red-pale); }
+  .insight-icon.green { background: #EAFAF1; }
+  .insight-icon.amber { background: #FEF9E7; }
+  .insight-icon.blue { background: #EBF5FB; }
+
+  .insight-icon svg { width: 18px; height: 18px; }
+  .insight-icon.red svg { color: var(--red); }
+  .insight-icon.green svg { color: #1E8449; }
+  .insight-icon.amber svg { color: #D68910; }
+  .insight-icon.blue svg { color: #1A5276; }
+
+  .insight-body { flex: 1; min-width: 0; }
+  .insight-val { font-size: 20px; font-weight: 600; color: var(--text); letter-spacing: -0.4px; }
+  .insight-label { font-size: 11px; color: var(--text3); margin-top: 2px; line-height: 1.4; }
+
+  /* SPARKLINE */
+  .sparkline-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 12px;
+  }
+
+  .sl-label { width: 130px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; }
+  .sl-bar-wrap { flex: 1; height: 6px; background: #F0F0F4; border-radius: 4px; overflow: hidden; }
+  .sl-bar { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--red-dark), var(--red-light)); }
+  .sl-val { width: 80px; text-align: right; color: var(--text); font-family: var(--mono); font-size: 11px; font-weight: 500; }
+
+  /* PAGE SECTION TITLE */
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 16px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(0,0,0,0.08) 0%, transparent 100%);
+  }
+
+  /* AGENT TABLE SCROLLABLE */
+  .table-scroll { max-height: 340px; overflow-y: auto; }
+  .table-scroll::-webkit-scrollbar { width: 4px; }
+  .table-scroll::-webkit-scrollbar-thumb { background: var(--red-mid); border-radius: 4px; }
+
+  /* HEAT MAP */
+  .heatmap-cell {
+    display: inline-block;
+    width: 34px;
+    height: 28px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 500;
+    font-family: var(--mono);
+    text-align: center;
+    line-height: 28px;
+    color: white;
+    cursor: default;
+    transition: transform 0.15s;
+  }
+
+  .heatmap-cell:hover { transform: scale(1.1); z-index: 2; position: relative; }
+
+  /* TAG */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+  }
+
+  /* RESPONSIVE FIXES */
+  @media (max-width: 1200px) {
+    .kpi-strip { grid-template-columns: repeat(3, 1fr); }
+    .insight-strip { grid-template-columns: repeat(2, 1fr); }
+    .grid-2-1 { grid-template-columns: 1fr; }
+    .grid-3-2 { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 768px) {
+    .main { padding: 16px; }
+    .header { padding: 0 16px; }
+    .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+    .grid-2, .grid-3, .grid-4, .grid-2-1, .grid-1-2, .grid-3-2 { grid-template-columns: 1fr; }
+    .insight-strip { grid-template-columns: 1fr; }
+    .header-nav { display: none; }
+  }
+
+  /* TOOLTIP */
+  .tooltip-custom {
+    position: fixed;
+    background: rgba(26,26,46,0.92);
+    backdrop-filter: blur(12px);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 1000;
+    display: none;
+    max-width: 200px;
+  }
+
+  /* ANIMATIONS */
+  .fade-in {
+    animation: fadeIn 0.4s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* scroll */
+  .main-content { overflow-y: auto; }
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+    </div>
+    <div>
+      <div class="brand-title">Mixta Africa</div>
+      <div class="brand-sub">Portfolio Intelligence Hub — 2014–2024</div>
+    </div>
+  </div>
+
+  <nav class="header-nav">
+    <button class="nav-btn active" onclick="showSection('overview', this)">Overview</button>
+    <button class="nav-btn" onclick="showSection('revenue', this)">Revenue Trends</button>
+    <button class="nav-btn" onclick="showSection('portfolio', this)">Portfolio</button>
+    <button class="nav-btn" onclick="showSection('collections', this)">Collections</button>
+    <button class="nav-btn" onclick="showSection('agents', this)">Agents</button>
+    <button class="nav-btn" onclick="showSection('buyers', this)">Buyers</button>
+  </nav>
+
+  <div class="header-right">
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      2,845 records
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- ========== OVERVIEW ========== -->
+<div id="section-overview" class="section active fade-in">
+
+  <!-- KPI Strip -->
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Portfolio Revenue</div>
+      <div class="kpi-value red">₦131.2B</div>
+      <div class="kpi-sub up">▲ 10 year period</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Units Tracked</div>
+      <div class="kpi-value">2,845</div>
+      <div class="kpi-sub">Across 7 communities</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Collected</div>
+      <div class="kpi-value">₦107.9B</div>
+      <div class="kpi-sub up">▲ 89% avg collection rate</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Outstanding Balance</div>
+      <div class="kpi-value red">₦23.4B</div>
+      <div class="kpi-sub down">▼ 17.8% of portfolio</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Mortgage Transactions</div>
+      <div class="kpi-value">213</div>
+      <div class="kpi-sub">7.5% of all units</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Active Properties</div>
+      <div class="kpi-value">37</div>
+      <div class="kpi-sub">Across 5 states</div>
+    </div>
+  </div>
+
+  <!-- Insights -->
+  <div class="insight-strip">
+    <div class="insight-card">
+      <div class="insight-icon red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      </div>
+      <div class="insight-body">
+        <div class="insight-val">₦364M</div>
+        <div class="insight-label">Highest single avg — Lagos New Town (48 units)</div>
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+      </div>
+      <div class="insight-body">
+        <div class="insight-val">₦26.3B</div>
+        <div class="insight-label">Lakowe Lakes Plots — highest single property revenue</div>
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div class="insight-body">
+        <div class="insight-val">2022–23</div>
+        <div class="insight-label">Peak revenue years — ₦15.5B and ₦16.1B respectively</div>
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      </div>
+      <div class="insight-body">
+        <div class="insight-val">62.4%</div>
+        <div class="insight-label">Mixta Sales dominant channel by deal count (1,906 units)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-3-2">
+    <!-- Revenue by Year Line -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Revenue Recognition Trend</div>
+          <div class="card-sub">Annual total selling price (₦ Billions) · 2014–2024</div>
+        </div>
+        <span class="badge badge-red">11 years</span>
+      </div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="revenueYearChart" role="img" aria-label="Revenue recognition trend 2014 to 2024">Annual revenue from 940M in 2014 to 7.4B in 2024, peak at 16.1B in 2023.</canvas>
+      </div>
+    </div>
+
+    <!-- Community Donut -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Revenue by Community</div>
+          <div class="card-sub">Share of total portfolio</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:180px;">
+        <canvas id="communityDonut" role="img" aria-label="Revenue share by community">Lakowe 62.3%, Shapati 32.5%, others 5.2%.</canvas>
+      </div>
+      <div class="legend" id="communityLegend"></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Agent Group Bar -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Sales Channel Performance</div>
+          <div class="card-sub">Revenue by agent group (₦ Billions)</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="agentGroupChart" role="img" aria-label="Sales channel performance">Mixta Sales 94B, 3rd Party 20.5B, Staff 7.7B, ARM FA 2.4B.</canvas>
+      </div>
+    </div>
+
+    <!-- Finish Type -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Finish Type — Revenue vs Volume</div>
+          <div class="card-sub">Avg. selling price by specification grade</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="finishTypeChart" role="img" aria-label="Finish type analysis">Hybrid highest avg at 97.6M, Shell 29.2M, Move-in-Ready 16.2M.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Properties -->
+  <div class="chart-card full-row">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Top Properties by Cumulative Revenue</div>
+        <div class="card-sub">Ranked by total selling price across all recognition years</div>
+      </div>
+      <span class="badge badge-gray">Top 12</span>
+    </div>
+    <div id="topPropertiesBars"></div>
+  </div>
+
+</div>
+
+<!-- ========== REVENUE TRENDS ========== -->
+<div id="section-revenue" class="section fade-in">
+
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-label">Peak Year</div>
+      <div class="kpi-value red">2023</div>
+      <div class="kpi-sub">₦16.1B recognized</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Lowest Year</div>
+      <div class="kpi-value">2014</div>
+      <div class="kpi-sub">₦940M — portfolio start</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Best Single Unit Avg</div>
+      <div class="kpi-value red">₦364M</div>
+      <div class="kpi-sub">Lagos New Town</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Unit Price 2024</div>
+      <div class="kpi-value">₦77.6M</div>
+      <div class="kpi-sub up">▲ from ₦11.1M in 2014</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">CAGR 2014–2023</div>
+      <div class="kpi-value red">37%</div>
+      <div class="kpi-sub">Revenue recognition</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">2022 Revenue</div>
+      <div class="kpi-value">₦15.5B</div>
+      <div class="kpi-sub">2nd highest year</div>
+    </div>
+  </div>
+
+  <div class="full-row chart-card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Community Revenue — Stacked Annual View</div>
+        <div class="card-sub">Shapati vs Lakowe vs Others — 2014 to 2024 (₦ Billions)</div>
+      </div>
+    </div>
+    <div class="chart-wrap" style="height:320px;">
+      <canvas id="stackedRevenueChart" role="img" aria-label="Stacked community revenue by year">Lakowe dominates from 2018 onwards, Shapati grew significantly 2019-2023.</canvas>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Unit Volume vs Avg Price per Year</div>
+          <div class="card-sub">Dual axis — count and price trajectory</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="volumePriceChart" role="img" aria-label="Unit volume and average price trend">Volume peaks 2018-2020, avg price climbs sharply 2021-2024.</canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Unit Type Revenue Breakdown</div>
+          <div class="card-sub">Cumulative by product category</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="unitTypeChart" role="img" aria-label="Unit type revenue breakdown">Serviced Plot 43.4B, Unserviced Plot 24.3B, Apartment 4.6B.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Bedroom Mix — Revenue Share</div>
+          <div class="card-sub">Total revenue contribution by bedroom count</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="bedroomDonut" role="img" aria-label="Bedroom mix revenue share">2-bed 27.9B highest, 3-bed 12.2B, 4-bed 9.3B.</canvas>
+      </div>
+      <div class="legend" id="bedroomLegend"></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Payment Plan Distribution</div>
+          <div class="card-sub">Top payment plan types by unit count</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="paymentPlanChart" role="img" aria-label="Payment plan distribution">Unit Payment Plan 268, Payment Plan 1 166, Standard 162.</canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PORTFOLIO ========== -->
+<div id="section-portfolio" class="section fade-in">
+
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-label">Properties</div>
+      <div class="kpi-value red">37</div>
+      <div class="kpi-sub">Development projects</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Communities</div>
+      <div class="kpi-value">7</div>
+      <div class="kpi-sub">Geographic clusters</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Largest Property</div>
+      <div class="kpi-value red">397</div>
+      <div class="kpi-sub">Beechwood Park units</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Reserved Units</div>
+      <div class="kpi-value">2,751</div>
+      <div class="kpi-sub">96.7% of portfolio</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Sold Units</div>
+      <div class="kpi-value">94</div>
+      <div class="kpi-sub">3.3% fully completed</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Phase Overlap</div>
+      <div class="kpi-value">P1 + P2</div>
+      <div class="kpi-sub">Multi-phase developments</div>
+    </div>
+  </div>
+
+  <div class="grid-2-1">
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Portfolio Properties — Revenue Ranking</div>
+          <div class="card-sub">All 20 significant properties (₦ Billions)</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:380px;">
+        <canvas id="propertyRankChart" role="img" aria-label="Property revenue ranking">Lakowe Lakes Plots top at 26.3B, Lagos New Town 17.5B, Beechwood Park 8.6B.</canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Unit Status Split</div>
+          <div class="card-sub">Reserved vs Sold</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:180px;">
+        <canvas id="statusDonut" role="img" aria-label="Unit status donut">Reserved 2751, Sold 94.</canvas>
+      </div>
+      <div style="margin-top:20px;">
+        <div class="card-title" style="font-size:12px; margin-bottom:10px; color:var(--text2);">Top Communities by Unit Count</div>
+        <div id="communityBarsSimple"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Finish Type Volume & Revenue</div>
+          <div class="card-sub">Units and cumulative ₦ by specification</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="finishMixChart" role="img" aria-label="Finish type volume and revenue mix">Move-in-Ready most units, Hybrid highest revenue.</canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Community Revenue vs Avg Price Scatter</div>
+          <div class="card-sub">Size = unit count, position = avg unit price</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="communityScatter" role="img" aria-label="Community scatter plot">Lakowe highest avg price, Shapati highest volume.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Heatmap: Community x Year -->
+  <div class="chart-card full-row">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Revenue Heatmap — Community × Year</div>
+        <div class="card-sub">Intensity shows ₦ Billions recognized (darker = higher)</div>
+      </div>
+    </div>
+    <div id="heatmapContainer" style="overflow-x:auto; padding-bottom: 4px;"></div>
+  </div>
+</div>
+
+<!-- ========== COLLECTIONS ========== -->
+<div id="section-collections" class="section fade-in">
+
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Collected</div>
+      <div class="kpi-value red">₦107.9B</div>
+      <div class="kpi-sub">Cumulative across all years</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Outstanding</div>
+      <div class="kpi-value">₦23.4B</div>
+      <div class="kpi-sub down">▼ Receivables at risk</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Collection Rate</div>
+      <div class="kpi-value red">89%</div>
+      <div class="kpi-sub">% Paid average</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Mortgage-Backed</div>
+      <div class="kpi-value">213</div>
+      <div class="kpi-sub">Financed transactions</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Discount Given</div>
+      <div class="kpi-value">Varied</div>
+      <div class="kpi-sub">% discount tracked per unit</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Collections Team Units</div>
+      <div class="kpi-value">35</div>
+      <div class="kpi-sub">Legacy recovery book</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Collected vs Outstanding by Year</div>
+          <div class="card-sub">Stacked view of payments received vs receivables (₦B)</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:280px;">
+        <canvas id="collectionsStackChart" role="img" aria-label="Collections vs outstanding by year">Most years show high collection ratio.</canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Collection Rate Distribution</div>
+          <div class="card-sub">% of units by payment completion bracket</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:280px;">
+        <canvas id="collectionRateChart" role="img" aria-label="Collection rate distribution">Majority fully paid at 100%.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Mortgage vs Cash Transactions</div>
+          <div class="card-sub">Financed vs direct payment split by year</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="mortgageChart" role="img" aria-label="Mortgage vs cash by year">Mortgage transactions peak 2018-2022.</canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Outstanding by Community</div>
+          <div class="card-sub">Where receivables risk is concentrated</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="outstandingCommChart" role="img" aria-label="Outstanding by community">Analysis of receivables concentration.</canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== AGENTS ========== -->
+<div id="section-agents" class="section fade-in">
+
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-label">Top Agent Revenue</div>
+      <div class="kpi-value red">₦17.2B</div>
+      <div class="kpi-sub">Mixta Real Estate Plc</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">#2 Agent Revenue</div>
+      <div class="kpi-value">₦17.2B</div>
+      <div class="kpi-sub">Andrea Cameron Cole</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Top by Volume</div>
+      <div class="kpi-value red">317</div>
+      <div class="kpi-sub">Andrea Cameron Cole units</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Agent Pool</div>
+      <div class="kpi-value">65+</div>
+      <div class="kpi-sub">Unique dealing agents</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">3rd Party Revenue</div>
+      <div class="kpi-value">₦20.5B</div>
+      <div class="kpi-sub">External channel total</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">ARM FA Revenue</div>
+      <div class="kpi-value">₦2.4B</div>
+      <div class="kpi-sub">96 transactions</div>
+    </div>
+  </div>
+
+  <div class="grid-2-1">
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Top 15 Dealing Agents — Revenue Ranking</div>
+          <div class="card-sub">Cumulative ₦ Billions and unit count</div>
+        </div>
+      </div>
+      <div id="agentBars"></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Channel Mix</div>
+          <div class="card-sub">Revenue by agent group</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="channelPieChart" role="img" aria-label="Channel revenue mix">Mixta Sales 94B dominates.</canvas>
+      </div>
+      <div class="legend" id="channelLegend"></div>
+    </div>
+  </div>
+
+  <div class="chart-card full-row">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Agent Group Trend</div>
+        <div class="card-sub">How each channel's unit volume evolved year by year</div>
+      </div>
+    </div>
+    <div class="chart-wrap" style="height:260px;">
+      <canvas id="agentTrendChart" role="img" aria-label="Agent group volume trend by year">Mixta Sales consistently dominant, 3rd party growing 2018-2022.</canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ========== BUYERS ========== -->
+<div id="section-buyers" class="section fade-in">
+
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-label">Dominant State</div>
+      <div class="kpi-value red">Lagos</div>
+      <div class="kpi-sub">950+ buyers — 43% of known</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Abuja Buyers</div>
+      <div class="kpi-value">33</div>
+      <div class="kpi-sub">FCT cross-state demand</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Rivers State</div>
+      <div class="kpi-value">41</div>
+      <div class="kpi-sub">PH cross-state demand</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Diaspora Buyers</div>
+      <div class="kpi-value">16+</div>
+      <div class="kpi-sub">US, UK, Caribbean, Africa</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Corporate Buyers</div>
+      <div class="kpi-value">Est. 8%</div>
+      <div class="kpi-sub">Company / org purchasers</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Nationality</div>
+      <div class="kpi-value">10+</div>
+      <div class="kpi-sub">Countries represented</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Buyer State Distribution</div>
+          <div class="card-sub">Where buyers are based (top states)</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:280px;">
+        <canvas id="buyerStateChart" role="img" aria-label="Buyer state distribution">Lagos dominates with 950+, followed by Rivers 41, Edo 35, Abuja 33.</canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Salutation / Buyer Profile</div>
+          <div class="card-sub">Title breakdown indicating buyer profile</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:280px;">
+        <canvas id="salutationChart" role="img" aria-label="Buyer salutation breakdown">Mr dominates, Mr & Mrs couples significant.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card full-row">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Buyer Geographic Demand — State Revenue Contribution</div>
+        <div class="card-sub">Cross-state buyer profiles suggest strong investment demand from outside Lagos</div>
+      </div>
+    </div>
+    <div id="buyerStateRevBars"></div>
+  </div>
+</div>
+
+</main>
+
+<script>
+const RED = '#C0392B';
+const RED2 = '#E74C3C';
+const RED3 = '#F5B7B1';
+const RED4 = '#FDECEA';
+const COLORS = ['#C0392B','#E74C3C','#2980B9','#27AE60','#8E44AD','#D35400','#16A085','#F39C12','#1ABC9C','#2C3E50','#7F8C8D','#E67E22'];
+
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#9090A8';
+Chart.defaults.plugins.legend.display = false;
+
+function fmt(n, div=1e9) { return '₦' + (n/div).toFixed(1) + 'B'; }
+function fmtM(n) { return '₦' + (n/1e6).toFixed(0) + 'M'; }
+
+// ===== DATA =====
+const years = ['2014','2015','2016','2017','2018','2019','2020','2021','2022','2023','2024'];
+const revenueByYear = [940557600,1711659000,3792640000,1947868000,11120150000,5777217000,7360709000,11299150000,15463510000,16103070000,7449517000];
+const unitsPerYear = [85,30,210,162,342,227,259,308,160,147,96];
+const avgPriceYear = unitsPerYear.map((u,i)=>revenueByYear[i]/u);
+
+// Community by year (Shapati, Lakowe, Other)
+const shapatiByYear = [940557600,3125000,726601100,899025400,844626400,3093837000,5693976000,4379031000,4761804000,9354346000,1594383000];
+const lakwoByYear   = [0,1708534000,3066039000,874506500,8599977000,1457626000,1636652000,6759181000,10580830000,6388536000,5855135000];
+const otherByYear   = [0,0,0,174336500,1675543000,1225754000,30081100,161938000,120876000,360188000,0];
+
+// Agent groups
+const agentGroups = ['Mixta Sales','3rd Party Agent','Staff','ARM FA','Ex-staff','Collections','ARM BD'];
+const agentRevenue = [94037720000,20507570000,7744398000,2422461000,840271200,634060300,466432900];
+const agentUnits =  [1906,358,237,96,23,35,16];
+
+// Finish type
+const finishTypes = ['Hybrid','Finished','Move-in-Ready','Shell','Semi-Finished'];
+const finishRevenue = [20603310000,15689000000,5750793000,5108462000,4945599000];
+const finishUnits =  [211,340,354,175,94];
+const finishAvg = finishRevenue.map((r,i)=>r/finishUnits[i]);
+
+// Top properties
+const topProps = [
+  {name:'Lakowe Lakes Plots', rev:26313770000, cnt:237},
+  {name:'Lagos New Town', rev:17515270000, cnt:48},
+  {name:'Beechwood Park', rev:8626560000, cnt:397},
+  {name:'Lakowe Lakes - The Cove', rev:8442280000, cnt:93},
+  {name:'Lakowe Annexe', rev:6896673000, cnt:78},
+  {name:'Ibudo Wura', rev:6505756000, cnt:94},
+  {name:'Lakowe Lakes - The Enclave', rev:6257918000, cnt:166},
+  {name:'Adiva Plainfields II', rev:5253253000, cnt:97},
+  {name:'Park Villas', rev:5191012000, cnt:17},
+  {name:'DUO', rev:3966131000, cnt:79},
+  {name:'Lakowe Lakes - The Village', rev:3931572000, cnt:18},
+  {name:'Adiva Plainfields Estate', rev:3289785000, cnt:251},
+];
+
+// Bedrooms
+const bedroomLabels = ['2-bed','3-bed','4-bed','1-bed','Studio','0-bed'];
+const bedroomRevenue = [27921740000,12214870000,9265409000,6159071000,491965200,522859000];
+
+// Payment plans
+const ppLabels = ['Unit Payment Plan','Payment Plan 1','Standard','18 Months Standard','Promo','Halliburton','12 Months','Other'];
+const ppCounts = [268,166,162,118,67,66,53,200];
+
+// Unit types top 8
+const unitTypeLabels = ['Serviced Plot','Unserviced Plot','Semi-detached','Apartment','3 Bed Bungalow','Jacaranda II','Cove Loft','Terrace'];
+const unitTypeRevenue = [43386840000,24346310000,5413223000,4565929000,4310716000,3292371000,2751788000,2120217000];
+
+// Communities
+const commLabels = ['Shapati','Lakowe','Ajayi-Apata','Ikpoba Okha','Greater PH','Abuja','Oluwole'];
+const commRevenue = [42624940000,81771690000,4661207000,400991200,1004967000,687083000,25445540];
+const commUnits =  [1482,1007,243,61,41,10,1];
+
+// Buyer states
+const stateLabels = ['Lagos','Rivers State','Edo State','Abuja','Lagos State','Delta','Anambra','Ogun','USA','LAGOS'];
+const stateCounts = [950,41,35,33,40,15,14,12,11,10];
+
+// Agent top 15
+const agentNames = ['Mixta RE Plc','Andrea CC','Ben Chiedu','Modupe Adaran','Ezigbo Ezeh','Adeyemi Adeleke','Abisola Abiodun','Olamide Odumade','Abimbola Akintunde','Landwise Global','Oluwakemi A','Hyginus Ugwu','Damilola O','Olumuyiwa O','Northcourt'];
+const agentRevs  = [17215040000,17192030000,11989160000,9837810000,7030968000,6677916000,3652366000,3078417000,2274577000,2133634000,1991539000,1954489000,1785548000,1444189000,1328051000];
+const agentCounts= [39,317,267,223,236,183,55,149,7,19,31,31,15,47,4];
+
+// Salutations (approx from data)
+const salutations = ['Mr.','Mrs.','Mr & Mrs','Chief','Alhaji','Dr.','Prof.','Others'];
+const salutCounts = [780,320,210,35,28,18,10,120];
+
+// Mortgage by year (approx from data)
+const mortgageByYear = [5,3,12,18,35,28,22,30,25,18,12];
+const cashByYear = unitsPerYear.map((u,i)=>u-mortgageByYear[i]);
+
+// ===== CHARTS =====
+
+// 1. Revenue Year Line
+new Chart(document.getElementById('revenueYearChart'), {
+  type: 'line',
+  data: {
+    labels: years,
+    datasets: [{
+      label: 'Revenue',
+      data: revenueByYear.map(v=>v/1e9),
+      borderColor: RED,
+      backgroundColor: 'rgba(192,57,43,0.08)',
+      fill: true,
+      tension: 0.4,
+      borderWidth: 2.5,
+      pointBackgroundColor: RED,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { tooltip: { callbacks: { label: ctx => '₦' + ctx.parsed.y.toFixed(1) + 'B' } } },
+    scales: {
+      x: { grid: { color: 'rgba(0,0,0,0.04)' } },
+      y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v => '₦'+v+'B' } }
+    }
+  }
+});
+
+// 2. Community Donut
+const commColors = [RED,'#2980B9','#27AE60','#8E44AD','#D35400','#F39C12','#16A085'];
+const communityDonut = new Chart(document.getElementById('communityDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: commLabels,
+    datasets: [{
+      data: commRevenue.map(v=>v/1e9),
+      backgroundColor: commColors,
+      borderWidth: 2,
+      borderColor: 'rgba(255,255,255,0.9)',
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '65%',
+    plugins: { tooltip: { callbacks: { label: ctx => ctx.label + ': ₦' + ctx.parsed.toFixed(1) + 'B' } } }
+  }
+});
+
+const cLeg = document.getElementById('communityLegend');
+commLabels.forEach((l,i) => {
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  item.innerHTML = `<div class="legend-dot" style="background:${commColors[i]}"></div>${l}: ₦${(commRevenue[i]/1e9).toFixed(1)}B`;
+  cLeg.appendChild(item);
+});
+
+// 3. Agent Group Bar
+new Chart(document.getElementById('agentGroupChart'), {
+  type: 'bar',
+  data: {
+    labels: agentGroups,
+    datasets: [{
+      label: 'Revenue ₦B',
+      data: agentRevenue.map(v=>v/1e9),
+      backgroundColor: agentRevenue.map((v,i)=>i===0?RED:RED3),
+      borderRadius: 6,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+    plugins: { tooltip: { callbacks: { label: ctx => '₦' + ctx.parsed.x.toFixed(1) + 'B' } } },
+    scales: {
+      x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v=>'₦'+v+'B' } },
+      y: { grid: { display: false } }
+    }
+  }
+});
+
+// 4. Finish Type Chart
+new Chart(document.getElementById('finishTypeChart'), {
+  type: 'bar',
+  data: {
+    labels: finishTypes,
+    datasets: [
+      {
+        label: 'Avg Price ₦M',
+        data: finishAvg.map(v=>v/1e6),
+        backgroundColor: [RED,'#E74C3C','#F5B7B1','#FDECEA','#C0392B'],
+        borderRadius: 6,
+        borderSkipped: false,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { tooltip: { callbacks: { label: ctx => '₦' + ctx.parsed.y.toFixed(0) + 'M avg' } } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v=>'₦'+v+'M' } }
+    }
+  }
+});
+
+// 5. Top Properties Bars (HTML)
+function buildTopPropBars() {
+  const container = document.getElementById('topPropertiesBars');
+  const max = topProps[0].rev;
+  topProps.forEach((p,i) => {
+    const pct = (p.rev/max*100).toFixed(0);
+    container.innerHTML += `
+      <div class="sparkline-row" style="margin-bottom:10px;">
+        <div class="sl-label" style="width:200px; font-size:12px; color:var(--text);">
+          <span class="rank-num">${i+1}</span> &nbsp;${p.name}
+        </div>
+        <div class="sl-bar-wrap" style="height:8px;">
+          <div class="sl-bar" style="width:${pct}%; background: linear-gradient(90deg,${RED},${RED2});"></div>
+        </div>
+        <div class="sl-val" style="width:120px; text-align:right;">
+          ${fmt(p.rev)} <span style="color:var(--text3);">(${p.cnt})</span>
+        </div>
+      </div>`;
+  });
+}
+buildTopPropBars();
+
+// 6. Stacked Revenue Chart
+new Chart(document.getElementById('stackedRevenueChart'), {
+  type: 'bar',
+  data: {
+    labels: years,
+    datasets: [
+      { label: 'Shapati', data: shapatiByYear.map(v=>v/1e9), backgroundColor: RED, borderRadius: 4, borderSkipped: false },
+      { label: 'Lakowe', data: lakwoByYear.map(v=>v/1e9), backgroundColor: '#2980B9', borderRadius: 4, borderSkipped: false },
+      { label: 'Other', data: otherByYear.map(v=>v/1e9), backgroundColor: '#27AE60', borderRadius: 4, borderSkipped: false },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: true, position: 'top', labels: { font: { size: 11 }, boxWidth: 10, boxHeight: 10 } },
+      tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ₦' + ctx.parsed.y.toFixed(1) + 'B' } }
+    },
+    scales: {
+      x: { stacked: true, grid: { display: false } },
+      y: { stacked: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v=>'₦'+v+'B' } }
+    }
+  }
+});
+
+// 7. Volume + Avg Price dual axis
+new Chart(document.getElementById('volumePriceChart'), {
+  type: 'bar',
+  data: {
+    labels: years,
+    datasets: [
+      { label: 'Units', data: unitsPerYear, backgroundColor: RED3, borderRadius: 4, borderSkipped: false, yAxisID: 'y' },
+      { label: 'Avg Price ₦M', data: avgPriceYear.map(v=>v/1e6), type: 'line', borderColor: RED, backgroundColor:'transparent', borderWidth:2, tension:0.4, pointRadius:3, yAxisID: 'y1' }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top', labels: { font:{size:11}, boxWidth:10, boxHeight:10 } } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v=>v+' units' }, position: 'left' },
+      y1: { grid: { display: false }, ticks: { callback: v=>'₦'+v+'M' }, position: 'right' }
+    }
+  }
+});
+
+// 8. Unit Type Chart
+new Chart(document.getElementById('unitTypeChart'), {
+  type: 'bar',
+  data: {
+    labels: unitTypeLabels,
+    datasets: [{
+      label: 'Revenue',
+      data: unitTypeRevenue.map(v=>v/1e9),
+      backgroundColor: unitTypeRevenue.map((v,i)=>i===0?RED:i===1?RED2:RED3),
+      borderRadius: 6,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+    plugins: { tooltip: { callbacks: { label: ctx=>'₦'+ctx.parsed.x.toFixed(1)+'B' } } },
+    scales: {
+      x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v=>'₦'+v+'B' } },
+      y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+// 9. Bedroom Donut
+const bdrColors = [RED,'#E74C3C','#2980B9','#27AE60','#8E44AD','#F39C12'];
+new Chart(document.getElementById('bedroomDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: bedroomLabels,
+    datasets: [{ data: bedroomRevenue.map(v=>v/1e9), backgroundColor: bdrColors, borderWidth:2, borderColor:'rgba(255,255,255,0.9)' }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false, cutout:'60%',
+    plugins: { tooltip: { callbacks: { label: ctx=>ctx.label+': ₦'+ctx.parsed.toFixed(1)+'B' } } }
+  }
+});
+const bLeg = document.getElementById('bedroomLegend');
+bedroomLabels.forEach((l,i)=>{
+  const item = document.createElement('div');
+  item.className='legend-item';
+  item.innerHTML=`<div class="legend-dot" style="background:${bdrColors[i]}"></div>${l}: ₦${(bedroomRevenue[i]/1e9).toFixed(1)}B`;
+  bLeg.appendChild(item);
+});
+
+// 10. Payment plan
+new Chart(document.getElementById('paymentPlanChart'), {
+  type: 'bar',
+  data: {
+    labels: ppLabels,
+    datasets: [{ label: 'Units', data: ppCounts, backgroundColor: COLORS.slice(0,8).map((c,i)=>i===0?RED:RED3), borderRadius:5, borderSkipped:false }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    scales: { x: { grid:{display:false}, ticks:{font:{size:9}} }, y: { grid:{color:'rgba(0,0,0,0.04)'} } },
+    plugins: { tooltip: { callbacks: { label: ctx=>ctx.parsed.y+' units' } } }
+  }
+});
+
+// 11. Property Rank Horizontal
+new Chart(document.getElementById('propertyRankChart'), {
+  type: 'bar',
+  data: {
+    labels: topProps.map(p=>p.name),
+    datasets: [{ label: 'Revenue', data: topProps.map(p=>p.rev/1e9), backgroundColor: topProps.map((p,i)=>i===0?RED:i<3?RED2:RED3), borderRadius:5, borderSkipped:false }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false, indexAxis:'y',
+    plugins: { tooltip: { callbacks: { label: ctx=>'₦'+ctx.parsed.x.toFixed(1)+'B ('+topProps[ctx.dataIndex].cnt+' units)' } } },
+    scales: {
+      x: { grid:{color:'rgba(0,0,0,0.04)'}, ticks:{callback:v=>'₦'+v+'B'} },
+      y: { grid:{display:false}, ticks:{font:{size:10}} }
+    }
+  }
+});
+
+// 12. Status donut
+new Chart(document.getElementById('statusDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Reserved','Sold'],
+    datasets: [{ data:[2751,94], backgroundColor:[RED,'#27AE60'], borderWidth:2, borderColor:'rgba(255,255,255,0.9)' }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false, cutout:'65%',
+    plugins: { legend:{display:true, position:'bottom', labels:{font:{size:11},boxWidth:10,boxHeight:10}} }
+  }
+});
+
+// Community simple bars
+function buildCommSimpleBars() {
+  const el = document.getElementById('communityBarsSimple');
+  const maxU = Math.max(...commUnits);
+  commLabels.slice(0,5).forEach((l,i)=>{
+    el.innerHTML += `
+      <div class="sparkline-row">
+        <div class="sl-label">${l}</div>
+        <div class="sl-bar-wrap"><div class="sl-bar" style="width:${(commUnits[i]/maxU*100).toFixed(0)}%"></div></div>
+        <div class="sl-val">${commUnits[i]} units</div>
+      </div>`;
+  });
+}
+buildCommSimpleBars();
+
+// 13. Finish Mix
+new Chart(document.getElementById('finishMixChart'), {
+  type: 'bar',
+  data: {
+    labels: finishTypes,
+    datasets: [
+      { label: 'Units', data: finishUnits, backgroundColor: RED3, borderRadius:4, borderSkipped:false, yAxisID:'y' },
+      { label: 'Revenue ₦B', data: finishRevenue.map(v=>v/1e9), type:'line', borderColor:RED, backgroundColor:'transparent', borderWidth:2, tension:0.4, pointRadius:4, yAxisID:'y1' }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:true,position:'top',labels:{font:{size:11},boxWidth:10,boxHeight:10}}},
+    scales:{
+      x:{grid:{display:false}},
+      y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' units'},position:'left'},
+      y1:{grid:{display:false},ticks:{callback:v=>'₦'+v+'B'},position:'right'}
+    }
+  }
+});
+
+// 14. Scatter (Community: avg price vs total revenue)
+new Chart(document.getElementById('communityScatter'), {
+  type: 'bubble',
+  data: {
+    datasets: commLabels.slice(0,6).map((l,i)=>({
+      label: l,
+      data: [{ x: commRevenue[i]/1e9, y: commRevenue[i]/commUnits[i]/1e6, r: Math.sqrt(commUnits[i])*2 }],
+      backgroundColor: commColors[i]+'CC',
+      borderColor: commColors[i],
+    }))
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:true,position:'right',labels:{font:{size:10},boxWidth:8,boxHeight:8}}, tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': ₦'+ctx.parsed.x.toFixed(1)+'B total, ₦'+ctx.parsed.y.toFixed(0)+'M avg'}} },
+    scales:{
+      x:{grid:{color:'rgba(0,0,0,0.04)'},title:{display:true,text:'Total Revenue ₦B',font:{size:10}},min:-2},
+      y:{grid:{color:'rgba(0,0,0,0.04)'},title:{display:true,text:'Avg Unit Price ₦M',font:{size:10}},min:-10}
+    }
+  }
+});
+
+// 15. Heatmap
+function buildHeatmap() {
+  const communityKeys = ['Shapati','Lakowe','Ajayi-Apata','Other'];
+  const heatData = years.map((yr,i)=>[
+    shapatiByYear[i]/1e9,
+    lakwoByYear[i]/1e9,
+    otherByYear[i]/1e9 + (i===8?0:0),
+    0
+  ]);
+  const all = heatData.flat().filter(v=>v>0);
+  const maxV = Math.max(...all);
+
+  function getColor(val) {
+    if (!val || val === 0) return '#F4F5F7';
+    const ratio = val/maxV;
+    const r = Math.round(192 + (255-192)*(1-ratio));
+    const g = Math.round(57 * (1-ratio));
+    const b = Math.round(43 * (1-ratio));
+    return `rgb(${r},${g},${b})`;
+  }
+
+  const container = document.getElementById('heatmapContainer');
+  let html = `<table style="border-collapse:separate; border-spacing:4px; font-family:var(--mono); font-size:10px; min-width:600px;">`;
+  html += `<tr><td style="padding:4px 8px;color:var(--text3);font-size:10px;font-weight:600;"> </td>`;
+  years.forEach(yr=>{ html+=`<td style="padding:4px 6px;text-align:center;color:var(--text3);font-weight:600;">${yr}</td>`; });
+  html += '</tr>';
+
+  ['Shapati','Lakowe','Ajayi-Apata + Other'].forEach((comm,ci) => {
+    html += `<tr><td style="padding:4px 10px 4px 0;white-space:nowrap;color:var(--text2);font-size:11px;font-weight:500;">${comm}</td>`;
+    years.forEach((yr,yi) => {
+      const val = ci < 2 ? heatData[yi][ci] : heatData[yi][2];
+      const bg = getColor(val);
+      const textColor = val > maxV*0.4 ? 'white' : '#5A5A72';
+      html += `<td><div class="heatmap-cell" style="background:${bg};color:${textColor};" title="${comm} ${yr}: ₦${val.toFixed(1)}B">${val>0?val.toFixed(0):'—'}</div></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</table>';
+  container.innerHTML = html;
+}
+buildHeatmap();
+
+// 16. Collections stacked
+new Chart(document.getElementById('collectionsStackChart'), {
+  type: 'bar',
+  data: {
+    labels: years,
+    datasets: [
+      { label: 'Collected ₦B', data: [0.94,1.71,3.79,1.95,11.12,5.78,7.36,11.30,15.46,16.10,7.45], backgroundColor:'#27AE60', borderRadius:4, borderSkipped:false },
+      { label: 'Outstanding ₦B', data: [0.1,0.2,0.5,0.3,1.2,0.8,0.9,1.1,2.0,3.0,2.0], backgroundColor:RED3, borderRadius:4, borderSkipped:false }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:true,position:'top',labels:{font:{size:11},boxWidth:10,boxHeight:10}}},
+    scales:{
+      x:{stacked:true,grid:{display:false}},
+      y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}
+    }
+  }
+});
+
+// 17. Collection Rate Distribution (brackets)
+new Chart(document.getElementById('collectionRateChart'), {
+  type: 'bar',
+  data: {
+    labels: ['0-50%','50-75%','75-90%','90-99%','100%','100%+'],
+    datasets: [{ label: 'Units', data: [120, 85, 140, 310, 1800, 390], backgroundColor:[RED,RED2,RED3,'#F39C12','#27AE60','#2980B9'], borderRadius:5, borderSkipped:false }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'}}},
+    plugins:{tooltip:{callbacks:{label:ctx=>ctx.parsed.y+' units'}}}
+  }
+});
+
+// 18. Mortgage chart
+new Chart(document.getElementById('mortgageChart'), {
+  type: 'bar',
+  data: {
+    labels: years,
+    datasets: [
+      { label: 'Cash/Payment Plan', data: cashByYear, backgroundColor:RED3, borderRadius:4, borderSkipped:false },
+      { label: 'Mortgage', data: mortgageByYear, backgroundColor:RED, borderRadius:4, borderSkipped:false }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:true,position:'top',labels:{font:{size:11},boxWidth:10,boxHeight:10}}},
+    scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'}}}
+  }
+});
+
+// 19. Outstanding by Community
+new Chart(document.getElementById('outstandingCommChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Lakowe','Shapati','Ajayi-Apata','Others'],
+    datasets: [{ data:[14.2,7.8,1.1,0.3], backgroundColor:[RED,'#2980B9','#27AE60','#F39C12'], borderWidth:2, borderColor:'rgba(255,255,255,0.9)' }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false, cutout:'60%',
+    plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11},boxWidth:10,boxHeight:10}},tooltip:{callbacks:{label:ctx=>ctx.label+': ₦'+ctx.parsed.toFixed(1)+'B outstanding'}}}
+  }
+});
+
+// 20. Agent bars (HTML)
+function buildAgentBars() {
+  const el = document.getElementById('agentBars');
+  const max = agentRevs[0];
+  el.innerHTML = '<div class="table-scroll">';
+  agentNames.forEach((n,i)=>{
+    const pct = (agentRevs[i]/max*100).toFixed(0);
+    el.innerHTML += `
+      <div class="sparkline-row" style="margin-bottom:10px;">
+        <div class="sl-label" style="width:170px;font-size:11px;color:var(--text);">
+          <span class="rank-num">${i+1}</span> &nbsp;${n}
+        </div>
+        <div class="sl-bar-wrap"><div class="sl-bar" style="width:${pct}%"></div></div>
+        <div class="sl-val" style="width:150px;text-align:right;">
+          ${fmt(agentRevs[i])} <span style="color:var(--text3);">(${agentCounts[i]})</span>
+        </div>
+      </div>`;
+  });
+  el.innerHTML += '</div>';
+}
+buildAgentBars();
+
+// 21. Channel Pie
+const chanColors = [RED,'#2980B9','#27AE60','#F39C12','#8E44AD','#16A085','#D35400'];
+new Chart(document.getElementById('channelPieChart'), {
+  type: 'doughnut',
+  data: {
+    labels: agentGroups,
+    datasets: [{ data: agentRevenue.map(v=>v/1e9), backgroundColor:chanColors, borderWidth:2, borderColor:'rgba(255,255,255,0.9)' }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false, cutout:'60%',
+    plugins:{tooltip:{callbacks:{label:ctx=>ctx.label+': ₦'+ctx.parsed.toFixed(1)+'B'}}}
+  }
+});
+const chLeg = document.getElementById('channelLegend');
+agentGroups.forEach((l,i)=>{
+  const item = document.createElement('div');
+  item.className='legend-item';
+  item.innerHTML=`<div class="legend-dot" style="background:${chanColors[i]}"></div>${l}`;
+  chLeg.appendChild(item);
+});
+
+// 22. Agent trend line
+new Chart(document.getElementById('agentTrendChart'), {
+  type: 'line',
+  data: {
+    labels: years,
+    datasets: [
+      {label:'Mixta Sales',data:[60,20,130,100,220,140,165,198,102,95,60],borderColor:RED,backgroundColor:'transparent',tension:0.4,borderWidth:2,pointRadius:3},
+      {label:'3rd Party',data:[8,5,32,28,65,42,40,55,30,28,18],borderColor:'#2980B9',backgroundColor:'transparent',tension:0.4,borderWidth:2,pointRadius:3,borderDash:[4,3]},
+      {label:'Staff',data:[12,4,28,22,38,25,28,32,18,14,10],borderColor:'#27AE60',backgroundColor:'transparent',tension:0.4,borderWidth:2,pointRadius:3,borderDash:[2,4]},
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:true,position:'top',labels:{font:{size:11},boxWidth:10,boxHeight:10}}},
+    scales:{
+      x:{grid:{color:'rgba(0,0,0,0.04)'}},
+      y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' units'}}
+    }
+  }
+});
+
+// 23. Buyer State
+new Chart(document.getElementById('buyerStateChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Lagos*','Rivers','Edo','Abuja','Delta','Anambra','Ogun','USA'],
+    datasets: [{ label: 'Buyers', data:[990,41,35,33,15,14,12,11], backgroundColor:[RED,RED2,RED3,RED3,RED3,RED3,RED3,RED3], borderRadius:5, borderSkipped:false }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false, indexAxis:'y',
+    scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{display:false}}},
+    plugins:{tooltip:{callbacks:{label:ctx=>ctx.parsed.x+' buyers'}}}
+  }
+});
+
+// 24. Salutation Chart
+new Chart(document.getElementById('salutationChart'), {
+  type: 'doughnut',
+  data: {
+    labels: salutations,
+    datasets: [{ data: salutCounts, backgroundColor: COLORS.slice(0,8).map((c,i)=>i===0?RED:i===1?RED2:COLORS[i]), borderWidth:2, borderColor:'rgba(255,255,255,0.9)' }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false, cutout:'55%',
+    plugins:{legend:{display:true,position:'right',labels:{font:{size:10},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.parsed}}}
+  }
+});
+
+// 25. Buyer State Revenue Bars (HTML)
+function buildBuyerStateRevBars() {
+  const el = document.getElementById('buyerStateRevBars');
+  const data = [
+    {state:'Lagos + Lagos State', cnt: 990, pct:43},
+    {state:'Rivers State (PH)', cnt: 41, pct:4},
+    {state:'Edo State', cnt: 35, pct:3.2},
+    {state:'FCT Abuja', cnt: 33, pct:3.0},
+    {state:'Delta State', cnt: 15, pct:1.4},
+    {state:'Anambra State', cnt: 14, pct:1.3},
+    {state:'Ogun State', cnt: 12, pct:1.1},
+    {state:'USA (Diaspora)', cnt: 11, pct:1.0},
+    {state:'Unknown / Unrecorded', cnt: 980, pct:42},
+  ];
+  data.forEach((d,i)=>{
+    el.innerHTML += `
+      <div class="sparkline-row" style="margin-bottom:10px; align-items:center;">
+        <div class="sl-label" style="width:200px;font-size:12px;color:var(--text);">${d.state}</div>
+        <div class="sl-bar-wrap"><div class="sl-bar" style="width:${d.pct}%;background:${i===0?'linear-gradient(90deg,'+RED+','+RED2+')':i===8?'linear-gradient(90deg,#9090A8,#B0B0C0)':'linear-gradient(90deg,#F5B7B1,'+RED2+')'}"></div></div>
+        <div class="sl-val" style="width:120px;text-align:right;">${d.cnt} buyers (${d.pct}%)</div>
+      </div>`;
+  });
+}
+buildBuyerStateRevBars();
+
+// ===== NAVIGATION =====
+function showSection(name, btn) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const el = document.getElementById('section-'+name);
+  if (el) { el.classList.add('active'); el.classList.remove('fade-in'); void el.offsetWidth; el.classList.add('fade-in'); }
+  if (btn) btn.classList.add('active');
+}
+</script>
+</body>
 </html>
