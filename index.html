@@ -1,0 +1,401 @@
+import React, { useState, useMemo } from 'react';
+import { 
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, 
+  XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer 
+} from 'recharts';
+import { 
+  TrendingUp, DollarSign, Activity, MapPin, 
+  Users, Building, Filter, ChevronDown, Download
+} from 'lucide-react';
+
+// --- MOCK DATA GENERATION BASED ON PROVIDED CSV SNIPPETS ---
+// We simulate a robust dataset reflecting the years 2014-2024 and specific properties.
+const generateData = () => {
+  const communities = ['Lakowe', 'Shapati', 'Ajayi-Apata', 'Ikpoba Okha LGA'];
+  const properties = {
+    'Lakowe': ['Lakowe Lakes Plots', 'Lakowe Lakes - The Enclave', 'Lakowe Lakes - The Village', 'DUO', 'Elms Garden Estate'],
+    'Shapati': ['Adiva Plainfields Estate', 'Townsville Extension', 'Beechwood Park', 'Lagos New Town'],
+    'Ajayi-Apata': ['Fara Park II'],
+    'Ikpoba Okha LGA': ['Emotan Gardens']
+  };
+  const agentGroups = ['Mixta Sales', 'ARM FA', '3rd Party Agent', 'Staff', 'Collections'];
+  const statuses = ['Reserved', 'Sold'];
+
+  const data = [];
+  for (let i = 0; i < 600; i++) {
+    const year = 2014 + Math.floor(Math.random() * 11);
+    const community = communities[Math.floor(Math.random() * communities.length)];
+    const property = properties[community][Math.floor(Math.random() * properties[community].length)];
+    const agentGroup = agentGroups[Math.floor(Math.random() * agentGroups.length)];
+    const status = statuses[Math.floor(Math.random() * statuses.length)];
+    
+    // Simulate realistic pricing based on snippets
+    let basePrice = 5000000;
+    if (community === 'Lakowe') basePrice = 30000000 + Math.random() * 250000000; // Lakowe is premium (30M - 280M)
+    if (property === 'Townsville Extension') basePrice = 3000000 + Math.random() * 3000000; // 3M - 6M
+    if (property === 'Adiva Plainfields Estate') basePrice = 6000000 + Math.random() * 15000000; // 6M - 21M
+    
+    const discount = Math.random() > 0.7 ? basePrice * (Math.random() * 0.1) : 0; // Up to 10% discount sometimes
+    const sellingPrice = basePrice - discount;
+    const percentPaid = Math.random() > 0.3 ? 100 : Math.random() * 90; // 70% chance fully paid
+    const totalPaid = (sellingPrice * percentPaid) / 100;
+    const outstanding = sellingPrice - totalPaid;
+
+    data.push({
+      id: `TRX-${year}-${1000 + i}`,
+      year,
+      community,
+      property,
+      agentGroup,
+      status,
+      sellingPrice,
+      totalPaid,
+      outstanding,
+      percentPaid,
+      discount
+    });
+  }
+  return data.sort((a, b) => a.year - b.year);
+};
+
+const rawData = generateData();
+
+// --- THEME & STYLES (Apple Liquid Glass + Red/White) ---
+const COLORS = ['#ef4444', '#f87171', '#fca5a5', '#fee2e2', '#991b1b', '#b91c1c']; // Pure Red Palette
+
+const GlassCard = ({ children, className = "" }) => (
+  <div className={`bg-white/70 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(220,38,38,0.06)] rounded-[2rem] p-6 ${className}`}>
+    {children}
+  </div>
+);
+
+const formatCurrency = (val) => {
+  if (val >= 1000000000) return `₦${(val / 1000000000).toFixed(2)}B`;
+  if (val >= 1000000) return `₦${(val / 1000000).toFixed(2)}M`;
+  return `₦${val.toLocaleString()}`;
+};
+
+export default function App() {
+  const [selectedYear, setSelectedYear] = useState('All');
+  const [selectedCommunity, setSelectedCommunity] = useState('All');
+
+  // --- ANALYTICS ENGINE ---
+  const filteredData = useMemo(() => {
+    return rawData.filter(d => 
+      (selectedYear === 'All' || d.year.toString() === selectedYear) &&
+      (selectedCommunity === 'All' || d.community === selectedCommunity)
+    );
+  }, [selectedYear, selectedCommunity]);
+
+  const kpis = useMemo(() => {
+    const totalRev = filteredData.reduce((acc, curr) => acc + curr.sellingPrice, 0);
+    const totalPaid = filteredData.reduce((acc, curr) => acc + curr.totalPaid, 0);
+    const totalOut = filteredData.reduce((acc, curr) => acc + curr.outstanding, 0);
+    const avgPaid = totalRev > 0 ? (totalPaid / totalRev) * 100 : 0;
+    
+    return { totalRev, totalPaid, totalOut, avgPaid, units: filteredData.length };
+  }, [filteredData]);
+
+  // Aggregations for charts
+  const yearlyTrend = useMemo(() => {
+    const map = {};
+    rawData.forEach(d => {
+      if (selectedCommunity !== 'All' && d.community !== selectedCommunity) return;
+      if (!map[d.year]) map[d.year] = { year: d.year, Revenue: 0, Paid: 0 };
+      map[d.year].Revenue += d.sellingPrice;
+      map[d.year].Paid += d.totalPaid;
+    });
+    return Object.values(map).sort((a, b) => a.year - b.year);
+  }, [selectedCommunity]);
+
+  const communityPerf = useMemo(() => {
+    const map = {};
+    filteredData.forEach(d => {
+      if (!map[d.community]) map[d.community] = { name: d.community, Revenue: 0 };
+      map[d.community].Revenue += d.sellingPrice;
+    });
+    return Object.values(map).sort((a, b) => b.Revenue - a.Revenue);
+  }, [filteredData]);
+
+  const agentPerf = useMemo(() => {
+    const map = {};
+    filteredData.forEach(d => {
+      if (!map[d.agentGroup]) map[d.agentGroup] = { name: d.agentGroup, value: 0 };
+      map[d.agentGroup].value += d.sellingPrice;
+    });
+    return Object.values(map).sort((a, b) => b.value - a.value);
+  }, [filteredData]);
+
+  // Custom Tooltip for PowerBI feel
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white/90 backdrop-blur-md border border-red-100 p-4 rounded-2xl shadow-xl">
+          <p className="font-bold text-gray-800 mb-2">{label}</p>
+          {payload.map((entry, index) => (
+            <div key={index} className="flex items-center gap-2 text-sm">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+              <span className="text-gray-600">{entry.name}:</span>
+              <span className="font-semibold text-gray-900">{formatCurrency(entry.value)}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FDFDFD] text-gray-800 font-sans p-4 sm:p-8 selection:bg-red-200">
+      
+      {/* HEADER & FILTERS */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6 relative z-10">
+        <div>
+          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 mb-1">
+            Real Estate <span className="text-red-600">Intelligence</span>
+          </h1>
+          <p className="text-gray-500 font-medium">Comprehensive portfolio performance & revenue analytics.</p>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="flex items-center bg-white/50 backdrop-blur-lg border border-red-100 p-2 rounded-2xl shadow-sm">
+            <Filter className="w-5 h-5 text-red-500 ml-2" />
+            <select 
+              className="bg-transparent border-none outline-none font-semibold text-gray-700 ml-2 cursor-pointer pr-4 appearance-none"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+            >
+              <option value="All">All Years</option>
+              {[...Array(11)].map((_, i) => (
+                <option key={i} value={2014 + i}>{2014 + i}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center bg-white/50 backdrop-blur-lg border border-red-100 p-2 rounded-2xl shadow-sm">
+            <MapPin className="w-5 h-5 text-red-500 ml-2" />
+            <select 
+              className="bg-transparent border-none outline-none font-semibold text-gray-700 ml-2 cursor-pointer pr-4 appearance-none"
+              value={selectedCommunity}
+              onChange={(e) => setSelectedCommunity(e.target.value)}
+            >
+              <option value="All">All Communities</option>
+              <option value="Lakowe">Lakowe</option>
+              <option value="Shapati">Shapati</option>
+              <option value="Ajayi-Apata">Ajayi-Apata</option>
+              <option value="Ikpoba Okha LGA">Ikpoba Okha LGA</option>
+            </select>
+          </div>
+          
+          <button className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-2xl shadow-lg shadow-red-600/30 transition-all active:scale-95">
+            <Download className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* KPI CARDS GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 relative z-10">
+        <GlassCard>
+          <div className="flex justify-between items-start mb-4">
+            <div className="bg-red-100 text-red-600 p-3 rounded-2xl">
+              <DollarSign className="w-6 h-6" />
+            </div>
+            <span className="bg-red-50 text-red-600 text-xs font-bold px-3 py-1 rounded-full">Total Selling Price</span>
+          </div>
+          <h2 className="text-3xl font-black text-gray-900">{formatCurrency(kpis.totalRev)}</h2>
+          <p className="text-sm text-gray-500 mt-2 font-medium">Expected Portfolio Value</p>
+        </GlassCard>
+
+        <GlassCard>
+          <div className="flex justify-between items-start mb-4">
+            <div className="bg-red-600 text-white p-3 rounded-2xl shadow-lg shadow-red-600/40">
+              <Activity className="w-6 h-6" />
+            </div>
+            <span className="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">Actual Collected</span>
+          </div>
+          <h2 className="text-3xl font-black text-red-600">{formatCurrency(kpis.totalPaid)}</h2>
+          <p className="text-sm text-gray-500 mt-2 font-medium flex items-center gap-2">
+            <span className="text-red-500 font-bold">{kpis.avgPaid.toFixed(1)}%</span> Realization Rate
+          </p>
+        </GlassCard>
+
+        <GlassCard>
+          <div className="flex justify-between items-start mb-4">
+            <div className="bg-red-50 text-red-500 p-3 rounded-2xl border border-red-100">
+              <TrendingUp className="w-6 h-6" />
+            </div>
+            <span className="bg-red-50 text-red-600 text-xs font-bold px-3 py-1 rounded-full">Receivables</span>
+          </div>
+          <h2 className="text-3xl font-black text-gray-900">{formatCurrency(kpis.totalOut)}</h2>
+          <p className="text-sm text-gray-500 mt-2 font-medium">Outstanding Balance</p>
+        </GlassCard>
+
+        <GlassCard>
+          <div className="flex justify-between items-start mb-4">
+            <div className="bg-white border border-red-200 text-red-600 p-3 rounded-2xl">
+              <Building className="w-6 h-6" />
+            </div>
+            <span className="bg-red-50 text-red-600 text-xs font-bold px-3 py-1 rounded-full">Volume</span>
+          </div>
+          <h2 className="text-3xl font-black text-gray-900">{kpis.units.toLocaleString()}</h2>
+          <p className="text-sm text-gray-500 mt-2 font-medium">Total Units (Sold + Reserved)</p>
+        </GlassCard>
+      </div>
+
+      {/* CHARTS SECTION */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 relative z-10">
+        
+        {/* Main Line Chart */}
+        <GlassCard className="lg:col-span-2">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-bold text-gray-900">Revenue Growth Matrix</h3>
+            <span className="text-sm font-semibold text-red-500 bg-red-50 px-3 py-1 rounded-full">2014 - 2024 Trend</span>
+          </div>
+          <div className="h-[350px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={yearlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#fee2e2" />
+                <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} tickFormatter={(val) => `₦${(val/1000000000).toFixed(1)}B`} />
+                <RechartsTooltip content={<CustomTooltip />} />
+                <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                <Line type="monotone" dataKey="Revenue" stroke="#ef4444" strokeWidth={4} dot={{r: 4, fill: '#ef4444', strokeWidth: 2, stroke: '#fff'}} activeDot={{r: 8, strokeWidth: 0, fill: '#b91c1c'}} />
+                <Line type="monotone" dataKey="Paid" stroke="#fca5a5" strokeWidth={3} dot={false} activeDot={{r: 6, fill: '#fca5a5'}} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </GlassCard>
+
+        {/* Donut Chart */}
+        <GlassCard>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-bold text-gray-900">Agent Performance</h3>
+            <Users className="text-red-400 w-5 h-5" />
+          </div>
+          <div className="h-[300px] w-full relative flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={agentPerf}
+                  innerRadius={80}
+                  outerRadius={110}
+                  paddingAngle={5}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {agentPerf.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <RechartsTooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+            {/* Inner text for donut */}
+            <div className="absolute text-center pointer-events-none">
+              <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Top Agent</p>
+              <p className="text-lg font-black text-red-600">{agentPerf.length > 0 ? agentPerf[0].name : 'N/A'}</p>
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2 justify-center">
+            {agentPerf.slice(0,3).map((agent, i) => (
+              <span key={i} className="text-xs font-semibold px-2 py-1 rounded-md" style={{backgroundColor: `${COLORS[i]}20`, color: COLORS[i]}}>
+                {agent.name}
+              </span>
+            ))}
+          </div>
+        </GlassCard>
+
+        {/* Bar Chart */}
+        <GlassCard className="lg:col-span-3">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-bold text-gray-900">Community Revenue Distribution</h3>
+            <span className="text-sm font-semibold text-gray-500">By Total Expected Revenue</span>
+          </div>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={communityPerf} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#fee2e2" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12, fontWeight: 600}} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} tickFormatter={(val) => `₦${(val/1000000000).toFixed(1)}B`} />
+                <RechartsTooltip content={<CustomTooltip />} />
+                <Bar dataKey="Revenue" radius={[8, 8, 0, 0]}>
+                  {communityPerf.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={index === 0 ? '#ef4444' : '#fca5a5'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </GlassCard>
+      </div>
+
+      {/* DATA GRID */}
+      <GlassCard className="relative z-10 overflow-hidden">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-gray-900">Recent Transactions</h3>
+          <button className="text-red-600 text-sm font-bold flex items-center gap-1 hover:text-red-800 transition-colors">
+            View Full Log <ChevronDown className="w-4 h-4" />
+          </button>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-red-100 text-gray-500 text-sm uppercase tracking-wider">
+                <th className="pb-4 font-bold pl-2">ID & Year</th>
+                <th className="pb-4 font-bold">Property / Community</th>
+                <th className="pb-4 font-bold">Agent Group</th>
+                <th className="pb-4 font-bold text-right">Selling Price</th>
+                <th className="pb-4 font-bold text-center">Status</th>
+                <th className="pb-4 font-bold text-right pr-2">Completion</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm">
+              {filteredData.slice(0, 10).map((row, i) => (
+                <tr key={i} className="border-b border-gray-50 hover:bg-red-50/50 transition-colors group">
+                  <td className="py-4 pl-2">
+                    <p className="font-bold text-gray-900 group-hover:text-red-600 transition-colors">{row.id}</p>
+                    <p className="text-gray-500 text-xs">{row.year}</p>
+                  </td>
+                  <td className="py-4">
+                    <p className="font-bold text-gray-800">{row.property}</p>
+                    <p className="text-gray-500 text-xs">{row.community}</p>
+                  </td>
+                  <td className="py-4 text-gray-700 font-medium">{row.agentGroup}</td>
+                  <td className="py-4 text-right font-bold text-gray-900">{formatCurrency(row.sellingPrice)}</td>
+                  <td className="py-4 text-center">
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                      row.status === 'Sold' 
+                        ? 'bg-red-100 text-red-700' 
+                        : 'bg-white border border-red-200 text-red-500'
+                    }`}>
+                      {row.status}
+                    </span>
+                  </td>
+                  <td className="py-4 text-right pr-2">
+                    <div className="flex items-center justify-end gap-2">
+                      <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-red-500 rounded-full" 
+                          style={{width: `${row.percentPaid}%`}}
+                        />
+                      </div>
+                      <span className="font-bold text-gray-700 w-10">{Math.round(row.percentPaid)}%</span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filteredData.length === 0 && (
+            <div className="text-center py-10 text-gray-400 font-medium">No records found for this criteria.</div>
+          )}
+        </div>
+      </GlassCard>
+
+      {/* Decorative blurred background elements for the liquid glass effect */}
+      <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-200/40 rounded-full blur-[120px] pointer-events-none z-0"></div>
+      <div className="fixed bottom-[-10%] right-[-10%] w-[30%] h-[50%] bg-red-100/50 rounded-full blur-[100px] pointer-events-none z-0"></div>
+    </div>
+  );
+}
