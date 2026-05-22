@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <!-- Firebase v10 modular SDK via compat shim (no build step needed) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -551,7 +551,7 @@ const ALLOWED_DOMAIN = "mixtafrica.com";
 /* =====================================================
    DATA SOURCE CONFIG
    ===================================================== */
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTg9nVEiwrU8xBzl6DaP3-b2enA8Ae_oNW-5VXlg2yRq9godA1cBjwzdRYbY4O9zdbU_2xnprBVo1QO/pub?output=csv';
+const XLSX_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTg9nVEiwrU8xBzl6DaP3-b2enA8Ae_oNW-5VXlg2yRq9godA1cBjwzdRYbY4O9zdbU_2xnprBVo1QO/pub?output=xlsx';
 
 // Firestore cache settings — shared across all users (zero extra fetches when cache is warm)
 const FS_CACHE_DOC  = 'cache/mixta_csv';           // Firestore document path
@@ -780,7 +780,7 @@ async function fetchWithRetry(url, retries=FETCH_MAX_RETRIES, delay=FETCH_BASE_D
   for(let attempt=0; attempt<=retries; attempt++) {
     try {
       const res = await fetch(url, { cache: 'no-store' });
-      if(res.ok) return await res.text();
+      if(res.ok) return await res.arrayBuffer();
       if(res.status === 429 || res.status >= 500) {
         if(attempt < retries) {
           setLoaderSub(`Rate limited by Google — retrying in ${((delay*(2**attempt))/1000).toFixed(0)}s…`);
@@ -801,117 +801,53 @@ async function fetchWithRetry(url, retries=FETCH_MAX_RETRIES, delay=FETCH_BASE_D
 }
 
 /* =====================================================
-   FIRESTORE SHARED CACHE
-   One fetch populates the cache for all users.
-   Falls back to localStorage, then live fetch.
-   ===================================================== */
-async function getCachedCSV(forceRefresh) {
-  // ── 1. Firestore (primary shared cache) ──────────────
-  if(_fbReady && _db && !forceRefresh) {
-    try {
-      // Race Firestore against a 3s timeout — if Firestore is slow, fall through to localStorage
-      const firestoreRead = _db.doc(FS_CACHE_DOC).get();
-      const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3000));
-      const doc = await Promise.race([firestoreRead, timeout]);
-      if(doc.exists) {
-        const { csv, ts, schemaVersion } = doc.data();
-        const age = Date.now() - (ts?.toMillis?.() || 0);
-        if(age < FS_CACHE_TTL && schemaVersion === SCHEMA_VERSION && csv) {
-          setLoaderSub('Loading from shared cache…');
-          safeLocalStorageSet(LS_CACHE_KEY, csv);
-          safeLocalStorageSet(LS_TS_KEY, String(Date.now()));
-          return { csv, fromCache: true };
-        }
-      }
-    } catch(e) {
-      console.warn('[Firestore] Read failed or timed out, falling through:', e.message);
-    }
-  }
-
-  // ── 2. localStorage (offline / Firestore unavailable) ──
-  if(!forceRefresh) {
-    const lsTs = parseInt(localStorage.getItem(LS_TS_KEY)||'0');
-    const lsCsv = localStorage.getItem(LS_CACHE_KEY);
-    const lsVer = localStorage.getItem(LS_SCHEMA_KEY);
-    if(lsCsv && lsVer === SCHEMA_VERSION && (Date.now() - lsTs) < FS_CACHE_TTL) {
-      setLoaderSub('Using local cache…');
-      return { csv: lsCsv, fromCache: true };
-    }
-  }
-
-  // ── 3. Live fetch from Google Sheets ──────────────────
-  setLoaderSub('Downloading from Google Sheets…');
-  const csv = await fetchWithRetry(CSV_URL);
-
-  // Write to localStorage (with size guard)
-  safeLocalStorageSet(LS_CACHE_KEY, csv);
-  safeLocalStorageSet(LS_TS_KEY, String(Date.now()));
-  safeLocalStorageSet(LS_SCHEMA_KEY, SCHEMA_VERSION);
-
-  // Write to Firestore so all subsequent users hit the cache
-  if(_fbReady && _db) {
-    try {
-      await _db.doc(FS_CACHE_DOC).set({
-        csv,
-        ts: firebase.firestore.FieldValue.serverTimestamp(),
-        schemaVersion: SCHEMA_VERSION,
-        fetchedBy: _currentUser?.email || 'anonymous',
-      });
-    } catch(e) {
-      console.warn('[Firestore] Write failed:', e.message);
-    }
-  }
-
-  return { csv, fromCache: false };
-}
-
-// Guard: never exceed LS_MAX_BYTES. If the CSV is too large, skip LS write.
-function safeLocalStorageSet(key, value) {
-  try {
-    if(typeof value === 'string' && value.length > LS_MAX_BYTES) {
-      console.warn('[localStorage] Value too large to cache:', key, value.length, 'bytes');
-      return;
-    }
-    localStorage.setItem(key, value);
-  } catch(e) {
-    console.warn('[localStorage] Write failed:', e.message);
-  }
-}
-
-/* =====================================================
    FETCH MUTEX
    Prevents concurrent fetches (multiple tabs / rapid clicks)
    ===================================================== */
 let _fetchInProgress = false;
 
 /* =====================================================
-   PARSE
+   FETCH AND PARSE EXCEL TABS
    ===================================================== */
-function parseRows(csvText) {
-  const result = Papa.parse(csvText, {
-    header: true,
-    skipEmptyLines: true,
-    dynamicTyping: false,
-    transformHeader: h => h.trim(),
-  });
-  const rows = result.data;
-  if(!rows.length) throw new Error('Empty CSV');
+async function getLiveSheetData() {
+  setLoaderSub('Downloading all tabs from Google Sheets…');
+  
+  // 1. Fetch the Excel file as binary data
+  const arrayBuffer = await fetchWithRetry(XLSX_URL);
 
-  const rawHeaders = Object.keys(rows[0] || {});
-  const normalised = rows
+  // 2. Read the workbook using SheetJS
+  const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+  
+  let allRows = [];
+  let rawHeaders = [];
+
+  // 3. Loop through EVERY tab in the spreadsheet
+  wb.SheetNames.forEach(sheetName => {
+    const ws = wb.Sheets[sheetName];
+    // Convert the tab into an array of objects
+    const sheetRows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    
+    // Grab headers from the first sheet for schema validation
+    if (sheetRows.length > 0 && rawHeaders.length === 0) {
+      rawHeaders = Object.keys(sheetRows[0]); 
+    }
+
+    // Add this tab's rows to our master list
+    allRows = allRows.concat(sheetRows);
+  });
+
+  if(!allRows.length) throw new Error('No data found in any sheets');
+
+  // 4. Clean up the rows using your existing HEADER_MAP
+  const normalised = allRows
     .map(r => normaliseRow(r, HEADER_MAP))
     .filter(r => r.community && r.community.trim() !== '' && r.community !== 'Community');
 
+  // 5. Validate columns
   if(normalised.length) validateSchema(normalised[0], rawHeaders);
-
-  // Detect & report unknown columns not in HEADER_MAP
-  const allAliases = new Set(Object.values(HEADER_MAP).flat().map(s=>s.toLowerCase()));
-  const unknown = rawHeaders.filter(h => !allAliases.has(h.toLowerCase()));
-  if(unknown.length) console.info('[Schema] Unknown columns (not yet mapped):', unknown.join(', '));
 
   return normalised;
 }
-
 /* =====================================================
    ANALYTICS ENGINE
    ===================================================== */
@@ -1358,225 +1294,177 @@ function setLoaderSub(msg) { const el=document.getElementById('loader-sub'); if(
 function setLoaderText(msg){ const el=document.getElementById('loader-text'); if(el) el.textContent=msg; }
 
 /* =====================================================
-   FILTER ENGINE
-   ===================================================== */
+   FILTER ENGINE
+   ===================================================== */
 let _allRows = null;
 
 function populateFilters(rows) {
-  const years = [...new Set(rows.map(r=>r._year).filter(Boolean))].sort();
-  const ySel  = document.getElementById('filterYear');
-  ySel.innerHTML = '<option value="all">All Years</option>';
-  years.forEach(y=>{ const o=document.createElement('option'); o.value=y; o.textContent=y; ySel.appendChild(o); });
+  const years = [...new Set(rows.map(r=>r._year).filter(Boolean))].sort();
+  const ySel  = document.getElementById('filterYear');
+  ySel.innerHTML = '<option value="all">All Years</option>';
+  years.forEach(y=>{ const o=document.createElement('option'); o.value=y; o.textContent=y; ySel.appendChild(o); });
 
-  const comms = [...new Set(rows.map(r=>r.community).filter(c=>c&&c!=='Unknown'))].sort();
-  const cSel  = document.getElementById('filterCommunity');
-  cSel.innerHTML = '<option value="all">All Communities</option>';
-  comms.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; cSel.appendChild(o); });
+  const comms = [...new Set(rows.map(r=>r.community).filter(c=>c&&c!=='Unknown'))].sort();
+  const cSel  = document.getElementById('filterCommunity');
+  cSel.innerHTML = '<option value="all">All Communities</option>';
+  comms.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; cSel.appendChild(o); });
 
-  const ags  = [...new Set(rows.map(r=>r.agentGroup).filter(a=>a&&a!=='Unknown'))].sort();
-  const aSel = document.getElementById('filterAgent');
-  aSel.innerHTML = '<option value="all">All Channels</option>';
-  ags.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; aSel.appendChild(o); });
+  const ags  = [...new Set(rows.map(r=>r.agentGroup).filter(a=>a&&a!=='Unknown'))].sort();
+  const aSel = document.getElementById('filterAgent');
+  aSel.innerHTML = '<option value="all">All Channels</option>';
+  ags.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; aSel.appendChild(o); });
 
-  // Risk filter
-  const risks = ['Collected','Near Completion','Low Risk','Medium Risk','High Risk'].filter(r=>rows.some(row=>row.collectionRisk===r));
-  const rSel  = document.getElementById('filterRisk');
-  rSel.innerHTML = '<option value="all">All Risk Tiers</option>';
-  risks.forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; rSel.appendChild(o); });
+  const risks = ['Collected','Near Completion','Low Risk','Medium Risk','High Risk'].filter(r=>rows.some(row=>row.collectionRisk===r));
+  const rSel  = document.getElementById('filterRisk');
+  rSel.innerHTML = '<option value="all">All Risk Tiers</option>';
+  risks.forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; rSel.appendChild(o); });
 
-  // Phase filter
-  const phases = [...new Set(rows.map(r=>r.phase).filter(p=>p&&p!=='nan'&&p!==''))].sort();
-  const pSel   = document.getElementById('filterPhase');
-  pSel.innerHTML = '<option value="all">All Phases</option>';
-  phases.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; pSel.appendChild(o); });
+  const phases = [...new Set(rows.map(r=>r.phase).filter(p=>p&&p!=='nan'&&p!==''))].sort();
+  const pSel   = document.getElementById('filterPhase');
+  pSel.innerHTML = '<option value="all">All Phases</option>';
+  phases.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; pSel.appendChild(o); });
 }
 
 function applyFilters() {
-  if(!_allRows) return;
-  const yr   = document.getElementById('filterYear').value;
-  const com  = document.getElementById('filterCommunity').value;
-  const ag   = document.getElementById('filterAgent').value;
-  const risk = document.getElementById('filterRisk').value;
-  const ph   = document.getElementById('filterPhase').value;
+  if(!_allRows) return;
+  const yr   = document.getElementById('filterYear').value;
+  const com  = document.getElementById('filterCommunity').value;
+  const ag   = document.getElementById('filterAgent').value;
+  const risk = document.getElementById('filterRisk').value;
+  const ph   = document.getElementById('filterPhase').value;
 
-  let filtered = _allRows;
-  if(yr   !== 'all') filtered = filtered.filter(r=>r._year === yr);
-  if(com  !== 'all') filtered = filtered.filter(r=>r.community === com);
-  if(ag   !== 'all') filtered = filtered.filter(r=>r.agentGroup === ag);
-  if(risk !== 'all') filtered = filtered.filter(r=>r.collectionRisk === risk);
-  if(ph   !== 'all') filtered = filtered.filter(r=>r.phase === ph);
+  let filtered = _allRows;
+  if(yr   !== 'all') filtered = filtered.filter(r=>r._year === yr);
+  if(com  !== 'all') filtered = filtered.filter(r=>r.community === com);
+  if(ag   !== 'all') filtered = filtered.filter(r=>r.agentGroup === ag);
+  if(risk !== 'all') filtered = filtered.filter(r=>r.collectionRisk === risk);
+  if(ph   !== 'all') filtered = filtered.filter(r=>r.phase === ph);
 
-  const isFiltered = (yr!=='all'||com!=='all'||ag!=='all'||risk!=='all'||ph!=='all');
-  document.getElementById('resetBtn').style.display = isFiltered ? '' : 'none';
+  const isFiltered = (yr!=='all'||com!=='all'||ag!=='all'||risk!=='all'||ph!=='all');
+  document.getElementById('resetBtn').style.display = isFiltered ? '' : 'none';
 
-  const total=_allRows.length, shown=filtered.length;
-  document.getElementById('filterCount').textContent = isFiltered
-    ? `Showing ${shown.toLocaleString()} of ${total.toLocaleString()} records`
-    : `${total.toLocaleString()} records`;
+  const total=_allRows.length, shown=filtered.length;
+  document.getElementById('filterCount').textContent = isFiltered
+    ? `Showing ${shown.toLocaleString()} of ${total.toLocaleString()} records`
+    : `${total.toLocaleString()} records`;
 
-  const analytics = computeAnalytics(filtered);
-  renderKPIs(analytics);
-  renderCharts(analytics);
+  const analytics = computeAnalytics(filtered);
+  renderKPIs(analytics);
+  renderCharts(analytics);
 }
 
 function resetFilters() {
-  ['filterYear','filterCommunity','filterAgent','filterRisk','filterPhase']
-    .forEach(id=>{ document.getElementById(id).value='all'; });
-  applyFilters();
+  ['filterYear','filterCommunity','filterAgent','filterRisk','filterPhase']
+    .forEach(id=>{ document.getElementById(id).value='all'; });
+  applyFilters();
 }
 
 /* =====================================================
-   MAIN LOAD
-   ===================================================== */
-/* =====================================================
-   RENDER HELPERS — called with any row set
-   ===================================================== */
+   RENDER HELPERS — called with any row set
+   ===================================================== */
 function renderFromRows(rows, fromCache) {
-  populateFilters(rows);
-  const analytics = computeAnalytics(rows);
-  renderKPIs(analytics);
-  renderCharts(analytics);
-  updateFreshness(fromCache);
-  document.getElementById('filterCount').textContent = rows.length.toLocaleString()+' records';
-  document.getElementById('errorBar').classList.remove('show');
+  populateFilters(rows);
+  const analytics = computeAnalytics(rows);
+  renderKPIs(analytics);
+  renderCharts(analytics);
+  updateFreshness(fromCache);
+  document.getElementById('filterCount').textContent = rows.length.toLocaleString()+' records';
+  document.getElementById('errorBar').classList.remove('show');
 }
 
 /* =====================================================
-   SYNC STATUS UI — non-blocking, never covers dashboard
-   ===================================================== */
+   SYNC STATUS UI — non-blocking, never covers dashboard
+   ===================================================== */
 function showSyncStatus(msg) {
-  const chip = document.getElementById('syncStatus');
-  const text = document.getElementById('syncStatusText');
-  const toast = document.getElementById('syncToast');
-  if(text) text.textContent = msg;
-  chip.classList.add('show');
-  toast.classList.remove('done');
-  toast.classList.add('active');
+  const chip = document.getElementById('syncStatus');
+  const text = document.getElementById('syncStatusText');
+  const toast = document.getElementById('syncToast');
+  if(text) text.textContent = msg;
+  chip.classList.add('show');
+  toast.classList.remove('done');
+  toast.classList.add('active');
 }
 function hideSyncStatus(success=true) {
-  const chip = document.getElementById('syncStatus');
-  const toast = document.getElementById('syncToast');
-  chip.classList.remove('show');
-  toast.classList.remove('active');
-  if(success) {
-    toast.classList.add('done');
-    setTimeout(()=>toast.classList.remove('done'), 800);
-  }
+  const chip = document.getElementById('syncStatus');
+  const toast = document.getElementById('syncToast');
+  chip.classList.remove('show');
+  toast.classList.remove('active');
+  if(success) {
+    toast.classList.add('done');
+    setTimeout(()=>toast.classList.remove('done'), 800);
+  }
 }
 
 /* =====================================================
-   LOAD DATA
-   Strategy:
-   - First visit (no cache): show full-screen loader → render → hide
-   - Subsequent loads / Sync: render stale cache INSTANTLY,
-     fetch fresh data in background, silently update when done
-   ===================================================== */
+   MAIN LOAD
+   ===================================================== */
 async function loadData(forceRefresh=false) {
-  if(_fetchInProgress) return;
-  _fetchInProgress = true;
+  if(_fetchInProgress) return;
+  _fetchInProgress = true;
 
-  const loader  = document.getElementById('loader');
-  const syncBtn = document.getElementById('syncBtn');
-  const isFirstLoad = !_allRows;
+  const loader  = document.getElementById('loader');
+  const syncBtn = document.getElementById('syncBtn');
+  const isFirstLoad = !_allRows;
 
-  // ── Step 1: Serve stale cache immediately (instant render) ──
-  if(!isFirstLoad || !forceRefresh) {
-    const lsCsv = localStorage.getItem(LS_CACHE_KEY);
-    if(lsCsv && _allRows) {
-      // Already rendered — skip straight to background fetch
-    } else if(lsCsv) {
-      try {
-        setLoaderSub('Loading cached data…');
-        const rows = parseRows(lsCsv);
-        _allRows = rows;
-        renderFromRows(rows, true);
-      } catch(e) { /* will re-render from fresh fetch below */ }
-    }
-  }
+  // Show UI feedback
+  if(isFirstLoad) {
+    loader.classList.remove('hidden');
+    setLoaderText('Loading dashboard…');
+    setLoaderSub('Fetching all tabs…');
+  } else {
+    syncBtn.classList.add('spinning');
+    showSyncStatus('Syncing…');
+  }
 
-  // ── Step 2: Show UI feedback appropriate to context ──
-  if(isFirstLoad && !_allRows) {
-    // True cold start — show full overlay only this once
-    loader.classList.remove('hidden');
-    setLoaderText('Loading dashboard…');
-    setLoaderSub('Fetching data…');
-  } else {
-    // Dashboard already visible — use non-blocking indicator
-    loader.classList.add('hidden');
-    syncBtn.classList.add('spinning');
-    showSyncStatus('Syncing…');
-  }
+  try {
+    // Fetch and combine all tabs using our new function
+    const rows = await getLiveSheetData();
+    
+    _allRows = rows;
+    renderFromRows(rows, false);
 
-  // ── Step 3: Fetch fresh data ──
-  let fromCache = false;
-  try {
-    const { csv, fromCache: fc } = await getCachedCSV(forceRefresh);
-    fromCache = fc;
+    // Flash the freshness label green briefly
+    const fl = document.getElementById('freshness-label');
+    if(fl) { fl.style.color='#27AE60'; setTimeout(()=>fl.style.color='',2000); }
 
-    const rows = parseRows(csv);
-    _allRows = rows;
-    renderFromRows(rows, fromCache);
-
-    if(!fromCache) {
-      // Flash the freshness label green briefly
-      const fl = document.getElementById('freshness-label');
-      if(fl) { fl.style.color='#27AE60'; setTimeout(()=>fl.style.color='',2000); }
-    }
-
-  } catch(err) {
-    console.error('[loadData]', err);
-    const eb = document.getElementById('errorBar');
-    document.getElementById('errorMsg').textContent =
-      'Could not reach Google Sheets: '+err.message+'. Showing cached data.';
-    eb.classList.add('show');
-    // If we still have nothing rendered, try localStorage emergency fallback
-    if(!_allRows) {
-      const lsCsv = localStorage.getItem(LS_CACHE_KEY);
-      if(lsCsv) {
-        try {
-          const rows = parseRows(lsCsv);
-          _allRows = rows;
-          renderFromRows(rows, true);
-        } catch(e2) { console.error('[Fallback]', e2); }
-      }
-    }
-  } finally {
-    loader.classList.add('hidden');
-    syncBtn.classList.remove('spinning');
-    hideSyncStatus(!document.getElementById('errorBar').classList.contains('show'));
-    _fetchInProgress = false;
-  }
+  } catch(err) {
+    console.error('[loadData]', err);
+    const eb = document.getElementById('errorBar');
+    document.getElementById('errorMsg').textContent = 'Could not load sheets: ' + err.message;
+    eb.classList.add('show');
+  } finally {
+    loader.classList.add('hidden');
+    syncBtn.classList.remove('spinning');
+    hideSyncStatus(!document.getElementById('errorBar').classList.contains('show'));
+    _fetchInProgress = false;
+  }
 }
 
 function syncData() {
-  // Force-refresh skips all caches and goes straight to Google Sheets
-  // But the dashboard stays visible — only the progress bar moves
-  loadData(true);
+  loadData(true);
 }
 
 /* =====================================================
-   NAVIGATION
-   ===================================================== */
+   NAVIGATION
+   ===================================================== */
 function showSection(name, btn) {
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  const el = document.getElementById('section-'+name);
-  if(el) el.classList.add('active');
-  if(btn) btn.classList.add('active');
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const el = document.getElementById('section-'+name);
+  if(el) el.classList.add('active');
+  if(btn) btn.classList.add('active');
 }
 
 /* =====================================================
-   AUTO-REFRESH — respects shared cache TTL
-   ===================================================== */
-setInterval(()=>loadData(false), FS_CACHE_TTL);
+   AUTO-REFRESH
+   ===================================================== */
+setInterval(()=>loadData(false), 30 * 60 * 1000); // 30 minutes
 
 /* =====================================================
-   BOOT
-   ===================================================== */
+   BOOT
+   ===================================================== */
 initFirebase();
 setupAuth();
-// If Firebase config is not yet filled in, auth gate bypasses automatically
-// and loadData is called directly from setupAuth()
 </script>
 </body>
 </html>
