@@ -74,7 +74,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .auth-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 20px;border-radius:10px;font-size:14px;font-weight:500;color:var(--text);background:#fff;border:1.5px solid rgba(0,0,0,0.14);cursor:pointer;font-family:var(--font);transition:all 0.18s;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
 .auth-btn:hover{background:#F7F7F7;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
 .auth-btn img{width:20px;height:20px}
-.auth-err{font-size:12px;color:var(--red);margin-top:12px;display:none}
+.auth-err{font-size:12px;color:var(--red);margin-top:12px;display:none;text-align:left;line-height:1.5;background:var(--red4);border:1px solid var(--red3);border-radius:8px;padding:8px 12px}
+.auth-btn:disabled{opacity:0.65;cursor:not-allowed;pointer-events:none}
+.auth-btn:disabled svg{display:inline-block}
 .auth-user-strip{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:20px;background:var(--red4);border:1px solid var(--red3);font-size:11px;font-weight:500;color:var(--red);cursor:pointer;flex-shrink:0}
 .auth-user-strip img{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--red3)}
 
@@ -234,12 +236,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       Continue with Google
     </button>
     <div class="auth-err" id="authErr"></div>
+    <div style="margin-top:16px;font-size:10px;color:var(--text3);text-align:center">
+      Project: <span id="fb-project-hint" style="font-family:var(--mono)">—</span>
+    </div>
   </div>
 </div>
 
 <div class="sync-toast" id="syncToast"></div>
 
-<div class="loader-overlay" id="loader">
+<div class="loader-overlay hidden" id="loader">
   <div class="loader-spinner"></div>
   <div class="loader-text" id="loader-text">Loading dashboard…</div>
   <div class="loader-sub" id="loader-sub">Fetching data</div>
@@ -743,6 +748,10 @@ let _fb = null, _auth = null, _db = null, _fbReady = false;
 let _currentUser = null;
 
 function initFirebase() {
+  // Show project ID in auth card so engineers can verify correct config at a glance
+  const hintEl = document.getElementById('fb-project-hint');
+  if (hintEl) hintEl.textContent = FIREBASE_CONFIG.projectId || '?';
+
   try {
     firebase.initializeApp(FIREBASE_CONFIG);
     _auth = firebase.auth();
@@ -750,9 +759,17 @@ function initFirebase() {
     _fb   = firebase;
     try { firebase.analytics(); } catch(ae) {}
     _fbReady = true;
+    console.info('[Firebase] Initialised. Project:', FIREBASE_CONFIG.projectId,
+                 '| Auth domain:', FIREBASE_CONFIG.authDomain);
   } catch(e) {
-    console.warn('[Firebase] Init failed — running in offline/no-auth mode:', e.message);
+    console.error('[Firebase] Init failed:', e.code, e.message);
     _fbReady = false;
+    // Show the error in the auth card so it's immediately visible
+    const errEl = document.getElementById('authErr');
+    if (errEl) {
+      errEl.textContent = 'Firebase init error: ' + e.message + '. Check your config.';
+      errEl.style.display = 'block';
+    }
   }
 }
 
@@ -760,45 +777,88 @@ function initFirebase() {
    AUTH
    ===================================================== */
 function setupAuth() {
+  // If Firebase failed to initialise (wrong config, offline), skip auth gate entirely
   if (!_fbReady) {
+    console.warn('[Auth] Firebase not ready — bypassing auth gate');
     document.getElementById('auth-gate').classList.add('hidden');
     loadData(false);
     return;
   }
 
   const provider = new firebase.auth.GoogleAuthProvider();
+  // hd hint shows org accounts first — NOT a server-side restriction
   provider.setCustomParameters({ hd: ALLOWED_DOMAIN });
+  // Request email + profile so we can read the email for domain check
+  provider.addScope('email');
+  provider.addScope('profile');
 
-  document.getElementById('googleSignInBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('googleSignInBtn');
+
+  btn.addEventListener('click', async () => {
     clearAuthErr();
+
+    // Visual feedback — user knows the click registered
+    const origHTML = btn.innerHTML;
+    btn.innerHTML = '<svg style="width:18px;height:18px;animation:spin 0.8s linear infinite" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="8"/></svg>&nbsp; Signing in…';
+    btn.disabled = true;
+
     try {
       const result = await _auth.signInWithPopup(provider);
-      const email = result.user.email || '';
+      const email = (result.user.email || '').toLowerCase().trim();
+
       if (!email.endsWith('@' + ALLOWED_DOMAIN)) {
         await _auth.signOut();
-        showAuthErr('Access restricted to @' + ALLOWED_DOMAIN + ' accounts.');
+        btn.innerHTML = origHTML;
+        btn.disabled = false;
+        showAuthErr('Access restricted to @' + ALLOWED_DOMAIN + ' accounts. You signed in as: ' + email);
         return;
       }
+      // Success — onAuthStateChanged will handle the rest
     } catch(e) {
-      showAuthErr(e.message || 'Sign-in failed. Please try again.');
+      btn.innerHTML = origHTML;
+      btn.disabled = false;
+
+      // Distinguish the most common failure modes clearly
+      if (e.code === 'auth/popup-blocked') {
+        showAuthErr('Popup was blocked by your browser. Please allow popups for this site and try again.');
+      } else if (e.code === 'auth/popup-closed-by-user') {
+        showAuthErr('Sign-in window was closed. Click the button again to try.');
+      } else if (e.code === 'auth/unauthorized-domain') {
+        showAuthErr('This domain is not authorised in Firebase. Add it under Authentication → Settings → Authorised domains in your Firebase Console.');
+      } else if (e.code === 'auth/invalid-api-key' || e.code === 'auth/configuration-not-found') {
+        showAuthErr('Firebase configuration error. Check that the API key and project ID are correct.');
+      } else if (e.code === 'auth/network-request-failed') {
+        showAuthErr('Network error. Check your internet connection and try again.');
+      } else {
+        showAuthErr((e.message || 'Sign-in failed.') + ' (Code: ' + (e.code || 'unknown') + ')');
+      }
+      console.error('[Auth] Sign-in error:', e.code, e.message);
     }
   });
 
   _auth.onAuthStateChanged(user => {
     _currentUser = user;
-    if (user && user.email && user.email.endsWith('@' + ALLOWED_DOMAIN)) {
+    if (user && user.email && user.email.toLowerCase().endsWith('@' + ALLOWED_DOMAIN)) {
+      // Valid domain — grant access
       document.getElementById('auth-gate').classList.add('hidden');
       const strip = document.getElementById('userStrip');
-      strip.style.display = 'flex';
-      document.getElementById('userName').textContent = user.displayName || user.email.split('@')[0];
+      if (strip) strip.style.display = 'flex';
+      const nameEl = document.getElementById('userName');
+      if (nameEl) nameEl.textContent = user.displayName || user.email.split('@')[0];
       const av = document.getElementById('userAvatar');
-      if (user.photoURL) { av.src = user.photoURL; av.style.display=''; }
-      else { av.style.display='none'; }
+      if (av) {
+        if (user.photoURL) { av.src = user.photoURL; av.style.display = ''; }
+        else { av.style.display = 'none'; }
+      }
+      // Reset button state (in case user was mid-sign-in on another tab)
+      if (btn) { btn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google"> Continue with Google'; btn.disabled = false; }
       loadData(false);
     } else if (user) {
+      // Signed in but wrong domain
       _auth.signOut();
-      showAuthErr('Access restricted to @' + ALLOWED_DOMAIN + ' accounts.');
+      showAuthErr('Access is restricted to @' + ALLOWED_DOMAIN + ' accounts. Signed in as: ' + user.email);
     }
+    // No user = auth gate stays visible, nothing to do
   });
 }
 
@@ -2340,109 +2400,12 @@ function renderPredictive(d, P) {
         </div>
       </div>`;
     });
-    pbEl.innerHTML += `<div style="font-size:9.5px;color:var(--text3);margin-top:8px">Bar = IQR (25th–75th percentile). Red line = Median recovery likelihood per risk bucket based on S-curve mapping.</div>`;
+    pbEl.innerHTML+=`<div style="font-size:9.5px;color:var(--text3);margin-top:8px">Bar = IQR (25th–75th percentile). Red line = median. Highest absorption zone for new unit pricing.</div>`;
   }
 }
 
-/* =====================================================
-   AI REPORT GENERATOR
-   ===================================================== */
-async function downloadAIReport() {
-  const btn = document.getElementById('reportBtn');
-  const originalText = btn.innerHTML;
-  btn.innerHTML = 'Generating...';
-  btn.disabled = true;
-
-  try {
-    const yr = document.getElementById('filterYear').value;
-    const qtr = document.getElementById('filterQuarter').value;
-    const periodStr = yr === 'all' ? 'All Years' : (qtr === 'all' ? yr : yr + ' ' + qtr);
-
-    // Read current metrics directly off the screen
-    const k_rev = document.getElementById('k-totalrev').textContent;
-    const k_units = document.getElementById('k-units').textContent;
-    const k_coll = document.getElementById('k-collected').textContent;
-    const k_out = document.getElementById('k-outstanding').textContent;
-    const k_props = document.getElementById('k-props').textContent;
-    
-    // SECURE API KEY HANDLING
-    let groqKey = localStorage.getItem('GROQ_API_KEY');
-    
-    if (!groqKey || groqKey.trim() === '' || groqKey === 'null') {
-        groqKey = prompt("Please enter your Groq API Key:\n\n(It will be saved securely in your browser's local storage so you don't have to enter it again.)");
-        if (groqKey && groqKey.trim() !== "") {
-            localStorage.setItem('GROQ_API_KEY', groqKey.trim());
-        } else {
-            throw new Error("Report generation cancelled. A Groq API Key is required.");
-        }
-    }
-
-    const promptText = `Act as a professional senior data analyst tasked with extracting key insights from each period currently under view linked to the "year" or "quarter" dropdowns, which dynamically populates the dashboard.
-
-PERIOD IN VIEW: ${periodStr}
-PORTFOLIO METRICS FOR THIS PERIOD:
-- Total Portfolio Revenue: ${k_rev}
-- Total Units: ${k_units}
-- Total Collected: ${k_coll}
-- Outstanding Balance: ${k_out}
-- Active Properties: ${k_props}
-
-Please write a structured, executive-level Performance Report tailored exactly to what this period reveals. Highlight trends, identify risks regarding outstanding balances, and provide strategic recommendations. Keep formatting clean with professional headers and bullet points.`;
-
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${groqKey}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: promptText }]
-      })
-    });
-
-    if (!res.ok) {
-       if (res.status === 401 || res.status === 403) {
-           localStorage.removeItem('GROQ_API_KEY'); 
-           throw new Error('Invalid API Key. The bad key has been deleted. Please click Download Report again to enter a valid Groq API Key.');
-       }
-       throw new Error('API Error - Status: ' + res.status);
-    }
-    
-    const data = await res.json();
-    const reportText = data.choices[0].message.content;
-
-    // Convert AI markdown to a clean Microsoft Word Document (.doc)
-    const htmlContent = `
-      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head><meta charset='utf-8'><title>Performance Report</title></head>
-      <body style="font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.6;">
-        <h1 style="color:#C0392B;">Mixta Africa Performance Report</h1>
-        <h3>Period Evaluated: ${periodStr}</h3>
-        <hr style="border:1px solid #ccc;">
-        ${reportText.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/### (.*?)<br>/g, '<h3 style="color:#2C3E50; margin-top:20px;">$1</h3>')}
-      </body>
-      </html>
-    `;
-
-    // Download the file
-    const blob = new Blob([htmlContent], { type: 'application/msword' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Mixta_Report_${periodStr.replace(/\s+/g, '_')}.doc`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-  } catch (e) {
-    alert(e.message);
-  } finally {
-    btn.innerHTML = originalText;
-    btn.disabled = false;
-  }
-}
+/* ─── HOOK INTO EXISTING RENDER PIPELINE ────────────── */
+let _lastAllRows = null;
 
 /* =====================================================
    AUTO-REFRESH
