@@ -42,9 +42,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .auth-user-strip{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:20px;background:var(--red4);border:1px solid var(--red3);font-size:11px;font-weight:500;color:var(--red);cursor:pointer;flex-shrink:0}
 .auth-user-strip img{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--red3)}
 
-/* ── GLASS & HEADER ───────────────────────────────── */
-.glass{background:var(--card);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid var(--card-border);border-radius:var(--r);box-shadow:var(--shadow-md)}
-.hdr{background:rgba(255,255,255,0.88);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%);border-bottom:1px solid rgba(255,255,255,0.9);box-shadow:0 1px 20px rgba(0,0,0,0.06);position:sticky;top:0;z-index:200;padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:60px;gap:16px}
+/* ── HEADER ───────────────────────────────── */
+.hdr{background:rgba(255,255,255,0.88);backdrop-filter:blur(32px) saturate(200%);border-bottom:1px solid rgba(255,255,255,0.9);box-shadow:0 1px 20px rgba(0,0,0,0.06);position:sticky;top:0;z-index:200;padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:60px;gap:16px}
 .brand{display:flex;align-items:center;gap:12px;flex-shrink:0}
 .brand-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--red) 0%,var(--red2) 100%);border-radius:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(192,57,43,0.3);flex-shrink:0}
 .brand-icon svg{width:17px;height:17px;fill:white}
@@ -69,29 +68,27 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .loader-spinner{width:40px;height:40px;border:3px solid var(--red3);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite}
 .loader-text{font-size:13px;color:var(--text2);font-weight:500}
 .loader-sub{font-size:11px;color:var(--text3)}
-.sync-toast{position:fixed;top:0;left:0;right:0;z-index:500;height:3px;background:linear-gradient(90deg,var(--red),var(--red2));transform:scaleX(0);transform-origin:left;transition:transform 0.3s ease,opacity 0.4s;opacity:0}
-.sync-toast.active{opacity:1;animation:progress-bar 2.5s ease-in-out infinite alternate}
-.sync-toast.done{transform:scaleX(1);opacity:0;transition:transform 0.2s,opacity 0.5s 0.2s}
-@keyframes progress-bar{from{transform:scaleX(0.05)}to{transform:scaleX(0.85)}}
 .sync-status{display:none;align-items:center;gap:5px;font-size:10px;color:var(--text3);padding:3px 8px;border-radius:10px;background:rgba(0,0,0,0.04);white-space:nowrap}
 .sync-status.show{display:flex}
 .sync-dot{width:5px;height:5px;border-radius:50%;background:var(--red);animation:pulse 1s ease-in-out infinite}
 .error-bar{display:none;background:#FFF3CD;border:1px solid #FFEAA7;border-radius:8px;padding:10px 16px;margin:12px 28px 0;font-size:12px;color:#856404;align-items:center;gap:8px}
 .error-bar.show{display:flex}
-
-/* ── SCHEMA WARN BANNER ───────────────────────────── */
 .schema-warn{display:none;background:#EBF5FB;border:1px solid #AED6F1;border-radius:8px;padding:9px 16px;margin:8px 28px 0;font-size:11px;color:#1A5276;align-items:center;gap:8px;flex-wrap:wrap}
 .schema-warn.show{display:flex}
 
-/* ── MAIN ─────────────────────────────────────────── */
+/* ── MAIN & GRIDS ─────────────────────────────────── */
 .main{padding:22px 28px;max-width:1600px;margin:0 auto}
 .section{display:none}
 .section.active{display:block;animation:fadeIn 0.35s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.g21{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
+.g32{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px}
+.full{margin-bottom:14px}
 
-/* ── KPI ──────────────────────────────────────────── */
+/* ── CARDS & KPIS ─────────────────────────────────── */
 .kpi-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:18px}
-.kpi{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.92);border-radius:15px;box-shadow:var(--shadow-sm);padding:16px 18px;position:relative;overflow:hidden;transition:box-shadow 0.2s,transform 0.2s}
+.kpi{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.92);border-radius:15px;box-shadow:var(--shadow-sm);padding:16px 18px;position:relative;overflow:hidden;transition:box-shadow 0.2s,transform 0.2s}
 .kpi:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--red),var(--red2));border-radius:15px 15px 0 0}
 .kpi-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px}
@@ -100,15 +97,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .kpi-sub{font-size:10px;color:var(--text3);margin-top:4px}
 .kpi-sub.up{color:#27AE60}.kpi-sub.dn{color:var(--red)}
 
-/* ── GRIDS ────────────────────────────────────────── */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
-.g21{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
-.g32{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px}
-.full{margin-bottom:14px}
-
-/* ── CHART CARD ───────────────────────────────────── */
-.cc{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.92);border-radius:var(--r);box-shadow:var(--shadow-sm);padding:20px 22px;transition:box-shadow 0.2s}
+.cc{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.92);border-radius:var(--r);box-shadow:var(--shadow-sm);padding:20px 22px;transition:box-shadow 0.2s}
 .cc:hover{box-shadow:var(--shadow-md)}
 .ch{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:8px}
 .ct{font-size:13.5px;font-weight:600;color:var(--text);letter-spacing:-.2px}
@@ -116,33 +105,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .badge{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:500;flex-shrink:0}
 .br{background:var(--red4);color:var(--red);border:1px solid var(--red3)}
 .bg_{background:#F0F0F4;color:var(--text2);border:1px solid #E0E0E8}
-.bgrn{background:#EAFAF1;color:#1E8449;border:1px solid #A9DFBF}
 .cw{position:relative;width:100%}
 
-/* ── SPARKLINE BARS ───────────────────────────────── */
+/* ── UI COMPONENTS ────────────────────────────────── */
 .sl-row{display:flex;align-items:center;gap:8px;margin-bottom:9px}
 .sl-lbl{width:190px;font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
 .sl-bw{flex:1;height:7px;background:#F0F0F4;border-radius:4px;overflow:hidden}
 .sl-bf{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--red5),var(--red2))}
 .sl-val{width:110px;text-align:right;color:var(--text);font-family:var(--mono);font-size:10.5px;font-weight:500;flex-shrink:0}
 .rn{width:20px;height:20px;background:var(--red4);color:var(--red);border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;font-family:var(--mono);flex-shrink:0}
-
-/* ── LEGEND ───────────────────────────────────────── */
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px}
 .li{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--text2)}
 .ld{width:8px;height:8px;border-radius:2px;flex-shrink:0}
-
-/* ── INSIGHT STRIP ────────────────────────────────── */
-.ins-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
-.ins{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.92);border-radius:13px;box-shadow:var(--shadow-sm);padding:15px 17px;display:flex;gap:12px;align-items:flex-start}
-.ins-ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.ins-ico.r{background:var(--red4)}.ins-ico.g{background:#EAFAF1}.ins-ico.a{background:#FEF9E7}.ins-ico.b{background:#EBF5FB}
-.ins-ico svg{width:17px;height:17px}
-.ins-ico.r svg{color:var(--red)}.ins-ico.g svg{color:#1E8449}.ins-ico.a svg{color:#D68910}.ins-ico.b svg{color:#1A5276}
-.ins-val{font-size:18px;font-weight:600;color:var(--text);letter-spacing:-.4px}
-.ins-lbl{font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4}
-
-/* ── HEATMAP ──────────────────────────────────────── */
 .hm-cell{display:inline-block;width:36px;height:28px;border-radius:4px;font-size:9px;font-weight:500;font-family:var(--mono);text-align:center;line-height:28px;color:white;cursor:default;transition:transform 0.12s}
 .hm-cell:hover{transform:scale(1.12);z-index:2;position:relative}
 
@@ -156,11 +130,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .filter-divider{width:1px;height:20px;background:rgba(0,0,0,0.1);flex-shrink:0}
 .filter-count{font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-left:auto;white-space:nowrap}
 .freshness{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px}
-.sdiv{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;margin-top:6px;display:flex;align-items:center;gap:8px}
-.sdiv::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(0,0,0,0.07) 0%,transparent 100%)}
-.tbl-scroll{max-height:320px;overflow-y:auto}
-.tbl-scroll::-webkit-scrollbar{width:4px}
-.tbl-scroll::-webkit-scrollbar-thumb{background:var(--red3);border-radius:4px}
 
 /* ── RISK PILLS ───────────────────────────────────── */
 .risk-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:.3px}
@@ -170,18 +139,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .risk-medium{background:#FDF2E9;color:#E67E22}
 .risk-high{background:var(--red4);color:var(--red)}
 
-/* ── RESPONSIVE ───────────────────────────────────── */
-@media(max-width:1200px){
-  .kpi-strip{grid-template-columns:repeat(3,1fr)}
-  .ins-strip{grid-template-columns:repeat(2,1fr)}
-  .g21,.g32{grid-template-columns:1fr}
-}
-@media(max-width:768px){
-  .main{padding:14px}.hdr{padding:0 14px}
-  .kpi-strip{grid-template-columns:repeat(2,1fr)}
-  .g2,.g3,.g21,.g32{grid-template-columns:1fr}
-  .ins-strip{grid-template-columns:1fr}.nav{display:none}
-}
+/* ── STRATEGY SLIDERS ─────────────────────────────── */
+.slider-container{background:var(--white);padding:16px;border-radius:12px;border:1px solid var(--border);margin-bottom:12px;}
+.slider-label{display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:10px;}
+.slider-val{color:var(--red);font-family:var(--mono);}
+input[type=range]{width:100%;cursor:pointer;accent-color:var(--red);}
+
+@media(max-width:1200px){ .kpi-strip{grid-template-columns:repeat(3,1fr)} .g21,.g32{grid-template-columns:1fr} }
+@media(max-width:768px){ .main{padding:14px} .hdr{padding:0 14px} .kpi-strip{grid-template-columns:repeat(2,1fr)} .g2,.g3,.g21,.g32{grid-template-columns:1fr} .nav{display:none} }
 </style>
 </head>
 <body>
@@ -200,8 +165,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <div class="auth-err" id="authErr"></div>
   </div>
 </div>
-
-<div class="sync-toast" id="syncToast"></div>
 
 <div class="loader-overlay" id="loader">
   <div class="loader-spinner"></div>
@@ -227,13 +190,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <button class="nav-btn" onclick="showSection('collections',this)">Collections</button>
     <button class="nav-btn" onclick="showSection('agents',this)">Agents</button>
     <button class="nav-btn" onclick="showSection('buyers',this)">Buyers</button>
+    <button class="nav-btn" onclick="showSection('strategy',this)">Strategy ⚡</button>
   </nav>
 
   <div class="hdr-right">
     <div class="freshness" id="freshness-label">—</div>
     
     <button class="sync-btn" id="reportBtn" onclick="downloadAIReport()" style="background:#EBF5FB;color:#2980B9;border-color:#AED6F1;margin-right:10px;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
       Download Report
     </button>
 
@@ -243,11 +207,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       Sync
     </button>
     <div class="live-badge"><div class="live-dot"></div><span id="record-count">—</span> records</div>
-    <div class="auth-user-strip" id="userStrip" style="display:none" onclick="signOut()">
-      <img id="userAvatar" src="" alt="">
-      <span id="userName"></span>
-      <span style="opacity:.6">· Sign out</span>
-    </div>
   </div>
 </header>
 
@@ -307,24 +266,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <div class="kpi"><div class="kpi-label">Outstanding Balance</div><div class="kpi-value red" id="k-outstanding">—</div><div class="kpi-sub dn" id="k-out-pct">—</div></div>
     <div class="kpi"><div class="kpi-label">Mortgage Transactions</div><div class="kpi-value" id="k-mortgage">—</div><div class="kpi-sub">Financed units</div></div>
     <div class="kpi"><div class="kpi-label">Active Properties</div><div class="kpi-value" id="k-props">—</div><div class="kpi-sub" id="k-comms">—</div></div>
-  </div>
-  <div class="ins-strip">
-    <div class="ins">
-      <div class="ins-ico r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-      <div><div class="ins-val" id="ins-peak-rev">—</div><div class="ins-lbl" id="ins-peak-prop">—</div></div>
-    </div>
-    <div class="ins">
-      <div class="ins-ico g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
-      <div><div class="ins-val" id="ins-top-prop-rev">—</div><div class="ins-lbl" id="ins-top-prop-name">—</div></div>
-    </div>
-    <div class="ins">
-      <div class="ins-ico a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
-      <div><div class="ins-val" id="ins-peak-year">—</div><div class="ins-lbl" id="ins-peak-year-lbl">—</div></div>
-    </div>
-    <div class="ins">
-      <div class="ins-ico b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
-      <div><div class="ins-val" id="ins-top-channel">—</div><div class="ins-lbl" id="ins-top-channel-lbl">—</div></div>
-    </div>
   </div>
   <div class="g32">
     <div class="cc">
@@ -501,7 +442,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <div class="g2">
     <div class="cc">
       <div class="ch"><div><div class="ct">Buyer Type Breakdown</div><div class="cs">Local vs Diaspora vs Staff vs Corporate</div></div></div>
-      <div class="cw" style="height:240px"><canvas id="c-buyertype"></canvas></div>
+      <div class="cw" style="height:240px" id="c-buyertype-container"><canvas id="c-buyertype"></canvas></div>
     </div>
     <div class="cc">
       <div class="ch"><div><div class="ct">Buyer State Distribution</div><div class="cs">Top states by buyer count</div></div></div>
@@ -520,13 +461,47 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   </div>
 </div>
 
+<div id="section-strategy" class="section">
+  <div class="kpi-strip">
+    <div class="kpi"><div class="kpi-label">Baseline 12M Liquidity</div><div class="kpi-value" id="st-base-liq">—</div><div class="kpi-sub">Expected cash flow with no changes</div></div>
+    <div class="kpi"><div class="kpi-label">Scenario 12M Liquidity</div><div class="kpi-value red" id="st-scen-liq">—</div><div class="kpi-sub" id="st-liq-diff">—</div></div>
+    <div class="kpi"><div class="kpi-label">Baseline Defaults</div><div class="kpi-value" id="st-base-risk">—</div><div class="kpi-sub">Receivables likely to fail</div></div>
+    <div class="kpi"><div class="kpi-label">Scenario Defaults</div><div class="kpi-value" id="st-scen-risk">—</div><div class="kpi-sub" id="st-risk-diff">—</div></div>
+    <div class="kpi"><div class="kpi-label">Baseline New Rev</div><div class="kpi-value" id="st-base-new">—</div><div class="kpi-sub">Based on historical run-rate</div></div>
+    <div class="kpi"><div class="kpi-label">Scenario New Rev</div><div class="kpi-value" id="st-scen-new">—</div><div class="kpi-sub" id="st-new-diff">—</div></div>
+  </div>
+  
+  <div class="g21">
+    <div class="cc">
+      <div class="ch"><div><div class="ct">Scenario Simulator</div><div class="cs">Adjust macroeconomic and strategic levers</div></div></div>
+      <div class="slider-container">
+         <div class="slider-label"><span>Macro: Collection Rate Shock</span><span class="slider-val" id="val-col-shock">0%</span></div>
+         <input type="range" id="sim-col-shock" min="-30" max="30" value="0" oninput="runSimulation()">
+         <div style="font-size:10px; color:var(--text3); margin-top:4px;">Simulates economic downturns or aggressive recovery drives.</div>
+      </div>
+      <div class="slider-container">
+         <div class="slider-label"><span>Strategy: Price Adjustment</span><span class="slider-val" id="val-price-shock">0%</span></div>
+         <input type="range" id="sim-price-shock" min="-20" max="50" value="0" oninput="runSimulation()">
+         <div style="font-size:10px; color:var(--text3); margin-top:4px;">Applies to projected new sales. (Assumes -0.5 elasticity on volume).</div>
+      </div>
+      <div class="slider-container">
+         <div class="slider-label"><span>Marketing: Demand/Velocity Shift</span><span class="slider-val" id="val-dem-shock">0%</span></div>
+         <input type="range" id="sim-dem-shock" min="-50" max="100" value="0" oninput="runSimulation()">
+         <div style="font-size:10px; color:var(--text3); margin-top:4px;">Simulates impact of shifting marketing budgets or agent incentives.</div>
+      </div>
+    </div>
+    <div class="cc">
+      <div class="ch"><div><div class="ct">Baseline vs Scenario Yield</div><div class="cs">Forward 12-Month Projection (₦ Billions)</div></div></div>
+      <div class="cw" style="height:250px"><canvas id="c-strategy"></canvas></div>
+    </div>
+  </div>
+</div>
+
 </main>
 
 <script>
 /* =====================================================
    FIREBASE CONFIG
-   ⚠️  Replace these placeholder values with your actual
-       Firebase project credentials before deploying.
    ===================================================== */
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyB2TvSXbXOAutbt0MqJeOrn-7hKfpaqfAo",
@@ -537,7 +512,6 @@ const FIREBASE_CONFIG = {
   appId:             "1:1012632142221:web:1aa118b847705bd1353dc4"
 };
 
-// Allowed email domain — only Mixta accounts can sign in
 const ALLOWED_DOMAIN = "mixtafrica.com";
 
 /* =====================================================
@@ -691,13 +665,6 @@ const topN     = (obj,n,valFn) => Object.entries(obj).map(([k,v])=>({k,v:valFn(v
 const setText  = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
 const sleep    = ms => new Promise(r => setTimeout(r, ms));
 
-function schemaHash(headers) {
-  const sorted = [...headers].sort().join(',');
-  let h = 0;
-  for(let i=0;i<sorted.length;i++){ h=(Math.imul(31,h)+sorted.charCodeAt(i))|0; }
-  return h.toString(36);
-}
-
 function normaliseRow(rawRow, headerMap) {
   const r = {};
   for(const [canonical, aliases] of Object.entries(headerMap)) {
@@ -785,8 +752,10 @@ async function getLiveSheetData() {
 }
 
 /* =====================================================
-   ANALYTICS ENGINE
+   ANALYTICS ENGINE & PREDICTIVE LOGIC
    ===================================================== */
+let _currentAnalytics = null;
+
 function enrichData(rows) {
   function getYearFromVal(val) {
     if (!val) return null;
@@ -1381,13 +1350,19 @@ function applyFilters() {
       analytics.quarterlyRev = [qRev['Q1'], qRev['Q2'], qRev['Q3'], qRev['Q4']];
   }
 
+  _currentAnalytics = analytics; // Save globally for the Simulator
   renderKPIs(analytics);
   renderCharts(analytics);
+  
+  if (document.getElementById('section-strategy').classList.contains('active')) {
+      runSimulation();
+  }
 }
 
 function resetFilters() {
-  ['filterYear','filterCommunity','filterAgent','filterRisk','filterPhase']
-    .forEach(id=>{ document.getElementById(id).value='all'; });
+  ['filterYear','filterQuarter','filterCommunity','filterAgent','filterRisk','filterPhase']
+    .forEach(id=>{ const el=document.getElementById(id); if(el) el.value='all'; });
+  updateQuarterDropdown();
   applyFilters();
 }
 
@@ -1404,6 +1379,7 @@ function renderFromRows(rows, fromCache) {
   analytics.currentYearFilter = 'all';
   analytics.currentQtrFilter = 'all';
 
+  _currentAnalytics = analytics;
   renderKPIs(analytics);
   renderCharts(analytics);
   updateFreshness(fromCache);
@@ -1491,6 +1467,97 @@ function showSection(name, btn) {
   const el = document.getElementById('section-'+name);
   if(el) el.classList.add('active');
   if(btn) btn.classList.add('active');
+  
+  if(name === 'strategy') { runSimulation(); }
+}
+
+/* =====================================================
+   STRATEGY SIMULATOR (ZERO-COST FORECASTING)
+   ===================================================== */
+function runSimulation() {
+  if (!_currentAnalytics) return;
+  const d = _currentAnalytics;
+  
+  const colShock = parseInt(document.getElementById('sim-col-shock').value);
+  const priceShock = parseInt(document.getElementById('sim-price-shock').value);
+  const demShock = parseInt(document.getElementById('sim-dem-shock').value);
+
+  document.getElementById('val-col-shock').textContent = (colShock > 0 ? '+' : '') + colShock + '%';
+  document.getElementById('val-price-shock').textContent = (priceShock > 0 ? '+' : '') + priceShock + '%';
+  document.getElementById('val-dem-shock').textContent = (demShock > 0 ? '+' : '') + demShock + '%';
+
+  // 1. Collections Logic (Liquidity from Outstanding)
+  const outstand = d.totalOut || 0;
+  const baseColRate = d.avgPctPaid || 50; 
+  const baseExpectedColl = outstand * (baseColRate / 100);
+  
+  let scenColRate = Math.max(0, Math.min(100, baseColRate + colShock));
+  const scenExpectedColl = outstand * (scenColRate / 100);
+  const scenRisk = outstand - scenExpectedColl;
+  const baseRisk = outstand - baseExpectedColl;
+
+  // 2. New Sales Logic (Using trailing year as baseline run-rate)
+  const baseVol = d.unitsByYear[d.unitsByYear.length - 1] || 0;
+  const baseAvgP = d.avgPriceByYear[d.avgPriceByYear.length - 1] || 0;
+  const baseNewRev = baseVol * baseAvgP;
+
+  // Price elasticity: 10% price hike = 5% volume drop
+  const elasticityEffect = priceShock * -0.5;
+  const netVolumeChange = demShock + elasticityEffect;
+  
+  const scenVol = Math.max(0, baseVol * (1 + (netVolumeChange / 100)));
+  const scenAvgP = baseAvgP * (1 + (priceShock / 100));
+  const scenNewRev = scenVol * scenAvgP;
+
+  // Update DOM KPIs
+  const baseLiq = baseExpectedColl + baseNewRev;
+  const scenLiq = scenExpectedColl + scenNewRev;
+
+  document.getElementById('st-base-liq').textContent = fB(baseLiq);
+  document.getElementById('st-scen-liq').textContent = fB(scenLiq);
+  document.getElementById('st-base-risk').textContent = fB(baseRisk);
+  document.getElementById('st-scen-risk').textContent = fB(scenRisk);
+  document.getElementById('st-base-new').textContent = fB(baseNewRev);
+  document.getElementById('st-scen-new').textContent = fB(scenNewRev);
+
+  // Differentials
+  const liqDiff = scenLiq - baseLiq;
+  const diffEl = document.getElementById('st-liq-diff');
+  diffEl.textContent = (liqDiff >= 0 ? '▲ +' : '▼ ') + fB(Math.abs(liqDiff));
+  diffEl.className = 'kpi-sub ' + (liqDiff >= 0 ? 'up' : 'dn');
+  
+  const riskDiff = scenRisk - baseRisk;
+  const rDiffEl = document.getElementById('st-risk-diff');
+  rDiffEl.textContent = (riskDiff >= 0 ? '▲ +' : '▼ ') + fB(Math.abs(riskDiff));
+  rDiffEl.className = 'kpi-sub ' + (riskDiff > 0 ? 'dn' : 'up');
+
+  const newDiff = scenNewRev - baseNewRev;
+  const nDiffEl = document.getElementById('st-new-diff');
+  nDiffEl.textContent = (newDiff >= 0 ? '▲ +' : '▼ ') + fB(Math.abs(newDiff));
+  nDiffEl.className = 'kpi-sub ' + (newDiff >= 0 ? 'up' : 'dn');
+
+  // Update Chart
+  if (chartRegistry['c-strategy']) {
+    chartRegistry['c-strategy'].data.datasets[0].data = [baseExpectedColl/1e9, scenExpectedColl/1e9];
+    chartRegistry['c-strategy'].data.datasets[1].data = [baseNewRev/1e9, scenNewRev/1e9];
+    chartRegistry['c-strategy'].update();
+  } else {
+    mkChart('c-strategy', {
+      type: 'bar',
+      data: {
+        labels: ['Baseline Forecast', 'Scenario Simulation'],
+        datasets: [
+          { label: 'Expected Recovery (from Outstanding)', data: [baseExpectedColl/1e9, scenExpectedColl/1e9], backgroundColor: C.blue },
+          { label: 'Projected New Sales', data: [baseNewRev/1e9, scenNewRev/1e9], backgroundColor: C.red }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: true, position: 'top', labels:{font:{size:10},boxWidth:9,boxHeight:9} } },
+        scales: { x: { stacked: true, grid:{display:false} }, y: { stacked: true, grid:{color:'rgba(0,0,0,0.04)'}, ticks: { callback: v => '₦' + v + 'B' } } }
+      }
+    });
+  }
 }
 
 /* =====================================================
@@ -1507,7 +1574,6 @@ async function downloadAIReport() {
     const qtr = document.getElementById('filterQuarter').value;
     const periodStr = yr === 'all' ? 'All Years' : (qtr === 'all' ? yr : yr + ' ' + qtr);
 
-    // Read current metrics directly off the screen
     const k_rev = document.getElementById('k-totalrev').textContent;
     const k_units = document.getElementById('k-units').textContent;
     const k_coll = document.getElementById('k-collected').textContent;
@@ -1522,10 +1588,7 @@ async function downloadAIReport() {
         if (groqKey && groqKey.trim() !== "") {
             localStorage.setItem('GROQ_API_KEY', groqKey.trim());
         } else {
-            alert("Report generation cancelled. A Groq API Key is required.");
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-            return;
+            throw new Error("Report generation cancelled. A Groq API Key is required.");
         }
     }
 
@@ -1558,14 +1621,12 @@ Please write a structured, executive-level Performance Report tailored exactly t
            localStorage.removeItem('GROQ_API_KEY'); 
            throw new Error('Invalid API Key. The bad key has been deleted. Please click Download Report again to enter a valid Groq API Key.');
        }
-       const errText = await res.text();
-       throw new Error(`API Error ${res.status}: ${errText}`);
+       throw new Error('API Error - Status: ' + res.status);
     }
     
     const data = await res.json();
     const reportText = data.choices[0].message.content;
 
-    // Convert AI markdown to a clean Microsoft Word Document (.doc)
     const htmlContent = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head><meta charset='utf-8'><title>Performance Report</title></head>
@@ -1578,7 +1639,6 @@ Please write a structured, executive-level Performance Report tailored exactly t
       </html>
     `;
 
-    // Download the file
     const blob = new Blob([htmlContent], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1600,7 +1660,7 @@ Please write a structured, executive-level Performance Report tailored exactly t
 /* =====================================================
    AUTO-REFRESH
    ===================================================== */
-setInterval(()=>loadData(false), 30 * 60 * 1000); // 30 minutes
+setInterval(()=>loadData(false), 30 * 60 * 1000);
 
 /* =====================================================
    BOOT
