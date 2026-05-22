@@ -1227,8 +1227,20 @@ function renderCharts(d) {
   const commRevSorted = d.communities.map((c,i)=>({c,r:d.commRevenue[i]})).sort((a,b)=>b.r-a.r);
   const topComms = commRevSorted.slice(0,Math.min(5,commRevSorted.length)).map(x=>x.c);
 
-  // ── OVERVIEW ──
-  mkChart('c-revyear',{type:'line',data:{labels:d.years,datasets:[{label:'Revenue ₦B',data:d.revByYear.map(v=>+(v/1e9).toFixed(2)),borderColor:C.red,backgroundColor:'rgba(192,57,43,0.07)',fill:true,tension:0.4,borderWidth:2.5,pointBackgroundColor:C.red,pointRadius:4,pointHoverRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
+ // ── OVERVIEW ──
+  // DYNAMIC CHART: Line for 'All Years', Bar for specific year
+  if (d.currentYearFilter === 'all') {
+    mkChart('c-revyear',{type:'line',data:{labels:d.years,datasets:[{label:'Revenue ₦B',data:d.revByYear.map(v=>+(v/1e9).toFixed(2)),borderColor:C.red,backgroundColor:'rgba(192,57,43,0.07)',fill:true,tension:0.4,borderWidth:2.5,pointBackgroundColor:C.red,pointRadius:4,pointHoverRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
+    document.querySelector('#c-revyear').parentElement.previousElementSibling.querySelector('.cs').textContent = 'Annual total selling price · ₦ Billions';
+  } else {
+    const qLabels = ['Q1', 'Q2', 'Q3', 'Q4'];
+    const activeQ = d.currentQtrFilter;
+    // Highlight logic: Red if 'all' or if it matches the specific quarter. Gray otherwise.
+    const bgColors = qLabels.map(q => (activeQ === 'all' || activeQ === q) ? C.red : '#E0E0E8');
+    
+    mkChart('c-revyear',{type:'bar',data:{labels:qLabels,datasets:[{label:'Revenue ₦B',data:d.quarterlyRev.map(v=>+(v/1e9).toFixed(2)),backgroundColor:bgColors,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
+    document.querySelector('#c-revyear').parentElement.previousElementSibling.querySelector('.cs').textContent = `Quarterly breakdown for ${d.currentYearFilter} · ₦ Billions`;
+  }
 
   mkChart('c-commdonut',{type:'doughnut',data:{labels:commRevSorted.map(x=>x.c),datasets:[{data:commRevSorted.map(x=>+(x.r/1e9).toFixed(2)),backgroundColor:commColors.slice(0,commRevSorted.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'64%',plugins:{tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B'}}}}});
   const legComm=document.getElementById('leg-comm'); legComm.innerHTML='';
@@ -1406,35 +1418,56 @@ function updateQuarterDropdown() {
 }
 
 function applyFilters() {
-  if(!_allRows) return;
-  const yr   = document.getElementById('filterYear').value;
-  const qtr  = document.getElementById('filterQuarter').value; // NEW
-  const com  = document.getElementById('filterCommunity').value;
-  const ag   = document.getElementById('filterAgent').value;
-  const risk = document.getElementById('filterRisk').value;
-  const ph   = document.getElementById('filterPhase').value;
+  if(!_allRows) return;
+  const yr   = document.getElementById('filterYear').value;
+  const qtr  = document.getElementById('filterQuarter').value; 
+  const com  = document.getElementById('filterCommunity').value;
+  const ag   = document.getElementById('filterAgent').value;
+  const risk = document.getElementById('filterRisk').value;
+  const ph   = document.getElementById('filterPhase').value;
 
-  let filtered = _allRows;
-  if(yr   !== 'all') filtered = filtered.filter(r=>r._year === yr);
-  if(qtr  !== 'all') filtered = filtered.filter(r=>r._quarter === qtr.substring(0,2)); // Matches "Q1"
-  if(com  !== 'all') filtered = filtered.filter(r=>r.community === com);
-  if(ag   !== 'all') filtered = filtered.filter(r=>r.agentGroup === ag);
-  if(risk !== 'all') filtered = filtered.filter(r=>r.collectionRisk === risk);
-  if(ph   !== 'all') filtered = filtered.filter(r=>r.phase === ph);
+  let filtered = _allRows;
+  if(yr   !== 'all') filtered = filtered.filter(r=>r._year === yr);
+  if(qtr  !== 'all') filtered = filtered.filter(r=>r._quarter === qtr); 
+  if(com  !== 'all') filtered = filtered.filter(r=>r.community === com);
+  if(ag   !== 'all') filtered = filtered.filter(r=>r.agentGroup === ag);
+  if(risk !== 'all') filtered = filtered.filter(r=>r.collectionRisk === risk);
+  if(ph   !== 'all') filtered = filtered.filter(r=>r.phase === ph);
 
-  const isFiltered = (yr!=='all'||qtr!=='all'||com!=='all'||ag!=='all'||risk!=='all'||ph!=='all');
-  document.getElementById('resetBtn').style.display = isFiltered ? '' : 'none';
+  const isFiltered = (yr!=='all'||qtr!=='all'||com!=='all'||ag!=='all'||risk!=='all'||ph!=='all');
+  document.getElementById('resetBtn').style.display = isFiltered ? '' : 'none';
 
-  const total=_allRows.length, shown=filtered.length;
-  document.getElementById('filterCount').textContent = isFiltered
-    ? `Showing ${shown.toLocaleString()} of ${total.toLocaleString()} records`
-    : `${total.toLocaleString()} records`;
+  const total=_allRows.length, shown=filtered.length;
+  document.getElementById('filterCount').textContent = isFiltered
+    ? `Showing ${shown.toLocaleString()} of ${total.toLocaleString()} records`
+    : `${total.toLocaleString()} records`;
 
-  const analytics = computeAnalytics(filtered);
-  renderKPIs(analytics);
-  renderCharts(analytics);
+  const analytics = computeAnalytics(filtered);
+
+  // NEW: Inject Quarterly Data for the Chart (retains all 4 quarters for visual context)
+  analytics.currentYearFilter = yr;
+  analytics.currentQtrFilter = qtr;
+  
+  if (yr !== 'all') {
+      // Re-filter but IGNORE the quarter filter so we can draw all 4 bars
+      let yearBase = _allRows.filter(r => r._year === yr);
+      if(com !== 'all') yearBase = yearBase.filter(r=>r.community === com);
+      if(ag  !== 'all') yearBase = yearBase.filter(r=>r.agentGroup === ag);
+      if(risk!== 'all') yearBase = yearBase.filter(r=>r.collectionRisk === risk);
+      if(ph  !== 'all') yearBase = yearBase.filter(r=>r.phase === ph);
+      
+      const qRev = { Q1: 0, Q2: 0, Q3: 0, Q4: 0 };
+      yearBase.forEach(r => {
+         if (r._quarter && qRev[r._quarter] !== undefined) {
+             qRev[r._quarter] += (r._sp || 0);
+         }
+      });
+      analytics.quarterlyRev = [qRev['Q1'], qRev['Q2'], qRev['Q3'], qRev['Q4']];
+  }
+
+  renderKPIs(analytics);
+  renderCharts(analytics);
 }
-
 function resetFilters() {
   ['filterYear','filterCommunity','filterAgent','filterRisk','filterPhase']
     .forEach(id=>{ document.getElementById(id).value='all'; });
@@ -1555,7 +1588,7 @@ async function downloadAIReport() {
   try {
     const yr = document.getElementById('filterYear').value;
     const qtr = document.getElementById('filterQuarter').value;
-    const periodStr = yr === 'all' ? 'All Years' : (qtr === 'all' ? yr : qtr);
+    const periodStr = yr === 'all' ? 'All Years' : (qtr === 'all' ? yr : yr + ' ' + qtr);
 
     // Read current metrics directly off the screen
     const k_rev = document.getElementById('k-totalrev').textContent;
@@ -1564,11 +1597,15 @@ async function downloadAIReport() {
     const k_out = document.getElementById('k-outstanding').textContent;
     const k_props = document.getElementById('k-props').textContent;
     
-    // Uses the API key from your GitHub Actions / Environment secrets
-    const groqKey = window.GROQ_API_KEY || 'YOUR_GROQ_API_KEY_HERE';
-
+    // Securely get or ask for the Groq API Key
+    let groqKey = window.GROQ_API_KEY || localStorage.getItem('GROQ_API_KEY');
     if (!groqKey || groqKey === 'YOUR_GROQ_API_KEY_HERE') {
-        throw new Error('Groq API Key is missing. Ensure GROQ_API_KEY is set in your environment or secrets.');
+        groqKey = prompt("Please enter your Groq API Key to generate reports:\n(It will be saved securely in your browser)");
+        if (groqKey) {
+            localStorage.setItem('GROQ_API_KEY', groqKey);
+        } else {
+            throw new Error('Groq API Key is required to generate AI reports.');
+        }
     }
 
     const prompt = `Act as a professional senior data analyst tasked with extracting key insights from each period currently under view linked to the "year" or "quarter" dropdowns, which dynamically populates the dashboard.
@@ -1595,7 +1632,12 @@ Please write a structured, executive-level Performance Report tailored exactly t
       })
     });
 
-    if (!res.ok) throw new Error('API Error - Please check your GROQ_API_KEY');
+    if (!res.ok) {
+       // If the key is invalid, remove it from storage so the user is prompted again next time
+       if(res.status === 401 || res.status === 403) localStorage.removeItem('GROQ_API_KEY');
+       throw new Error('API Error - Please check your GROQ_API_KEY');
+    }
+    
     const data = await res.json();
     const reportText = data.choices[0].message.content;
 
@@ -1630,10 +1672,15 @@ Please write a structured, executive-level Performance Report tailored exactly t
     btn.disabled = false;
   }
 }
-  
+
 /* =====================================================
-   BOOT
-   ===================================================== */
+   AUTO-REFRESH
+   ===================================================== */
+setInterval(()=>loadData(false), 30 * 60 * 1000); // 30 minutes
+
+/* =====================================================
+   BOOT
+   ===================================================== */
 initFirebase();
 setupAuth();
 </script>
