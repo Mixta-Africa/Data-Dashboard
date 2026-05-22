@@ -864,8 +864,48 @@ async function getLiveSheetData() {
    ANALYTICS ENGINE
    ===================================================== */
 // NEW: Processes dates BEFORE filters are built
+// NEW: Processes dates and perfectly converts Excel serial numbers
 function enrichData(rows) {
-  const monthMap = {jan:1,feb:1,mar:1,apr:2,may:2,jun:2,jul:3,aug:3,sep:3,oct:4,nov:4,dec:4};
+  // Helper to safely extract a Year from text OR an Excel Date Serial
+  function getYearFromVal(val) {
+    if (!val) return null;
+    let s = String(val).trim();
+    
+    // Check if it's an Excel serial number (e.g., 45334)
+    if (/^\d{5}$/.test(s)) {
+       let n = parseInt(s, 10);
+       if (n > 30000 && n < 60000) { // Valid dates between 1982 and 2064
+          let d = new Date((n - 25569) * 86400 * 1000);
+          return String(d.getFullYear());
+       }
+    }
+    // Otherwise look for a normal 4-digit year (e.g. 2018, Dec 2023)
+    let yrMatch = s.match(/\b(20\d{2})\b/);
+    return yrMatch ? yrMatch[1] : null;
+  }
+
+  // Helper to safely extract a Quarter from text OR an Excel Date Serial
+  function getQuarterFromVal(val) {
+    if (!val) return null;
+    let s = String(val).trim();
+    
+    // Check if it's an Excel serial number (e.g., 45334)
+    if (/^\d{5}$/.test(s)) {
+       let n = parseInt(s, 10);
+       if (n > 30000 && n < 60000) {
+          let d = new Date((n - 25569) * 86400 * 1000);
+          return 'Q' + Math.ceil((d.getMonth() + 1) / 3);
+       }
+    }
+    // Otherwise look for month text (e.g. Jan, February)
+    const monthMap = {jan:1,feb:1,mar:1,apr:2,may:2,jun:2,jul:3,aug:3,sep:3,oct:4,nov:4,dec:4};
+    let moMatch = s.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/i);
+    if (moMatch) {
+       return 'Q' + monthMap[moMatch[1].toLowerCase()];
+    }
+    return null;
+  }
+
   rows.forEach(r => {
     r._sp    = num(r.sellingPrice);
     r._paid  = num(r.totalPaid);
@@ -875,20 +915,9 @@ function enrichData(rows) {
     r._psqm  = num(r.pricePerSqM);
     r._base  = num(r.basePrice);
     
-    // Extract Year
-    let yrMatch = String(r.revYear || '').match(/(\d{4})/);
-    if(!yrMatch) yrMatch = String(r.soldDate || '').match(/(\d{4})/);
-    r._year = yrMatch ? yrMatch[1] : null;
-
-    // Extract Quarter
-    let moMatch = String(r.revYear || '').match(/([a-zA-Z]{3})/);
-    if(!moMatch) moMatch = String(r.soldDate || '').match(/([a-zA-Z]{3})/);
-    if (moMatch) {
-       const q = monthMap[moMatch[1].toLowerCase()];
-       r._quarter = q ? 'Q' + q : null;
-    } else {
-       r._quarter = null;
-    }
+    // Safely Extract Year & Quarter from the best available date columns
+    r._year = getYearFromVal(r.revYear) || getYearFromVal(r.soldDate) || getYearFromVal(r.paymentReceipt);
+    r._quarter = getQuarterFromVal(r.revYear) || getQuarterFromVal(r.soldDate) || getQuarterFromVal(r.paymentReceipt);
   });
 }
 
