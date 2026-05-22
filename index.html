@@ -13,6 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
 
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -524,12 +525,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
        → Your apps → Web app → Config snippet
    ===================================================== */
 const FIREBASE_CONFIG = {
-  apiKey:            "REPLACE_WITH_YOUR_API_KEY",
-  authDomain:        "REPLACE_WITH_YOUR_PROJECT_ID.firebaseapp.com",
-  projectId:         "REPLACE_WITH_YOUR_PROJECT_ID",
-  storageBucket:     "REPLACE_WITH_YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "REPLACE_WITH_YOUR_MESSAGING_SENDER_ID",
-  appId:             "REPLACE_WITH_YOUR_APP_ID"
+  apiKey:            "AIzaSyB2TvSXbXOAutbt0MqJeOrn-7hKfpaqfAo",
+  authDomain:        "data-dashboard-ad94f.firebaseapp.com",
+  projectId:         "data-dashboard-ad94f",
+  storageBucket:     "data-dashboard-ad94f.firebasestorage.app",
+  messagingSenderId: "1012632142221",
+  appId:             "1:1012632142221:web:1aa118b847705bd1353dc4"
 };
 
 // Allowed email domain — only Mixta accounts can sign in
@@ -622,6 +623,8 @@ function initFirebase() {
     _auth = firebase.auth();
     _db   = firebase.firestore();
     _fb   = firebase;
+    // Analytics — gracefully skip if blocked by adblocker
+    try { firebase.analytics(); } catch(ae) { console.info('[Analytics] Skipped:', ae.message); }
     _fbReady = true;
   } catch(e) {
     console.warn('[Firebase] Init failed — running in offline/no-auth mode:', e.message);
