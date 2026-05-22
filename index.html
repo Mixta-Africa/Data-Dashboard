@@ -248,6 +248,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <div class="loader-spinner"></div>
   <div class="loader-text" id="loader-text">Loading dashboard…</div>
   <div class="loader-sub" id="loader-sub">Fetching data</div>
+  <div style="margin-top:12px;width:260px;height:3px;background:rgba(192,57,43,0.12);border-radius:2px;overflow:hidden">
+    <div id="loader-progress" style="height:100%;background:var(--red);border-radius:2px;width:0%;transition:width 0.4s ease"></div>
+  </div>
+  <div id="loader-step" style="font-size:9.5px;color:var(--text3);margin-top:6px;font-family:var(--mono)">step 1/7</div>
 </div>
 
 <header class="hdr">
@@ -566,6 +570,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <!-- ===== PREDICTIVE INTELLIGENCE ===== -->
 <div id="section-predict" class="section">
 
+  <!-- Predictive model error bar (hidden unless a model throws) -->
+  <div id="predict-model-warn" style="display:none;background:#FFF3CD;border:1px solid #FFEAA7;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:12px;color:#856404;align-items:center;gap:8px">
+    ⚠️ <span></span>
+  </div>
+
   <!-- KPI strip: model outputs -->
   <div class="kpi-strip">
     <div class="kpi"><div class="kpi-label">Next-Year Revenue Forecast</div><div class="kpi-value red" id="pr-nextyear">—</div><div class="kpi-sub" id="pr-nextyear-s">OLS linear projection</div></div>
@@ -878,7 +887,28 @@ const groupBy  = (arr,key) => arr.reduce((acc,r)=>{ const k=r[key]||'Unknown'; (
 const sumKey   = (arr,key) => arr.reduce((s,r)=>s+num(r[key]),0);
 const topN     = (obj,n,valFn) => Object.entries(obj).map(([k,v])=>({k,v:valFn(v)})).sort((a,b)=>b.v-a.v).slice(0,n);
 const setText  = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
-const sleep    = ms => new Promise(r => setTimeout(r, ms));
+const sleep      = ms => new Promise(r => setTimeout(r, ms));
+// yieldThread: releases the main thread for ONE event-loop tick (0ms).
+// This lets the browser repaint, process input events, and prevents
+// "page unresponsive" freezes during long synchronous computation.
+const yieldThread = () => new Promise(r => setTimeout(r, 0));
+
+// telemetryError: surface model errors visibly instead of swallowing them
+function telemetryError(stage, err) {
+  console.error('[Pipeline] ' + stage + ' failed:', err.message, err.stack);
+  const eb = document.getElementById('errorBar');
+  const em = document.getElementById('errorMsg');
+  if(eb && em) {
+    em.textContent = 'Pipeline error in [' + stage + ']: ' + err.message;
+    eb.classList.add('show');
+  }
+}
+
+// showPredictiveError: yellow warning in the predict section itself
+function showPredictiveError(msg) {
+  const el = document.getElementById('predict-model-warn');
+  if(el) { el.textContent = 'Predictive model error: ' + msg + '. Other dashboard sections are unaffected.'; el.style.display='flex'; }
+}
 
 function schemaHash(headers) {
   const sorted = [...headers].sort().join(',');
@@ -1469,8 +1499,20 @@ function updateFreshness(fromCache) {
   el.textContent = mins < 2 ? 'Live · just now' : `Cached · ${mins}m ago`;
 }
 
-function setLoaderSub(msg) { const el=document.getElementById('loader-sub'); if(el) el.textContent=msg; }
-function setLoaderText(msg){ const el=document.getElementById('loader-text'); if(el) el.textContent=msg; }
+let _loaderStep = 0;
+const LOADER_STEPS = ['Fetching data','Enriching records','Building filters',
+  'Computing analytics','Rendering KPIs','Drawing charts','Running models'];
+
+function setLoaderSub(msg) {
+  const el = document.getElementById('loader-sub'); if(el) el.textContent = msg;
+  // Find matching step index for progress bar
+  const idx = LOADER_STEPS.findIndex(s => msg.toLowerCase().includes(s.toLowerCase().split(' ')[0]));
+  const step = idx >= 0 ? idx : _loaderStep++;
+  const pct  = Math.min(95, Math.round((step / LOADER_STEPS.length) * 100));
+  const pb   = document.getElementById('loader-progress'); if(pb) pb.style.width = pct + '%';
+  const st   = document.getElementById('loader-step'); if(st) st.textContent = 'step ' + (step+1) + '/' + LOADER_STEPS.length;
+}
+function setLoaderText(msg){ const el=document.getElementById('loader-text'); if(el) el.textContent=msg; _loaderStep=0; }
 
 /* =====================================================
    FILTER ENGINE
@@ -1574,13 +1616,16 @@ function applyFilters() {
   renderCharts(analytics);
 
   // Predictive always uses the full unfiltered dataset for statistical validity
+  // Run async so it doesn't block the filter UI update
   if(_lastAllRows) {
-    try {
-      const fa = computeAnalytics(_lastAllRows);
-      fa.currentYearFilter='all'; fa.currentQtrFilter='all';
-      const P = computePredictive(fa, _lastAllRows);
-      renderPredictive(fa, P);
-    } catch(e) { console.warn('[Predictive filter]', e.message); }
+    (async () => {
+      try {
+        const fa = computeAnalytics(_lastAllRows);
+        fa.currentYearFilter='all'; fa.currentQtrFilter='all';
+        const P = await computePredictiveAsync(fa, _lastAllRows);
+        renderPredictive(fa, P);
+      } catch(e) { telemetryError('Predictive (filter)', e); }
+    })();
   }
 }
 
@@ -1593,26 +1638,72 @@ function resetFilters() {
 /* =====================================================
    RENDER HELPERS — called with any row set
    ===================================================== */
-function renderFromRows(rows, fromCache) {
+async function renderFromRows(rows, fromCache) {
   _lastAllRows = rows;
-  enrichData(rows);
-  populateFilters(rows);
-  
-  const analytics = computeAnalytics(rows);
-  analytics.currentYearFilter = 'all';
-  analytics.currentQtrFilter = 'all';
 
-  renderKPIs(analytics);
-  renderCharts(analytics);
+  // ── Step 1: Enrich (date parsing) ─────────────────────
+  setLoaderSub('Enriching ' + rows.length.toLocaleString() + ' records…');
+  await yieldThread();
+  try { enrichData(rows); } catch(e) { telemetryError('enrichData', e); }
 
-  // Predictive engine — runs on full dataset
+  // ── Step 2: Build filter dropdowns ────────────────────
+  setLoaderSub('Building filters…');
+  await yieldThread();
+  try { populateFilters(rows); } catch(e) { telemetryError('populateFilters', e); }
+
+  // ── Step 3: Core analytics ────────────────────────────
+  setLoaderSub('Computing portfolio analytics…');
+  await yieldThread();
+  let analytics;
   try {
-    const P = computePredictive(analytics, rows);
+    analytics = computeAnalytics(rows);
+    analytics.currentYearFilter = 'all';
+    analytics.currentQtrFilter  = 'all';
+  } catch(e) {
+    telemetryError('computeAnalytics', e);
+    analytics = { years:[], revByYear:[], unitsByYear:[], communities:[], commRevenue:[],
+      commUnits:[], commOutstanding:[], commYearMatrix:{}, propRevenue:[], propUnits:{},
+      agentGroups:[], agentGrpRev:[], agentGrpCnt:[], finishTypes:[], finishRev:[],
+      finishUnits:[], finishAvg:[], statusLabels:[], statusCounts:[], unitTypes:[],
+      unitTypeRevs:[], bedroomLabels:[], bedroomRevs:[], ppLabels:[], ppCounts:[],
+      totalRows:0, totalRev:0, totalPaid:0, totalOut:0, mortgageCount:0,
+      avgPctPaid:0, fullyPaidCnt:0, highRiskCnt:0, collBrackets:[], collBracketCounts:[],
+      mortgageByYear:[], cashByYear:[], paidByYear:[], outByYear:[], riskLabels:[],
+      riskCounts:[], riskRevs:[], riskOuts:[], buyerTypeLabels:[], buyerTypeCounts:[],
+      stateLabels:[], stateCounts:[], salLabels:[], salCounts:[], countries:0,
+      diaspora:0, crossStateCount:0, topStateName:'—', topStateCount:0, topNat:'—',
+      topNatCnt:0, phaseLabels:[], phaseRevs:[], phaseUnits:[], collectionsBook:0,
+      cagr:'—', latestAvgPrice:0, avgPricePerSqM:0, currentYearFilter:'all', currentQtrFilter:'all' };
+  }
+
+  // ── Step 4: Render KPIs (instant DOM writes) ──────────
+  setLoaderSub('Rendering KPIs…');
+  await yieldThread();
+  try { renderKPIs(analytics); } catch(e) { telemetryError('renderKPIs', e); }
+
+  // ── Step 5: Render charts (heaviest DOM work) ─────────
+  setLoaderSub('Drawing charts…');
+  await yieldThread();
+  try { renderCharts(analytics); } catch(e) { telemetryError('renderCharts', e); }
+
+  // ── Step 6: Predictive engine (most CPU-intensive) ────
+  // This step is deliberately deferred AFTER the dashboard is already visible.
+  // Users see the main data immediately; predictions load ~500ms later.
+  setLoaderSub('Running predictive models…');
+  await yieldThread();
+  try {
+    const P = await computePredictiveAsync(analytics, rows);
     renderPredictive(analytics, P);
-  } catch(e) { console.warn('[Predictive]', e.message, e.stack); }
+  } catch(e) {
+    telemetryError('computePredictive', e);
+    // Show degraded state in predictive section rather than crashing
+    const warnEl = document.getElementById('pr-nextyear');
+    if(warnEl) warnEl.textContent = 'Model error';
+    showPredictiveError(e.message);
+  }
 
   updateFreshness(fromCache);
-  document.getElementById('filterCount').textContent = rows.length.toLocaleString()+' records';
+  document.getElementById('filterCount').textContent = rows.length.toLocaleString() + ' records';
   document.getElementById('errorBar').classList.remove('show');
 }
 
@@ -1664,7 +1755,7 @@ async function loadData(forceRefresh=false) {
     const rows = await getLiveSheetData();
     
     _allRows = rows;
-    renderFromRows(rows, false);
+    await renderFromRows(rows, false);
 
     const fl = document.getElementById('freshness-label');
     if(fl) { fl.style.color='#27AE60'; setTimeout(()=>fl.style.color='',2000); }
@@ -1861,7 +1952,7 @@ function linearInterp(x, x0, x1, y0, y1) {
 }
 
 /* ─── PREDICTIVE MODELS ─────────────────────────────── */
-function computePredictive(d, allRows) {
+async function computePredictiveAsync(d, allRows) {
   const P = {};
 
   // ── 1. REVENUE FORECAST (OLS on annual series) ──────
@@ -1904,16 +1995,21 @@ function computePredictive(d, allRows) {
   P.forecastLower   = forecastLower;
 
   // ── 2. PRICE APPRECIATION per community ─────────────
-  // Fit OLS per community on avg price per unit per year
+  await yieldThread();
   P.priceForecasts = {};
   const projYrLabels = [...d.years, ...proj.map(p=>String(p.year))];
+  // PRE-INDEX: build comm+year lookup once (O(n) instead of O(n×comms×years))
+  const commYearCount = {};
+  allRows.forEach(r => {
+    if(!r.community||!r._year) return;
+    const key = r.community + '|' + r._year;
+    commYearCount[key] = (commYearCount[key]||0) + 1;
+  });
+
   d.communities.forEach(comm => {
     const cYears = d.years.filter(y => (d.commYearMatrix[comm]?.[y]||0) > 0);
     if(cYears.length < 2) return;
-    const cUnitsByYear = cYears.map(y => {
-      const rows = allRows.filter(r => r.community===comm && r._year===y);
-      return rows.length;
-    });
+    const cUnitsByYear = cYears.map(y => commYearCount[comm+'|'+y]||0);
     const cAvgPrice = cYears.map((y,i) => {
       const rev = d.commYearMatrix[comm][y] || 0;
       const u   = cUnitsByYear[i] || 1;
@@ -1925,6 +2021,7 @@ function computePredictive(d, allRows) {
   P.priceProjectionLabels = projYrLabels;
 
   // ── 3. COLLECTION RECOVERY MODEL ────────────────────
+  await yieldThread();
   // Assign recovery probability per risk tier based on empirical % paid distributions
   // p(recovery) = f(currentPctPaid, tier)
   // We model each tier's likely recovery path as a probability-weighted expected value
@@ -1984,6 +2081,7 @@ function computePredictive(d, allRows) {
   });
 
   // ── 4. MOVING AVERAGE & DEMAND VELOCITY ─────────────
+  await yieldThread();
   P.mavgLabels = d.years;
   P.mavg3yr    = movingAverage(d.unitsByYear, 3);
   P.mavg2yr    = movingAverage(d.unitsByYear, 2);
@@ -1991,20 +2089,15 @@ function computePredictive(d, allRows) {
 
   // Velocity score: compare last 2 years vs prior 2 years per community
   // Score = (recent avg / prior avg) * 100. 100 = flat, >100 = accelerating
+  // Use the pre-built commYearCount index (built above in model 2)
   P.velocityScores = {};
   d.communities.forEach(comm => {
     const n = d.years.length;
     if(n < 4) { P.velocityScores[comm] = 100; return; }
     const recentYrs = d.years.slice(-2);
     const priorYrs  = d.years.slice(-4,-2);
-    const recentAvg = recentYrs.reduce((s,y)=>{
-      const cnt = allRows.filter(r=>r.community===comm&&r._year===y).length;
-      return s+cnt;
-    },0) / 2;
-    const priorAvg  = priorYrs.reduce((s,y)=>{
-      const cnt = allRows.filter(r=>r.community===comm&&r._year===y).length;
-      return s+cnt;
-    },0) / 2;
+    const recentAvg = recentYrs.reduce((s,y)=>s+(commYearCount[comm+'|'+y]||0),0) / 2;
+    const priorAvg  = priorYrs.reduce((s,y)=>s+(commYearCount[comm+'|'+y]||0),0) / 2;
     P.velocityScores[comm] = priorAvg > 0 ? Math.round((recentAvg/priorAvg)*100) : 100;
   });
 
@@ -2016,15 +2109,22 @@ function computePredictive(d, allRows) {
   P.demandTrendDir = maSlope > 2 ? 'up' : maSlope < -2 ? 'dn' : 'flat';
 
   // ── 5. AGENT COMPOSITE SCORE ─────────────────────────
+  await yieldThread();
   // Score = 0.40 × Revenue_efficiency + 0.35 × Collection_health + 0.25 × Trend_momentum
   // All sub-scores normalised 0–100
-  const agentGroups_ = [...new Set(allRows.map(r=>r.dealingAgent).filter(a=>a&&a!==''))];
+  // PRE-INDEX: group rows by agent once instead of re-filtering per agent
+  const agentRowMap = {};
+  allRows.forEach(r => {
+    if(!r.dealingAgent||r.dealingAgent==='') return;
+    (agentRowMap[r.dealingAgent] = agentRowMap[r.dealingAgent]||[]).push(r);
+  });
+  const agentGroups_ = Object.keys(agentRowMap);
   const agentScores  = [];
   const avgRevPerUnit = d.totalRev / Math.max(d.totalRows,1);
   const avgCollRate   = d.avgPctPaid / 100;
 
   agentGroups_.forEach(ag => {
-    const agRows = allRows.filter(r=>r.dealingAgent===ag);
+    const agRows = agentRowMap[ag];
     if(agRows.length < 2) return; // too small a sample
     const rev   = agRows.reduce((s,r)=>s+r._sp,0);
     const revPerUnit = rev / agRows.length;
@@ -2047,6 +2147,7 @@ function computePredictive(d, allRows) {
   P.agentScores = agentScores.slice(0,12);
 
   // ── 6. PRICE ELASTICITY SIGNAL ───────────────────────
+  await yieldThread();
   // Correlation between avg price changes and unit volume changes year-on-year
   const priceDelta  = d.avgPriceByYear.slice(1).map((v,i) => v - d.avgPriceByYear[i]);
   const volumeDelta = d.unitsByYear.slice(1).map((v,i) => v - d.unitsByYear[i]);
