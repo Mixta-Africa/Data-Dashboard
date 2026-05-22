@@ -1597,18 +1597,19 @@ async function downloadAIReport() {
     const k_out = document.getElementById('k-outstanding').textContent;
     const k_props = document.getElementById('k-props').textContent;
     
-    // Securely get or ask for the Groq API Key
-    let groqKey = window.GROQ_API_KEY || localStorage.getItem('GROQ_API_KEY');
-    if (!groqKey || groqKey === 'YOUR_GROQ_API_KEY_HERE') {
-        groqKey = prompt("Please enter your Groq API Key to generate reports:\n(It will be saved securely in your browser)");
-        if (groqKey) {
-            localStorage.setItem('GROQ_API_KEY', groqKey);
+    // SECURE API KEY HANDLING: Read from browser storage, never hardcode!
+    let groqKey = localStorage.getItem('GROQ_API_KEY');
+    
+    if (!groqKey) {
+        groqKey = prompt("Please enter your Groq API Key:\n(It will be saved securely in your browser's local storage, NOT in the code.)");
+        if (groqKey && groqKey.trim() !== "") {
+            localStorage.setItem('GROQ_API_KEY', groqKey.trim());
         } else {
-            throw new Error('Groq API Key is required to generate AI reports.');
+            throw new Error("Report generation cancelled. Groq API Key is missing.");
         }
     }
 
-    const prompt = `Act as a professional senior data analyst tasked with extracting key insights from each period currently under view linked to the "year" or "quarter" dropdowns, which dynamically populates the dashboard.
+    const promptText = `Act as a professional senior data analyst tasked with extracting key insights from each period currently under view linked to the "year" or "quarter" dropdowns, which dynamically populates the dashboard.
 
 PERIOD IN VIEW: ${periodStr}
 PORTFOLIO METRICS FOR THIS PERIOD:
@@ -1628,14 +1629,17 @@ Please write a structured, executive-level Performance Report tailored exactly t
       },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: prompt }]
+        messages: [{ role: 'user', content: promptText }]
       })
     });
 
     if (!res.ok) {
-       // If the key is invalid, remove it from storage so the user is prompted again next time
-       if(res.status === 401 || res.status === 403) localStorage.removeItem('GROQ_API_KEY');
-       throw new Error('API Error - Please check your GROQ_API_KEY');
+       // If the key is invalid or revoked, remove it from storage so the user is prompted again next time
+       if (res.status === 401 || res.status === 403) {
+           localStorage.removeItem('GROQ_API_KEY'); 
+           throw new Error('Invalid or revoked API Key. It has been removed from your browser. Please click Download Report again to enter a new, valid key.');
+       }
+       throw new Error('API Error - Status: ' + res.status);
     }
     
     const data = await res.json();
@@ -1666,13 +1670,12 @@ Please write a structured, executive-level Performance Report tailored exactly t
     URL.revokeObjectURL(url);
 
   } catch (e) {
-    alert('Error generating report: ' + e.message);
+    alert(e.message);
   } finally {
     btn.innerHTML = originalText;
     btn.disabled = false;
   }
 }
-
 /* =====================================================
    AUTO-REFRESH
    ===================================================== */
