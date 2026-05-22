@@ -126,6 +126,20 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 /* DATA FRESHNESS */
 .freshness{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px}
 
+
+/* FILTER BAR */
+.filter-bar{display:flex;align-items:center;gap:10px;padding:10px 28px;background:rgba(255,255,255,0.75);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,0.05);flex-wrap:wrap}
+.filter-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap}
+.filter-select{padding:5px 10px;border-radius:8px;font-size:12px;font-weight:500;color:var(--text);background:rgba(255,255,255,0.9);border:1px solid rgba(0,0,0,0.1);cursor:pointer;font-family:var(--font);outline:none;transition:border-color 0.18s}
+.filter-select:focus{border-color:var(--red)}
+.filter-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all 0.15s;font-family:var(--font);background:#F0F0F4;color:var(--text2)}
+.filter-pill.active{background:var(--red4);color:var(--red);border-color:var(--red3)}
+.filter-pill:hover:not(.active){background:#E8E8EF}
+.filter-divider{width:1px;height:20px;background:rgba(0,0,0,0.1);flex-shrink:0}
+.filter-reset{padding:4px 11px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--red3);color:var(--red);background:var(--red4);font-family:var(--font);transition:all 0.15s}
+.filter-reset:hover{background:var(--red3)}
+.filter-count{font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-left:auto;white-space:nowrap}
+
 /* SECTION DIVIDER */
 .sdiv{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;margin-top:6px;display:flex;align-items:center;gap:8px}
 .sdiv::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(0,0,0,0.07) 0%,transparent 100%)}
@@ -193,6 +207,29 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <div class="error-bar" id="errorBar">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
   <span id="errorMsg">Could not load live data. Showing cached fallback.</span>
+</div>
+
+
+<!-- FILTER BAR -->
+<div class="filter-bar" id="filterBar">
+  <span class="filter-label">Filter</span>
+  <div class="filter-divider"></div>
+  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Year</span>
+  <select class="filter-select" id="filterYear" onchange="applyFilters()">
+    <option value="all">All Years</option>
+  </select>
+  <div class="filter-divider"></div>
+  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Community</span>
+  <select class="filter-select" id="filterCommunity" onchange="applyFilters()">
+    <option value="all">All Communities</option>
+  </select>
+  <div class="filter-divider"></div>
+  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Agent Group</span>
+  <select class="filter-select" id="filterAgent" onchange="applyFilters()">
+    <option value="all">All Channels</option>
+  </select>
+  <button class="filter-reset" onclick="resetFilters()" id="resetBtn" style="display:none">✕ Clear Filters</button>
+  <span class="filter-count" id="filterCount"></span>
 </div>
 
 <!-- MAIN -->
@@ -712,6 +749,13 @@ function computeAnalytics(rows) {
   data.mortgageByYear = years.map(y=>(byYear[y]||[]).filter(r=>r._mort>0).length);
   data.cashByYear     = data.unitsByYear.map((u,i)=>u-data.mortgageByYear[i]);
 
+  // Outstanding and collected by year (needed for collections chart)
+  data.paidByYear = years.map(y=>sumKey(byYear[y]||[],'_paid'));
+  data.outByYear  = years.map(y=>sumKey(byYear[y]||[],'_out'));
+
+  // Unique agent count
+  data.agentCount = Object.keys(byDA).length;
+
   // Outstanding by community
   data.commOutstanding = data.communities.map(c=>sumKey(byComm[c],'_out'));
 
@@ -768,7 +812,7 @@ function renderKPIs(d) {
   setText('record-count', d.totalRows.toLocaleString());
 
   // Insight cards
-  setText('ins-peak-rev', fB(d.bestAvgProp?.avg||0));
+  setText('ins-peak-rev', fN(d.bestAvgProp?.avg||0));
   setText('ins-peak-prop', 'Highest avg per unit — '+(d.bestAvgProp?.k||'—')+' ('+( d.bestAvgProp?.cnt||0)+' units)');
   setText('ins-top-prop-rev', fB(d.topPropRevenue?.v||0));
   setText('ins-top-prop-name', 'Top property — '+(d.topPropRevenue?.k||'—'));
@@ -786,7 +830,9 @@ function renderKPIs(d) {
   setText('rv-bestavg', fN(d.bestAvgProp?.avg||0));
   setText('rv-bestavg-s', d.bestAvgProp?.k||'—');
   setText('rv-latestprice', fN(d.latestAvgPrice));
-  setText('rv-latestprice-s', '▲ from '+fN(d.avgPriceByYear[0])+' in '+d.years[0]);
+  const firstValidAvg = d.avgPriceByYear.find(v=>v>0)||0;
+  const firstValidYr  = d.years[d.avgPriceByYear.findIndex(v=>v>0)]||d.years[0];
+  setText('rv-latestprice-s', firstValidAvg>0 ? '▲ from '+fN(firstValidAvg)+' in '+firstValidYr : 'Latest year avg unit price');
   setText('rv-cagr', d.cagr);
   setText('rv-yrs', d.years.length);
 
@@ -815,7 +861,7 @@ function renderKPIs(d) {
   setText('ag-top-name', d.topAgentName);
   setText('ag-top-vol', d.topVolAgent?.cnt||'—');
   setText('ag-top-vol-name', d.topVolAgent?.k||'—');
-  setText('ag-count', Object.keys(groupBy([], 'k')).length||'65+');
+  setText('ag-count', d.agentCount||'—');
   setText('ag-mixta-rev', fB(d.mixtaRev));
   setText('ag-mixta-cnt', d.mixtaCnt+' transactions');
   setText('ag-3p-rev', fB(d.thirdRev));
@@ -977,10 +1023,10 @@ function renderCharts(d) {
   mkChart('c-collstack',{
     type:'bar',
     data:{ labels:d.years, datasets:[
-      { label:'Collected ₦B', data:d.revByYear.map(v=>+(v/1e9).toFixed(2)), backgroundColor:C.green, borderRadius:4, borderSkipped:false },
-      { label:'Outstanding ₦B', data:d.years.map(y=>{ const yr=(groupBy(d.years.map((_,i)=>({y:d.years[i],out:0})),'y'))||{}; return 0; }), backgroundColor:C.red3, borderRadius:4, borderSkipped:false }
+      { label:'Collected ₦B', data:d.paidByYear.map(v=>+(v/1e9).toFixed(2)), backgroundColor:C.green, borderRadius:4, borderSkipped:false },
+      { label:'Outstanding ₦B', data:d.outByYear.map(v=>+(v/1e9).toFixed(2)), backgroundColor:C.red3, borderRadius:4, borderSkipped:false }
     ]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}}}, scales:{ x:{stacked:true,grid:{display:false}}, y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}} } }
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}}, scales:{ x:{stacked:true,grid:{display:false}}, y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}} } }
   });
 
   // Collection rate distribution
@@ -1066,6 +1112,65 @@ function updateFreshness(fromCache) {
   el.textContent = mins < 2 ? 'Live · just now' : `Cached · ${mins}m ago`;
 }
 
+
+/* ===================================================
+   FILTER ENGINE
+=================================================== */
+let _allRows = null; // store full parsed rows for re-filtering
+
+function populateFilters(rows) {
+  // Years
+  const years = [...new Set(rows.map(r=>r._year).filter(Boolean))].sort();
+  const ySel = document.getElementById('filterYear');
+  ySel.innerHTML = '<option value="all">All Years</option>';
+  years.forEach(y=>{ const o=document.createElement('option'); o.value=y; o.textContent=y; ySel.appendChild(o); });
+
+  // Communities
+  const comms = [...new Set(rows.map(r=>r.community).filter(c=>c&&c!=='Unknown'))].sort();
+  const cSel = document.getElementById('filterCommunity');
+  cSel.innerHTML = '<option value="all">All Communities</option>';
+  comms.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; cSel.appendChild(o); });
+
+  // Agent groups
+  const ags = [...new Set(rows.map(r=>r.agentGroup).filter(a=>a&&a!=='Unknown'))].sort();
+  const aSel = document.getElementById('filterAgent');
+  aSel.innerHTML = '<option value="all">All Channels</option>';
+  ags.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; aSel.appendChild(o); });
+}
+
+function applyFilters() {
+  if (!_allRows) return;
+  const yr  = document.getElementById('filterYear').value;
+  const com = document.getElementById('filterCommunity').value;
+  const ag  = document.getElementById('filterAgent').value;
+
+  let filtered = _allRows;
+  if (yr  !== 'all') filtered = filtered.filter(r=>r._year === yr);
+  if (com !== 'all') filtered = filtered.filter(r=>r.community === com);
+  if (ag  !== 'all') filtered = filtered.filter(r=>r.agentGroup === ag);
+
+  const isFiltered = (yr!=='all'||com!=='all'||ag!=='all');
+  document.getElementById('resetBtn').style.display = isFiltered ? '' : 'none';
+
+  const total = _allRows.length;
+  const shown = filtered.length;
+  document.getElementById('filterCount').textContent = isFiltered
+    ? `Showing ${shown.toLocaleString()} of ${total.toLocaleString()} records`
+    : `${total.toLocaleString()} records`;
+
+  const analytics = computeAnalytics(filtered);
+  _lastData = analytics;
+  renderKPIs(analytics);
+  renderCharts(analytics);
+}
+
+function resetFilters() {
+  document.getElementById('filterYear').value = 'all';
+  document.getElementById('filterCommunity').value = 'all';
+  document.getElementById('filterAgent').value = 'all';
+  applyFilters();
+}
+
 /* ===================================================
    MAIN LOAD
 =================================================== */
@@ -1090,9 +1195,11 @@ async function loadData(forceRefresh=false) {
     await new Promise(r=>setTimeout(r,30));
 
     const rows = parseRows(csvText);
+    _allRows = rows;
     document.getElementById('loader-sub').textContent = 'Computing analytics…';
     await new Promise(r=>setTimeout(r,30));
 
+    populateFilters(rows);
     const analytics = computeAnalytics(rows);
     _lastData = analytics;
 
@@ -1102,6 +1209,7 @@ async function loadData(forceRefresh=false) {
     renderKPIs(analytics);
     renderCharts(analytics);
     updateFreshness(fromCache);
+    document.getElementById('filterCount').textContent = rows.length.toLocaleString()+' records';
 
     document.getElementById('errorBar').classList.remove('show');
   } catch(err) {
