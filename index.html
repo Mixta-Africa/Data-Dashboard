@@ -1475,108 +1475,111 @@ function resetFilters() {
 }
 
 /* =====================================================
-   RENDER HELPERS — called with any row set
-   ===================================================== */
+   RENDER HELPERS — called with any row set
+   ===================================================== */
 function renderFromRows(rows, fromCache) {
   enrichData(rows); // Calculates Year/Quarter FIRST
   populateFilters(rows); // Now filters will successfully see the years!
+  
   const analytics = computeAnalytics(rows);
+
+  // BUG FIX: Explicitly tell the charts we are starting on 'All Years'
+  // so they draw the line chart correctly on the initial load without crashing!
+  analytics.currentYearFilter = 'all';
+  analytics.currentQtrFilter = 'all';
+
   renderKPIs(analytics);
   renderCharts(analytics);
   updateFreshness(fromCache);
+  
   document.getElementById('filterCount').textContent = rows.length.toLocaleString()+' records';
   document.getElementById('errorBar').classList.remove('show');
 }
 
 /* =====================================================
-   SYNC STATUS UI — non-blocking, never covers dashboard
-   ===================================================== */
+   SYNC STATUS UI — non-blocking, never covers dashboard
+   ===================================================== */
 function showSyncStatus(msg) {
-  const chip = document.getElementById('syncStatus');
-  const text = document.getElementById('syncStatusText');
-  const toast = document.getElementById('syncToast');
-  if(text) text.textContent = msg;
-  chip.classList.add('show');
-  toast.classList.remove('done');
-  toast.classList.add('active');
+  const chip = document.getElementById('syncStatus');
+  const text = document.getElementById('syncStatusText');
+  const toast = document.getElementById('syncToast');
+  if(text) text.textContent = msg;
+  chip.classList.add('show');
+  toast.classList.remove('done');
+  toast.classList.add('active');
 }
 function hideSyncStatus(success=true) {
-  const chip = document.getElementById('syncStatus');
-  const toast = document.getElementById('syncToast');
-  chip.classList.remove('show');
-  toast.classList.remove('active');
-  if(success) {
-    toast.classList.add('done');
-    setTimeout(()=>toast.classList.remove('done'), 800);
-  }
+  const chip = document.getElementById('syncStatus');
+  const toast = document.getElementById('syncToast');
+  chip.classList.remove('show');
+  toast.classList.remove('active');
+  if(success) {
+    toast.classList.add('done');
+    setTimeout(()=>toast.classList.remove('done'), 800);
+  }
 }
 
 /* =====================================================
-   MAIN LOAD
-   ===================================================== */
+   MAIN LOAD
+   ===================================================== */
 async function loadData(forceRefresh=false) {
-  if(_fetchInProgress) return;
-  _fetchInProgress = true;
+  if(_fetchInProgress) return;
+  _fetchInProgress = true;
 
-  const loader  = document.getElementById('loader');
-  const syncBtn = document.getElementById('syncBtn');
-  const isFirstLoad = !_allRows;
+  const loader  = document.getElementById('loader');
+  const syncBtn = document.getElementById('syncBtn');
+  const isFirstLoad = !_allRows;
 
-  // Show UI feedback
-  if(isFirstLoad) {
-    loader.classList.remove('hidden');
-    setLoaderText('Loading dashboard…');
-    setLoaderSub('Fetching all tabs…');
-  } else {
-    syncBtn.classList.add('spinning');
-    showSyncStatus('Syncing…');
-  }
+  // Show UI feedback
+  if(isFirstLoad) {
+    loader.classList.remove('hidden');
+    setLoaderText('Loading dashboard…');
+    setLoaderSub('Fetching all tabs…');
+  } else {
+    syncBtn.classList.add('spinning');
+    showSyncStatus('Syncing…');
+  }
 
-  try {
-    // Fetch and combine all tabs using our new function
-    const rows = await getLiveSheetData();
-    
-    _allRows = rows;
-    renderFromRows(rows, false);
+  try {
+    // Fetch and combine all tabs using our new function
+    const rows = await getLiveSheetData();
+    
+    _allRows = rows;
+    renderFromRows(rows, false);
 
-    // Flash the freshness label green briefly
-    const fl = document.getElementById('freshness-label');
-    if(fl) { fl.style.color='#27AE60'; setTimeout(()=>fl.style.color='',2000); }
+    // Flash the freshness label green briefly
+    const fl = document.getElementById('freshness-label');
+    if(fl) { fl.style.color='#27AE60'; setTimeout(()=>fl.style.color='',2000); }
 
-  } catch(err) {
-    console.error('[loadData]', err);
-    const eb = document.getElementById('errorBar');
-    document.getElementById('errorMsg').textContent = 'Could not load sheets: ' + err.message;
-    eb.classList.add('show');
-  } finally {
-    loader.classList.add('hidden');
-    syncBtn.classList.remove('spinning');
-    hideSyncStatus(!document.getElementById('errorBar').classList.contains('show'));
-    _fetchInProgress = false;
-  }
+  } catch(err) {
+    console.error('[loadData]', err);
+    const eb = document.getElementById('errorBar');
+    document.getElementById('errorMsg').textContent = 'Could not load sheets: ' + err.message;
+    eb.classList.add('show');
+  } finally {
+    loader.classList.add('hidden');
+    syncBtn.classList.remove('spinning');
+    hideSyncStatus(!document.getElementById('errorBar').classList.contains('show'));
+    _fetchInProgress = false;
+  }
 }
 
 function syncData() {
-  loadData(true);
+  loadData(true);
 }
 
 /* =====================================================
-   NAVIGATION
-   ===================================================== */
+   NAVIGATION
+   ===================================================== */
 function showSection(name, btn) {
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  const el = document.getElementById('section-'+name);
-  if(el) el.classList.add('active');
-  if(btn) btn.classList.add('active');
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const el = document.getElementById('section-'+name);
+  if(el) el.classList.add('active');
+  if(btn) btn.classList.add('active');
 }
 
 /* =====================================================
-   AUTO-REFRESH
-   ===================================================== */
-setInterval(()=>loadData(false), 30 * 60 * 1000); // 30 minutes
-
-  /* =====================================================
    AI REPORT GENERATOR
    ===================================================== */
 async function downloadAIReport() {
@@ -1597,15 +1600,15 @@ async function downloadAIReport() {
     const k_out = document.getElementById('k-outstanding').textContent;
     const k_props = document.getElementById('k-props').textContent;
     
-    // SECURE API KEY HANDLING: Read from browser storage, never hardcode!
+    // SECURE API KEY HANDLING
     let groqKey = localStorage.getItem('GROQ_API_KEY');
     
-    if (!groqKey) {
-        groqKey = prompt("Please enter your Groq API Key:\n(It will be saved securely in your browser's local storage, NOT in the code.)");
+    if (!groqKey || groqKey.trim() === '' || groqKey === 'null') {
+        groqKey = prompt("Please enter your Groq API Key:\n\n(It will be saved securely in your browser's local storage so you don't have to enter it again.)");
         if (groqKey && groqKey.trim() !== "") {
             localStorage.setItem('GROQ_API_KEY', groqKey.trim());
         } else {
-            throw new Error("Report generation cancelled. Groq API Key is missing.");
+            throw new Error("Report generation cancelled. A Groq API Key is required.");
         }
     }
 
@@ -1634,10 +1637,9 @@ Please write a structured, executive-level Performance Report tailored exactly t
     });
 
     if (!res.ok) {
-       // If the key is invalid or revoked, remove it from storage so the user is prompted again next time
        if (res.status === 401 || res.status === 403) {
            localStorage.removeItem('GROQ_API_KEY'); 
-           throw new Error('Invalid or revoked API Key. It has been removed from your browser. Please click Download Report again to enter a new, valid key.');
+           throw new Error('Invalid API Key. The bad key has been deleted. Please click Download Report again to enter a valid Groq API Key.');
        }
        throw new Error('API Error - Status: ' + res.status);
     }
@@ -1676,6 +1678,7 @@ Please write a structured, executive-level Performance Report tailored exactly t
     btn.disabled = false;
   }
 }
+
 /* =====================================================
    AUTO-REFRESH
    ===================================================== */
