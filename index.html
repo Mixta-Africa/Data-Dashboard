@@ -65,11 +65,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 /* ── LOADER ───────────────────────────────────────── */
-.loader-overlay{position:fixed;inset:0;background:rgba(255,255,255,0.92);backdrop-filter:blur(20px);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.4s}
+.loader-overlay{position:fixed;inset:0;background:rgba(255,255,255,0.96);backdrop-filter:blur(12px);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.3s}
 .loader-overlay.hidden{opacity:0;pointer-events:none}
-.loader-spinner{width:44px;height:44px;border:3px solid var(--red3);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite}
+.loader-spinner{width:40px;height:40px;border:3px solid var(--red3);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite}
 .loader-text{font-size:13px;color:var(--text2);font-weight:500}
 .loader-sub{font-size:11px;color:var(--text3)}
+.sync-toast{position:fixed;top:0;left:0;right:0;z-index:500;height:3px;background:linear-gradient(90deg,var(--red),var(--red2));transform:scaleX(0);transform-origin:left;transition:transform 0.3s ease,opacity 0.4s;opacity:0}
+.sync-toast.active{opacity:1;animation:progress-bar 2.5s ease-in-out infinite alternate}
+.sync-toast.done{transform:scaleX(1);opacity:0;transition:transform 0.2s,opacity 0.5s 0.2s}
+@keyframes progress-bar{from{transform:scaleX(0.05)}to{transform:scaleX(0.85)}}
+.sync-status{display:none;align-items:center;gap:5px;font-size:10px;color:var(--text3);padding:3px 8px;border-radius:10px;background:rgba(0,0,0,0.04);white-space:nowrap}
+.sync-status.show{display:flex}
+.sync-dot{width:5px;height:5px;border-radius:50%;background:var(--red);animation:pulse 1s ease-in-out infinite}
 .error-bar{display:none;background:#FFF3CD;border:1px solid #FFEAA7;border-radius:8px;padding:10px 16px;margin:12px 28px 0;font-size:12px;color:#856404;align-items:center;gap:8px}
 .error-bar.show{display:flex}
 
@@ -196,11 +203,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   </div>
 </div>
 
-<!-- LOADER -->
+<!-- SYNC TOAST (non-blocking progress bar at top) -->
+<div class="sync-toast" id="syncToast"></div>
+
+<!-- LOADER (first cold-load only) -->
 <div class="loader-overlay" id="loader">
   <div class="loader-spinner"></div>
-  <div class="loader-text" id="loader-text">Connecting to data source…</div>
-  <div class="loader-sub" id="loader-sub">Please wait</div>
+  <div class="loader-text" id="loader-text">Loading dashboard…</div>
+  <div class="loader-sub" id="loader-sub">Fetching data</div>
 </div>
 
 <!-- HEADER -->
@@ -226,6 +236,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
   <div class="hdr-right">
     <div class="freshness" id="freshness-label">—</div>
+    <div class="sync-status" id="syncStatus"><div class="sync-dot"></div><span id="syncStatusText">Syncing…</span></div>
     <button class="sync-btn" id="syncBtn" onclick="syncData()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
       Sync
@@ -798,20 +809,22 @@ async function getCachedCSV(forceRefresh) {
   // ── 1. Firestore (primary shared cache) ──────────────
   if(_fbReady && _db && !forceRefresh) {
     try {
-      const doc = await _db.doc(FS_CACHE_DOC).get();
+      // Race Firestore against a 3s timeout — if Firestore is slow, fall through to localStorage
+      const firestoreRead = _db.doc(FS_CACHE_DOC).get();
+      const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3000));
+      const doc = await Promise.race([firestoreRead, timeout]);
       if(doc.exists) {
         const { csv, ts, schemaVersion } = doc.data();
         const age = Date.now() - (ts?.toMillis?.() || 0);
         if(age < FS_CACHE_TTL && schemaVersion === SCHEMA_VERSION && csv) {
           setLoaderSub('Loading from shared cache…');
-          // Also refresh localStorage for offline fallback
           safeLocalStorageSet(LS_CACHE_KEY, csv);
           safeLocalStorageSet(LS_TS_KEY, String(Date.now()));
           return { csv, fromCache: true };
         }
       }
     } catch(e) {
-      console.warn('[Firestore] Read failed, falling through:', e.message);
+      console.warn('[Firestore] Read failed or timed out, falling through:', e.message);
     }
   }
 
@@ -1415,66 +1428,131 @@ function resetFilters() {
 /* =====================================================
    MAIN LOAD
    ===================================================== */
+/* =====================================================
+   RENDER HELPERS — called with any row set
+   ===================================================== */
+function renderFromRows(rows, fromCache) {
+  populateFilters(rows);
+  const analytics = computeAnalytics(rows);
+  renderKPIs(analytics);
+  renderCharts(analytics);
+  updateFreshness(fromCache);
+  document.getElementById('filterCount').textContent = rows.length.toLocaleString()+' records';
+  document.getElementById('errorBar').classList.remove('show');
+}
+
+/* =====================================================
+   SYNC STATUS UI — non-blocking, never covers dashboard
+   ===================================================== */
+function showSyncStatus(msg) {
+  const chip = document.getElementById('syncStatus');
+  const text = document.getElementById('syncStatusText');
+  const toast = document.getElementById('syncToast');
+  if(text) text.textContent = msg;
+  chip.classList.add('show');
+  toast.classList.remove('done');
+  toast.classList.add('active');
+}
+function hideSyncStatus(success=true) {
+  const chip = document.getElementById('syncStatus');
+  const toast = document.getElementById('syncToast');
+  chip.classList.remove('show');
+  toast.classList.remove('active');
+  if(success) {
+    toast.classList.add('done');
+    setTimeout(()=>toast.classList.remove('done'), 800);
+  }
+}
+
+/* =====================================================
+   LOAD DATA
+   Strategy:
+   - First visit (no cache): show full-screen loader → render → hide
+   - Subsequent loads / Sync: render stale cache INSTANTLY,
+     fetch fresh data in background, silently update when done
+   ===================================================== */
 async function loadData(forceRefresh=false) {
-  // Mutex: prevents overlapping fetches
-  if(_fetchInProgress && !forceRefresh) return;
+  if(_fetchInProgress) return;
   _fetchInProgress = true;
 
   const loader  = document.getElementById('loader');
   const syncBtn = document.getElementById('syncBtn');
-  loader.classList.remove('hidden');
-  syncBtn.classList.add('spinning');
-  setLoaderText('Connecting to data source…');
+  const isFirstLoad = !_allRows;
 
+  // ── Step 1: Serve stale cache immediately (instant render) ──
+  if(!isFirstLoad || !forceRefresh) {
+    const lsCsv = localStorage.getItem(LS_CACHE_KEY);
+    if(lsCsv && _allRows) {
+      // Already rendered — skip straight to background fetch
+    } else if(lsCsv) {
+      try {
+        setLoaderSub('Loading cached data…');
+        const rows = parseRows(lsCsv);
+        _allRows = rows;
+        renderFromRows(rows, true);
+      } catch(e) { /* will re-render from fresh fetch below */ }
+    }
+  }
+
+  // ── Step 2: Show UI feedback appropriate to context ──
+  if(isFirstLoad && !_allRows) {
+    // True cold start — show full overlay only this once
+    loader.classList.remove('hidden');
+    setLoaderText('Loading dashboard…');
+    setLoaderSub('Fetching data…');
+  } else {
+    // Dashboard already visible — use non-blocking indicator
+    loader.classList.add('hidden');
+    syncBtn.classList.add('spinning');
+    showSyncStatus('Syncing…');
+  }
+
+  // ── Step 3: Fetch fresh data ──
   let fromCache = false;
   try {
     const { csv, fromCache: fc } = await getCachedCSV(forceRefresh);
     fromCache = fc;
 
-    setLoaderSub('Parsing records…');
-    await sleep(30);
     const rows = parseRows(csv);
     _allRows = rows;
+    renderFromRows(rows, fromCache);
 
-    setLoaderSub('Computing analytics…');
-    await sleep(30);
-    populateFilters(rows);
-    const analytics = computeAnalytics(rows);
-
-    setLoaderSub('Rendering dashboard…');
-    await sleep(30);
-    renderKPIs(analytics);
-    renderCharts(analytics);
-    updateFreshness(fromCache);
-    document.getElementById('filterCount').textContent = rows.length.toLocaleString()+' records';
-    document.getElementById('errorBar').classList.remove('show');
+    if(!fromCache) {
+      // Flash the freshness label green briefly
+      const fl = document.getElementById('freshness-label');
+      if(fl) { fl.style.color='#27AE60'; setTimeout(()=>fl.style.color='',2000); }
+    }
 
   } catch(err) {
-    console.error('[loadData] Error:', err);
-    document.getElementById('errorMsg').textContent = 'Could not fetch live data: '+err.message+'. Showing any available cached data.';
-    document.getElementById('errorBar').classList.add('show');
-    // If we have localStorage fallback, try it
-    const lsCsv = localStorage.getItem(LS_CACHE_KEY);
-    if(lsCsv && !_allRows) {
-      try {
-        const rows = parseRows(lsCsv);
-        _allRows = rows;
-        populateFilters(rows);
-        const analytics = computeAnalytics(rows);
-        renderKPIs(analytics);
-        renderCharts(analytics);
-        updateFreshness(true);
-        document.getElementById('filterCount').textContent = rows.length.toLocaleString()+' records (cached)';
-      } catch(e2) { console.error('[Fallback] Parse error:', e2); }
+    console.error('[loadData]', err);
+    const eb = document.getElementById('errorBar');
+    document.getElementById('errorMsg').textContent =
+      'Could not reach Google Sheets: '+err.message+'. Showing cached data.';
+    eb.classList.add('show');
+    // If we still have nothing rendered, try localStorage emergency fallback
+    if(!_allRows) {
+      const lsCsv = localStorage.getItem(LS_CACHE_KEY);
+      if(lsCsv) {
+        try {
+          const rows = parseRows(lsCsv);
+          _allRows = rows;
+          renderFromRows(rows, true);
+        } catch(e2) { console.error('[Fallback]', e2); }
+      }
     }
   } finally {
     loader.classList.add('hidden');
     syncBtn.classList.remove('spinning');
+    hideSyncStatus(!document.getElementById('errorBar').classList.contains('show'));
     _fetchInProgress = false;
   }
 }
 
-function syncData() { loadData(true); }
+function syncData() {
+  // Force-refresh skips all caches and goes straight to Google Sheets
+  // But the dashboard stays visible — only the progress bar moves
+  loadData(true);
+}
 
 /* =====================================================
    NAVIGATION
