@@ -187,6 +187,58 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .sowhat-body{font-size:11.5px;color:var(--text2);line-height:1.6}
 .sowhat-body strong{color:var(--text);font-weight:600}
 
+/* ── COMMAND BRIEF ────────────────────────────────── */
+.cmd-brief{background:linear-gradient(135deg,rgba(26,26,46,0.97) 0%,rgba(44,44,68,0.97) 100%);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:22px 26px;margin-bottom:18px;position:relative;overflow:hidden}
+.cmd-brief::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),var(--red2),transparent)}
+.cmd-brief-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.cmd-brief-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,0.45);display:flex;align-items:center;gap:8px}
+.cmd-brief-title::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--red2);box-shadow:0 0 8px rgba(231,76,60,0.6);animation:pulse 2s ease-in-out infinite}
+.cmd-brief-score{display:flex;align-items:center;gap:10px}
+.health-score-badge{display:flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;font-family:var(--mono)}
+.health-score-badge.hs-strong{background:rgba(39,174,96,0.18);border:1px solid rgba(39,174,96,0.35);color:#2ECC71}
+.health-score-badge.hs-moderate{background:rgba(243,156,18,0.18);border:1px solid rgba(243,156,18,0.35);color:#F39C12}
+.health-score-badge.hs-weak{background:rgba(192,57,43,0.2);border:1px solid rgba(192,57,43,0.4);color:#E74C3C}
+.cmd-brief-findings{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.cmd-finding{border-radius:12px;padding:14px 16px;border:1px solid transparent;position:relative;transition:transform 0.18s}
+.cmd-finding:hover{transform:translateY(-1px)}
+.cmd-finding.cf-action{background:rgba(192,57,43,0.12);border-color:rgba(192,57,43,0.22)}
+.cmd-finding.cf-watch{background:rgba(243,156,18,0.1);border-color:rgba(243,156,18,0.22)}
+.cmd-finding.cf-strong{background:rgba(39,174,96,0.1);border-color:rgba(39,174,96,0.22)}
+.cmd-finding.cf-info{background:rgba(41,128,185,0.1);border-color:rgba(41,128,185,0.22)}
+.cf-tag{font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.cmd-finding.cf-action .cf-tag{color:#E74C3C}
+.cmd-finding.cf-watch .cf-tag{color:#F39C12}
+.cmd-finding.cf-strong .cf-tag{color:#2ECC71}
+.cmd-finding.cf-info .cf-tag{color:#5DADE2}
+.cf-headline{font-size:12px;font-weight:600;color:rgba(255,255,255,0.9);margin-bottom:4px;line-height:1.35}
+.cf-body{font-size:10.5px;color:rgba(255,255,255,0.5);line-height:1.55}
+.cf-body strong{color:rgba(255,255,255,0.75);font-weight:600}
+.cf-metric{display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:2px 8px;border-radius:10px;font-size:9.5px;font-weight:600;font-family:var(--mono)}
+.cmd-finding.cf-action .cf-metric{background:rgba(192,57,43,0.2);color:#E74C3C}
+.cmd-finding.cf-watch .cf-metric{background:rgba(243,156,18,0.2);color:#F39C12}
+.cmd-finding.cf-strong .cf-metric{background:rgba(39,174,96,0.2);color:#2ECC71}
+.cmd-finding.cf-info .cf-metric{background:rgba(41,128,185,0.2);color:#5DADE2}
+
+/* ── ENHANCED SO WHAT ─────────────────────────────── */
+.sowhat-actions{margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.07)}
+.sowhat-action-title{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:6px}
+.sowhat-action-list{list-style:none;display:flex;flex-direction:column;gap:4px}
+.sowhat-action-list li{font-size:11px;color:var(--text2);padding-left:14px;position:relative;line-height:1.4}
+.sowhat-action-list li::before{content:'→';position:absolute;left:0;color:var(--red);font-weight:600}
+.sowhat-metric-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.sowhat-pill{padding:2px 9px;border-radius:10px;font-size:9.5px;font-weight:600;font-family:var(--mono);background:rgba(0,0,0,0.06);color:var(--text2)}
+
+/* ── CROSS-LINK ALERT ─────────────────────────────── */
+.xlink-alert{border-radius:10px;padding:11px 14px 11px 44px;position:relative;margin-bottom:8px;border:1px solid transparent}
+.xlink-alert::before{content:attr(data-ico);position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px}
+.xlink-alert.xl-red{background:#FDECEA;border-color:#F5B7B1}
+.xlink-alert.xl-amber{background:#FEF9E7;border-color:#FAD7A0}
+.xlink-alert.xl-blue{background:#EBF5FB;border-color:#AED6F1}
+.xlink-alert.xl-green{background:#EAFAF1;border-color:#A9DFBF}
+.xl-hed{font-size:11.5px;font-weight:600;color:var(--text);margin-bottom:2px}
+.xl-bod{font-size:10.5px;color:var(--text2);line-height:1.5}
+.xl-bod strong{font-weight:600;color:var(--text)}
+
 /* ── RESPONSIVE ───────────────────────────────────── */
 @media(max-width:1200px){
   .kpi-strip{grid-template-columns:repeat(3,1fr)}
@@ -328,6 +380,19 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
 <!-- ===== OVERVIEW ===== -->
 <div id="section-overview" class="section active">
+
+  <!-- COMMAND BRIEF — populated by renderInsightEngine() -->
+  <div class="cmd-brief" id="cmd-brief" style="display:none">
+    <div class="cmd-brief-header">
+      <div class="cmd-brief-title">Portfolio Command Brief</div>
+      <div class="cmd-brief-score">
+        <div style="font-size:10px;color:rgba(255,255,255,0.35)">Health Score</div>
+        <div class="health-score-badge" id="hs-badge">—</div>
+      </div>
+    </div>
+    <div class="cmd-brief-findings" id="cmd-findings"></div>
+  </div>
+
   <div class="kpi-strip">
     <div class="kpi"><div class="kpi-label">Total Portfolio Revenue</div><div class="kpi-value red" id="k-totalrev">—</div><div class="kpi-sub" id="k-totalrev-sub">loading…</div></div>
     <div class="kpi"><div class="kpi-label">Total Units</div><div class="kpi-value" id="k-units">—</div><div class="kpi-sub" id="k-units-sub">—</div></div>
@@ -464,6 +529,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
 <!-- ===== COLLECTIONS ===== -->
 <div id="section-collections" class="section">
+  <!-- Cross-metric alerts populated by insight engine -->
+  <div id="coll-xlinks" style="margin-bottom:4px"></div>
   <div class="kpi-strip">
     <div class="kpi"><div class="kpi-label">Total Collected</div><div class="kpi-value red" id="cl-collected">—</div><div class="kpi-sub">Cumulative across all years</div></div>
     <div class="kpi"><div class="kpi-label">Total Outstanding</div><div class="kpi-value" id="cl-outstanding">—</div><div class="kpi-sub dn">Receivables at risk</div></div>
@@ -492,10 +559,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       <div class="cw" style="height:230px"><canvas id="c-outstandcomm"></canvas></div>
     </div>
   </div>
+  <!-- So What: Collections — populated by insight engine -->
+  <div class="sowhat sw-neg" id="sw-collections" data-ico="💰" style="display:none">
+    <div class="sowhat-label">So What — Collections Intelligence</div>
+    <div class="sowhat-headline" id="sw-coll-headline">—</div>
+    <div class="sowhat-body" id="sw-coll-body">—</div>
+    <div class="sowhat-actions" id="sw-coll-actions" style="display:none">
+      <div class="sowhat-action-title">Recommended Actions</div>
+      <ul class="sowhat-action-list" id="sw-coll-action-list"></ul>
+    </div>
+    <div class="sowhat-metric-row" id="sw-coll-metrics"></div>
+  </div>
 </div>
 
 <!-- ===== AGENTS ===== -->
 <div id="section-agents" class="section">
+  <div id="agent-xlinks" style="margin-bottom:4px"></div>
   <div class="kpi-strip">
     <div class="kpi"><div class="kpi-label">Top Agent Revenue</div><div class="kpi-value red" id="ag-top-rev">—</div><div class="kpi-sub" id="ag-top-name">—</div></div>
     <div class="kpi"><div class="kpi-label">Top by Volume</div><div class="kpi-value" id="ag-top-vol">—</div><div class="kpi-sub" id="ag-top-vol-name">—</div></div>
@@ -518,6 +597,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <div class="cc full">
     <div class="ch"><div><div class="ct">Agent Group — Volume Trend</div><div class="cs">Unit count by channel per year</div></div></div>
     <div class="cw" style="height:250px"><canvas id="c-agtrend"></canvas></div>
+  </div>
+  <!-- So What: Channel — populated by insight engine -->
+  <div class="sowhat sw-neu" id="sw-agents" data-ico="🤝" style="display:none">
+    <div class="sowhat-label">So What — Channel Intelligence</div>
+    <div class="sowhat-headline" id="sw-agent-headline">—</div>
+    <div class="sowhat-body" id="sw-agent-body">—</div>
+    <div class="sowhat-actions" id="sw-agent-actions" style="display:none">
+      <div class="sowhat-action-title">Recommended Actions</div>
+      <ul class="sowhat-action-list" id="sw-agent-action-list"></ul>
+    </div>
   </div>
 </div>
 
@@ -1616,6 +1705,7 @@ function applyFilters() {
 
   renderKPIs(analytics);
   renderCharts(analytics);
+  try { renderInsightEngine(analytics, filtered); } catch(e) { console.warn('[insights] filter render failed:', e); }
 }
 function resetFilters() {
   ['filterYear','filterCommunity','filterAgent','filterRisk','filterPhase']
@@ -1643,6 +1733,7 @@ function renderFromRows(rows, fromCache) {
   // Filtering by community/agent/risk for a revenue forecast is statistically
   // meaningless, so we deliberately do NOT call this from applyFilters().
   try { renderPredict(analytics, rows); } catch(e) { console.warn('[predict] render failed:', e); }
+  try { renderInsightEngine(analytics, rows); } catch(e) { console.warn('[insights] render failed:', e); }
   updateFreshness(fromCache);
   
   document.getElementById('filterCount').textContent = rows.length.toLocaleString()+' records';
@@ -2556,6 +2647,440 @@ function renderElasticity(d, rows) {
   sw.style.display = '';
 }
 
+
+/* =====================================================
+   INSIGHT ENGINE — Cross-metric analysis & narrative
+   Runs after renderKPIs/renderCharts on every data load.
+   Writes to: #cmd-brief, #sw-collections, #sw-agents,
+   plus section cross-link alert containers.
+   ===================================================== */
+function renderInsightEngine(d, rows) {
+  if (!d || !d.totalRows || d.totalRows < 2) return;
+
+  const fB = v => v >= 1e9 ? '₦' + (v/1e9).toFixed(1) + 'B' : v >= 1e6 ? '₦' + (v/1e6).toFixed(0) + 'M' : '₦' + v.toLocaleString();
+  const pct = (a, b) => b > 0 ? ((a/b)*100).toFixed(0)+'%' : '—';
+
+  // ── Derived signals ──────────────────────────────────────────────────────
+  const collRate       = d.totalRev > 0 ? (d.totalPaid / d.totalRev) : 0;
+  const outstandRate   = d.totalRev > 0 ? (d.totalOut  / d.totalRev) : 0;
+  const highRiskPct    = d.totalRows > 0 ? (d.highRiskCnt / d.totalRows) : 0;
+  const fullyPaidPct   = d.totalRows > 0 ? (d.fullyPaidCnt / d.totalRows) : 0;
+
+  // Year-on-year revenue growth (last 2 years)
+  const yoyGrowth = (() => {
+    if (!d.revByYear || d.revByYear.length < 2) return null;
+    const last = d.revByYear[d.revByYear.length - 1];
+    const prev = d.revByYear[d.revByYear.length - 2];
+    return prev > 0 ? ((last - prev) / prev) : null;
+  })();
+
+  // Channel concentration — top channel % of total revenue
+  const topChRevPct = d.agentGrpRev && d.agentGrpRev[0] && d.totalRev > 0
+    ? d.agentGrpRev[0] / d.totalRev : 0;
+
+  // Mortgage adoption
+  const mortgagePct = d.totalRows > 0 ? d.mortgageCount / d.totalRows : 0;
+
+  // Outstanding concentration by community (which community holds the most debt)
+  const commOutIdx = d.commOutstanding
+    ? d.commOutstanding.reduce((best, v, i) => v > (d.commOutstanding[best]||0) ? i : best, 0)
+    : -1;
+  const worstDebtComm  = commOutIdx >= 0 ? d.communities[commOutIdx] : null;
+  const worstDebtVal   = commOutIdx >= 0 ? d.commOutstanding[commOutIdx] : 0;
+  const worstDebtPct   = d.totalOut > 0 && worstDebtVal > 0
+    ? (worstDebtVal / d.totalOut * 100).toFixed(0) + '%' : null;
+
+  // Revenue concentration by community
+  const commRevIdx = d.commRevenue
+    ? d.commRevenue.reduce((best, v, i) => v > (d.commRevenue[best]||0) ? i : best, 0)
+    : -1;
+  const topRevComm   = commRevIdx >= 0 ? d.communities[commRevIdx] : null;
+  const topRevCommPct = commRevIdx >= 0 && d.totalRev > 0
+    ? (d.commRevenue[commRevIdx] / d.totalRev * 100).toFixed(0) : null;
+
+  // Diaspora signal strength
+  const diasporaPct = d.totalRows > 0 && d.diaspora ? d.diaspora / d.totalRows : 0;
+
+  // ── Portfolio Health Score (0–100) ───────────────────────────────────────
+  // Composite of: collection rate (35%), low high-risk pct (25%),
+  // revenue growth trend (20%), channel diversity (10%), mortgage adoption (10%)
+  let hs = 0;
+
+  // Collection rate (35pts): excellent ≥80%, poor <50%
+  if (collRate >= 0.80)      hs += 35;
+  else if (collRate >= 0.65) hs += 25;
+  else if (collRate >= 0.50) hs += 15;
+  else                       hs += 5;
+
+  // Low high-risk concentration (25pts): good <10%, bad >30%
+  if (highRiskPct <= 0.10)      hs += 25;
+  else if (highRiskPct <= 0.20) hs += 17;
+  else if (highRiskPct <= 0.30) hs += 10;
+  else                          hs += 3;
+
+  // Revenue growth (20pts)
+  if (yoyGrowth !== null) {
+    if (yoyGrowth >= 0.20)       hs += 20;
+    else if (yoyGrowth >= 0.05)  hs += 15;
+    else if (yoyGrowth >= -0.05) hs += 10;
+    else                         hs += 3;
+  } else { hs += 10; } // neutral if unknown
+
+  // Channel diversity (10pts): risky if top channel >70%
+  if (topChRevPct <= 0.50)      hs += 10;
+  else if (topChRevPct <= 0.65) hs += 7;
+  else if (topChRevPct <= 0.80) hs += 4;
+  else                          hs += 1;
+
+  // Mortgage adoption (10pts): signal of product bankability
+  if (mortgagePct >= 0.15)      hs += 10;
+  else if (mortgagePct >= 0.07) hs += 7;
+  else if (mortgagePct >= 0.03) hs += 4;
+  else                          hs += 2;
+
+  hs = Math.min(100, Math.max(0, hs));
+  const hsClass = hs >= 70 ? 'hs-strong' : hs >= 45 ? 'hs-moderate' : 'hs-weak';
+  const hsLabel = hs >= 70 ? '● Strong' : hs >= 45 ? '◑ Moderate' : '○ Weak';
+
+  const hsBadge = document.getElementById('hs-badge');
+  if (hsBadge) {
+    hsBadge.textContent = hs + '/100 — ' + hsLabel.split(' ')[1];
+    hsBadge.className = 'health-score-badge ' + hsClass;
+  }
+
+  // ── Build Command Brief findings ─────────────────────────────────────────
+  const findings = [];
+
+  // Finding 1 — Collections urgency
+  if (collRate < 0.60) {
+    const atRisk = fB(d.totalOut);
+    findings.push({
+      type: 'cf-action',
+      tag: '🚨 Urgent Action',
+      headline: 'Collection rate is critically low — cash exposure is high',
+      body: `Only <strong>${pct(d.totalPaid, d.totalRev)}</strong> of total contracted revenue has been collected. The remaining <strong>${atRisk}</strong> outstanding is at risk of delay or default. This directly suppresses the firm's liquidity and limits reinvestment capacity.`,
+      metric: atRisk + ' at risk'
+    });
+  } else if (collRate < 0.75) {
+    findings.push({
+      type: 'cf-watch',
+      tag: '⚠️ Watch',
+      headline: 'Collection rate below healthy threshold',
+      body: `Portfolio collection sits at <strong>${pct(d.totalPaid, d.totalRev)}</strong>. With <strong>${fB(d.totalOut)}</strong> outstanding, there is material receivables exposure. High-risk accounts likely need escalated follow-up before year-end.`,
+      metric: pct(d.totalPaid, d.totalRev) + ' collected'
+    });
+  } else {
+    findings.push({
+      type: 'cf-strong',
+      tag: '✅ Strong Signal',
+      headline: 'Collection discipline is performing well',
+      body: `<strong>${pct(d.totalPaid, d.totalRev)}</strong> of contracted revenue collected. Only <strong>${fB(d.totalOut)}</strong> outstanding. This is a healthy receivables position — focus effort on the high-risk <strong>${d.highRiskCnt}</strong> units still below 25% paid.`,
+      metric: pct(d.totalPaid, d.totalRev) + ' collected'
+    });
+  }
+
+  // Finding 2 — Revenue trajectory
+  if (yoyGrowth !== null) {
+    const growthStr = (yoyGrowth >= 0 ? '+' : '') + (yoyGrowth * 100).toFixed(0) + '%';
+    const lastYr = d.years && d.years[d.years.length - 1];
+    const lastYrRev = d.revByYear && fB(d.revByYear[d.revByYear.length - 1]);
+    if (yoyGrowth >= 0.15) {
+      findings.push({
+        type: 'cf-strong',
+        tag: '📈 Growth Signal',
+        headline: `Revenue accelerating — ${growthStr} year-on-year`,
+        body: `${lastYr} closed at <strong>${lastYrRev}</strong>, ${growthStr} over the prior year. This is an active growth period. The key risk is whether collections keep pace — strong top-line growth paired with weak collections creates a dangerous gap between booked and received.`,
+        metric: growthStr + ' YoY growth'
+      });
+    } else if (yoyGrowth < -0.05) {
+      findings.push({
+        type: 'cf-action',
+        tag: '📉 Revenue Risk',
+        headline: `Revenue declined ${Math.abs((yoyGrowth * 100).toFixed(0))}% — demand signal needs investigation`,
+        body: `${lastYr} revenue of <strong>${lastYrRev}</strong> is down year-on-year. Possible causes: fewer new launches, pricing friction, or channel underperformance. Compare against unit volume — if units held steady but revenue fell, average pricing eroded.`,
+        metric: growthStr + ' YoY change'
+      });
+    } else {
+      findings.push({
+        type: 'cf-info',
+        tag: '📊 Stable Trajectory',
+        headline: `Revenue growth flat (${growthStr}) — optimise margins, not volume`,
+        body: `Portfolio revenue is broadly flat year-on-year. This is a signal to stop chasing volume and focus on <strong>average selling price</strong>, finish type mix, and collection efficiency. Margin gains during a flat period are more durable than volume-driven spikes.`,
+        metric: growthStr + ' YoY'
+      });
+    }
+  }
+
+  // Finding 3 — Channel concentration risk
+  if (d.topChannel && topChRevPct >= 0.65) {
+    findings.push({
+      type: 'cf-watch',
+      tag: '⚠️ Concentration Risk',
+      headline: `${d.topChannel} drives ${pct(d.agentGrpRev[0], d.totalRev)} of all revenue — single-channel dependency`,
+      body: `Over <strong>${pct(d.agentGrpRev[0], d.totalRev)}</strong> of portfolio revenue flows through one channel. This creates fragility: any disruption — agent departure, commission dispute, or channel conflict — could have outsized revenue impact. Diversification is a strategic priority.`,
+      metric: pct(d.agentGrpRev[0], d.totalRev) + ' via ' + d.topChannel
+    });
+  } else if (d.topChannel) {
+    findings.push({
+      type: 'cf-info',
+      tag: '🤝 Channel Health',
+      headline: `Channel mix is reasonably diversified — ${d.topChannel} leads`,
+      body: `<strong>${d.topChannel}</strong> accounts for <strong>${pct(d.agentGrpRev[0], d.totalRev)}</strong> of revenue. The remaining ${pct(d.totalRev - d.agentGrpRev[0], d.totalRev)} is distributed across ${d.agentGroups.length - 1} other channels. Monitor for trend shifts — if third-party share is growing, consider co-investing in those relationships.`,
+      metric: d.agentGroups.length + ' active channels'
+    });
+  }
+
+  // Finding 4 — High-risk units debt cross-community exposure
+  if (worstDebtComm && worstDebtPct && highRiskPct > 0.10) {
+    findings.push({
+      type: 'cf-action',
+      tag: '🔴 Double Exposure',
+      headline: `${worstDebtComm} holds ${worstDebtPct} of outstanding — and ${(highRiskPct*100).toFixed(0)}% of units are high-risk`,
+      body: `Outstanding debt is concentrated in <strong>${worstDebtComm}</strong> (${worstDebtPct} of total <strong>${fB(d.totalOut)}</strong>) while portfolio-wide <strong>${(highRiskPct*100).toFixed(0)}%</strong> of buyers are below 25% paid. If these overlap, the recovery risk is compounding. Segment high-risk buyers by community immediately.`,
+      metric: worstDebtPct + ' in ' + worstDebtComm
+    });
+  } else if (worstDebtComm && worstDebtPct) {
+    findings.push({
+      type: 'cf-info',
+      tag: '📍 Debt Concentration',
+      headline: `${worstDebtComm} carries ${worstDebtPct} of all outstanding receivables`,
+      body: `<strong>${fB(worstDebtVal)}</strong> of the portfolio's total outstanding balance sits in <strong>${worstDebtComm}</strong>. This is worth monitoring — a liquidity event or buyer cluster in one community can stress cash flow unexpectedly. Ensure collection activities are proportionally resourced here.`,
+      metric: fB(worstDebtVal) + ' in ' + worstDebtComm
+    });
+  }
+
+  // Finding 5 — Mortgage adoption signal
+  if (mortgagePct < 0.05 && d.totalRows > 20) {
+    findings.push({
+      type: 'cf-watch',
+      tag: '🏦 Finance Gap',
+      headline: 'Mortgage penetration is very low — financing is not a buyer pathway',
+      body: `Only <strong>${pct(d.mortgageCount, d.totalRows)}</strong> of transactions are mortgage-financed. In a market where affordability is a constraint, low mortgage uptake can suppress demand ceiling. Consider mortgage readiness programmes or direct bank MOU partnerships to unlock this segment.`,
+      metric: pct(d.mortgageCount, d.totalRows) + ' mortgage rate'
+    });
+  } else if (mortgagePct >= 0.15) {
+    findings.push({
+      type: 'cf-strong',
+      tag: '🏦 Finance Signal',
+      headline: `Mortgage adoption healthy at ${pct(d.mortgageCount, d.totalRows)} — product is bankable`,
+      body: `<strong>${d.mortgageCount}</strong> units (<strong>${pct(d.mortgageCount, d.totalRows)}</strong>) are financed through mortgages. This validates product bankability and signals access to buyers who require formal credit. Track whether these buyers also show better collection behaviour than cash buyers.`,
+      metric: pct(d.mortgageCount, d.totalRows) + ' financed'
+    });
+  }
+
+  // Finding 6 — Diaspora opportunity
+  if (diasporaPct >= 0.10) {
+    findings.push({
+      type: 'cf-strong',
+      tag: '🌍 Diaspora Signal',
+      headline: `${pct(d.diaspora, d.totalRows)} of buyers are diaspora — an underserved premium segment`,
+      body: `With <strong>${d.diaspora}</strong> diaspora buyers (<strong>${d.countries}</strong> countries), the portfolio has proven cross-border appeal. Diaspora buyers typically pay higher ASPs and have lower price sensitivity. A dedicated diaspora marketing programme and forex-friendly payment structures could significantly lift revenue per unit.`,
+      metric: pct(d.diaspora, d.totalRows) + ' diaspora'
+    });
+  }
+
+  // Show the Command Brief
+  const cmdBrief = document.getElementById('cmd-brief');
+  const cmdFindings = document.getElementById('cmd-findings');
+  if (cmdBrief && cmdFindings && findings.length) {
+    cmdBrief.style.display = '';
+    // Show max 3 findings in the grid
+    const shown = findings.slice(0, 3);
+    cmdFindings.style.gridTemplateColumns = `repeat(${shown.length},1fr)`;
+    cmdFindings.innerHTML = shown.map(f => `
+      <div class="cmd-finding ${f.type}">
+        <div class="cf-tag">${f.tag}</div>
+        <div class="cf-headline">${f.headline}</div>
+        <div class="cf-body">${f.body}</div>
+        <div><span class="cf-metric">${f.metric}</span></div>
+      </div>
+    `).join('');
+  }
+
+  // ── Collections So What ──────────────────────────────────────────────────
+  const swColl = document.getElementById('sw-collections');
+  if (swColl) {
+    const collPctNum = (collRate * 100).toFixed(0);
+    const highRiskPctStr = (highRiskPct * 100).toFixed(0);
+    let swClass, swIco, swHed, swBod, swActions;
+
+    if (collRate < 0.55) {
+      swClass = 'sowhat sw-neg'; swIco = '🚨';
+      swHed = `Collection rate of ${collPctNum}% is a critical business risk — ${fB(d.totalOut)} outstanding`;
+      swBod = `Less than <strong>60%</strong> of contracted revenue has been received. The <strong>${fB(d.totalOut)}</strong> outstanding balance is not just a receivables problem — it directly constraints the firm's ability to fund construction, operations, and new launches. With <strong>${d.highRiskCnt} high-risk accounts</strong> (below 25% paid), a portion of this outstanding may not be recoverable at standard terms. Collection is not a finance function issue alone — it requires escalation to management, legal, and potentially product modification for underwater buyers.`;
+      swActions = [
+        `Prioritise the ${d.highRiskCnt} high-risk accounts below 25% paid — assign dedicated recovery officer per community`,
+        `Review whether payment plan structures are genuinely achievable for buyers in ${worstDebtComm || 'high-debt communities'} — restructuring may recover more than legal action`,
+        `Segment outstanding by vintage (when sold) — older unpaid accounts are statistically harder to recover; provision accordingly`,
+        `Set a 90-day collection target with weekly reporting to MD level — visibility changes behaviour`
+      ];
+    } else if (collRate < 0.72) {
+      swClass = 'sowhat sw-med'; swIco = '⚠️';
+      swHed = `${collPctNum}% collected — ${fB(d.totalOut)} outstanding requires a structured recovery programme`;
+      swBod = `Collection is in a <strong>watchlist zone</strong>. The <strong>${fB(d.totalOut)}</strong> outstanding is material. With <strong>${highRiskPctStr}%</strong> of the portfolio high-risk (below 25% paid), there is a clear sub-population of buyers who need intervention before their accounts deteriorate further. Outstanding by community shows where resources should be prioritised — don't spread collection effort evenly when the debt is concentrated.`;
+      swActions = [
+        `Map high-risk accounts against community and agent — identify if specific agents sold to buyers who cannot now perform`,
+        `Introduce payment flexibility (restructured instalment plans) for medium-risk accounts before they fall to high-risk`,
+        `Monthly collections dashboards to project-level managers, not just finance — ownership changes behaviour`,
+        `Consider early-settlement discounts for near-completion accounts to accelerate cash collection`
+      ];
+    } else {
+      swClass = 'sowhat sw-pos'; swIco = '✅';
+      swHed = `${collPctNum}% collection rate is solid — defend this by focusing on the ${d.highRiskCnt} high-risk stragglers`;
+      swBod = `At <strong>${collPctNum}%</strong>, collection discipline is performing well relative to industry norms. The <strong>${fB(d.totalOut)}</strong> remaining outstanding is a manageable receivable. However, <strong>${d.highRiskCnt} accounts</strong> are below 25% paid and represent the tail risk. Don't let a strong aggregate number mask the need for targeted action at the bottom of the distribution. <strong>${d.fullyPaidCnt} units</strong> are fully paid — understand what drove those buyers to completion and replicate that pathway.`;
+      swActions = [
+        `Profile fully-paid buyers — which payment plans, channels, and communities produce the best completion rates`,
+        `Create a watch list for accounts between 25–50% paid that have slowed — these are next-wave risk`,
+        `Reward fast-paying buyers with service benefits to reinforce positive behaviour`
+      ];
+    }
+
+    swColl.className = swClass;
+    swColl.dataset.ico = swIco;
+    swColl.style.display = '';
+    document.getElementById('sw-coll-headline').textContent = swHed;
+    document.getElementById('sw-coll-body').innerHTML = swBod;
+
+    const actEl = document.getElementById('sw-coll-actions');
+    const actList = document.getElementById('sw-coll-action-list');
+    if (actEl && actList && swActions) {
+      actEl.style.display = '';
+      actList.innerHTML = swActions.map(a => `<li>${a}</li>`).join('');
+    }
+
+    const metricsEl = document.getElementById('sw-coll-metrics');
+    if (metricsEl) {
+      metricsEl.innerHTML = [
+        `${collPctNum}% collected`,
+        `${fB(d.totalOut)} outstanding`,
+        `${d.highRiskCnt} high-risk units`,
+        `${(fullyPaidPct*100).toFixed(0)}% fully paid`
+      ].map(m => `<span class="sowhat-pill">${m}</span>`).join('');
+    }
+  }
+
+  // ── Agents So What ───────────────────────────────────────────────────────
+  const swAgent = document.getElementById('sw-agents');
+  if (swAgent && d.topChannel) {
+    const topChPct = pct(d.agentGrpRev[0], d.totalRev);
+    const mixta = d.mixtaRev > 0 ? pct(d.mixtaRev, d.totalRev) : null;
+    const thirdP = d.thirdRev > 0 ? pct(d.thirdRev, d.totalRev) : null;
+    let agHed, agBod, agClass, agIco, agActions;
+
+    if (topChRevPct >= 0.70) {
+      agClass = 'sowhat sw-neg'; agIco = '⚠️';
+      agHed = `Channel over-concentration: ${d.topChannel} generates ${topChPct} of revenue — this is a strategic vulnerability`;
+      agBod = `When a single channel drives more than <strong>70%</strong> of revenue, the portfolio's commercial health is tied to that channel's operational stability. <strong>${d.topChannel}</strong> currently accounts for <strong>${topChPct}</strong> of total sales. Any disruption — talent loss, commission dispute, competitor poaching, or organisational change — has <strong>outsized and immediate revenue impact</strong>. This is not a relationship to take for granted; it requires formalised retention and governance.`;
+      agActions = [
+        `Formalise the relationship with ${d.topChannel} — SLA, exclusivity review, and retention incentive structure`,
+        `Actively incubate 2–3 smaller channels as revenue diversification; allocate dedicated inventory`,
+        `Track and report channel revenue share quarterly — set a target to reduce top-channel dependency below 60%`,
+        `If ${d.topChannel} is internal (Mixta Sales), ensure succession planning for key personnel`
+      ];
+    } else if (topChRevPct >= 0.50) {
+      agClass = 'sowhat sw-med'; agIco = '🤝';
+      agHed = `${d.topChannel} leads at ${topChPct} — healthy dominance, but monitor diversity trend`;
+      agBod = `<strong>${d.topChannel}</strong> drives <strong>${topChPct}</strong> of portfolio revenue. This is a comfortable leadership position, not yet a concentration risk. The question is trajectory: is the top channel's share growing (consolidating risk) or shrinking (natural diversification)? Check the Agent Group Volume Trend chart. ${mixta ? `Mixta Sales contributes <strong>${mixta}</strong> of revenue — direct sales strength is a margin-positive signal.` : ''} ${thirdP ? `Third-party agents generate <strong>${thirdP}</strong> — these are likely commission-heavy; monitor per-unit economics.` : ''}`;
+      agActions = [
+        `Review commission structures across channels — ensure third-party cost is justified by the units they sell`,
+        `Identify your top 3 individual agents by revenue and volume — these people are key-person risk`,
+        `Track which channels sell into which communities — channel-community mis-match may indicate untapped opportunity`
+      ];
+    } else {
+      agClass = 'sowhat sw-pos'; agIco = '✅';
+      agHed = `Well-diversified channel mix — no single source exceeds ${topChPct} of revenue`;
+      agBod = `Revenue is spread across <strong>${d.agentGroups.length}</strong> channels, with the largest (<strong>${d.topChannel}</strong>) at <strong>${topChPct}</strong>. This is resilient. The risk in a diversified portfolio is coordination cost — ensure tracking, commission management, and lead handling don't fragment or create blind spots. ${d.agentCount > 30 ? `With <strong>${d.agentCount}</strong> individual dealing agents, data hygiene (consistent agent tagging in the CRM) is critical for accurate attribution.` : ''}`;
+      agActions = [
+        `Identify the top 5 agents by revenue-per-unit (not just total revenue) — those are the highest-quality relationships`,
+        `Analyse whether high-volume agents are also associated with high collection rates — quality of sale matters as much as quantity`
+      ];
+    }
+
+    swAgent.className = agClass;
+    swAgent.dataset.ico = agIco;
+    swAgent.style.display = '';
+    document.getElementById('sw-agent-headline').textContent = agHed;
+    document.getElementById('sw-agent-body').innerHTML = agBod;
+
+    const agActEl = document.getElementById('sw-agent-actions');
+    const agActList = document.getElementById('sw-agent-action-list');
+    if (agActEl && agActList && agActions) {
+      agActEl.style.display = '';
+      agActList.innerHTML = agActions.map(a => `<li>${a}</li>`).join('');
+    }
+  }
+
+  // ── Collections cross-link alerts ────────────────────────────────────────
+  const collXlinks = document.getElementById('coll-xlinks');
+  if (collXlinks) {
+    const alerts = [];
+
+    // If revenue grew but collection didn't keep pace
+    if (yoyGrowth !== null && yoyGrowth > 0.10 && collRate < 0.65) {
+      alerts.push({
+        cls: 'xl-red', ico: '📉',
+        hed: 'Revenue is growing faster than cash collection — a widening gap',
+        bod: `Portfolio revenue grew <strong>${(yoyGrowth*100).toFixed(0)}%</strong> last year, but collection rate sits at <strong>${(collRate*100).toFixed(0)}%</strong>. More sales are being booked without a proportional increase in cash received. This is the most dangerous pattern in receivables management — growth creates the illusion of health while the cash position quietly deteriorates.`
+      });
+    }
+
+    // High-risk units in top revenue community
+    if (topRevComm && worstDebtComm && topRevComm === worstDebtComm) {
+      alerts.push({
+        cls: 'xl-red', ico: '🔴',
+        hed: `${topRevComm} is your top revenue community and your biggest debt holder — compounding exposure`,
+        bod: `<strong>${topRevComm}</strong> generates <strong>${topRevCommPct}%</strong> of portfolio revenue but also holds <strong>${worstDebtPct}</strong> of all outstanding. Revenue concentration and debt concentration in the same community means a single adverse event — delayed handover, buyer confidence shock, or macro pressure — would hit both the top line and collections simultaneously.`
+      });
+    }
+
+    if (d.highRiskCnt > 0) {
+      const outPerHighRisk = d.totalOut > 0 && d.highRiskCnt > 0
+        ? fB(d.totalOut / d.highRiskCnt) : null;
+      alerts.push({
+        cls: 'xl-amber', ico: '⚠️',
+        hed: `${d.highRiskCnt} units below 25% paid — average ${outPerHighRisk ? outPerHighRisk + ' outstanding per account' : 'outstanding balance significant'}`,
+        bod: `High-risk accounts (below 25% paid) are the most likely source of future write-offs or legal action. They require a <strong>differentiated response</strong> from the rest of the book — not standard payment reminder cycles, but case-by-case review of buyer capacity, intent, and whether restructuring makes economic sense versus formal recovery.`
+      });
+    }
+
+    collXlinks.innerHTML = alerts.map(a => `
+      <div class="xlink-alert ${a.cls}" data-ico="${a.ico}">
+        <div class="xl-hed">${a.hed}</div>
+        <div class="xl-bod">${a.bod}</div>
+      </div>`).join('');
+  }
+
+  // ── Agent cross-link alerts ───────────────────────────────────────────────
+  const agentXlinks = document.getElementById('agent-xlinks');
+  if (agentXlinks) {
+    const alerts = [];
+
+    if (d.topAgentName && d.topAgentRev) {
+      const agentRevPct = d.totalRev > 0 ? (d.topAgentRev / d.totalRev * 100).toFixed(0) : '—';
+      if (parseFloat(agentRevPct) > 15) {
+        alerts.push({
+          cls: 'xl-amber', ico: '👤',
+          hed: `${d.topAgentName} alone accounts for ${agentRevPct}% of portfolio revenue — key-person risk`,
+          bod: `A single dealing agent generating more than <strong>15%</strong> of total revenue represents a concentration risk at the individual level. Departure, poaching, or conflict with this agent would have immediate revenue impact. Ensure relationship is managed at principal level and that <strong>client data, leads, and transaction history</strong> are held at the company level, not with the individual.`
+        });
+      }
+    }
+
+    if (topChRevPct >= 0.65 && collRate < 0.65) {
+      alerts.push({
+        cls: 'xl-red', ico: '🔗',
+        hed: 'Channel concentration + low collection rate = compounding risk',
+        bod: `The dominant channel (<strong>${d.topChannel}</strong> at <strong>${pct(d.agentGrpRev[0], d.totalRev)}</strong> of revenue) paired with a <strong>${(collRate*100).toFixed(0)}%</strong> collection rate creates a specific risk pattern. High agent-driven sales often come with buyers who were sold aspirationally — they committed to a payment plan they struggle to sustain. Cross-reference high-risk accounts with channel origin to test this hypothesis.`
+      });
+    }
+
+    agentXlinks.innerHTML = alerts.map(a => `
+      <div class="xlink-alert ${a.cls}" data-ico="${a.ico}">
+        <div class="xl-hed">${a.hed}</div>
+        <div class="xl-bod">${a.bod}</div>
+      </div>`).join('');
+  }
+}
 
 /* =====================================================
    AUTO-REFRESH
