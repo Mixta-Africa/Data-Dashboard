@@ -567,6 +567,68 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     </div>
     <div id="strategy-insights"></div>
   </div>
+
+  <!-- ===== DEMAND VELOCITY ===== -->
+  <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin:22px 0 14px;display:flex;align-items:center;gap:10px">
+    Demand Velocity — Sales Momentum
+    <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(192,57,43,0.15),transparent)"></div>
+  </div>
+
+  <div class="kpi-strip" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi"><div class="kpi-label">Demand Trend</div><div class="kpi-value red" id="vel-trend">—</div><div class="kpi-sub" id="vel-trend-s">3-year MA slope</div></div>
+    <div class="kpi"><div class="kpi-label">Total Units Last Year</div><div class="kpi-value" id="vel-lastyr">—</div><div class="kpi-sub" id="vel-lastyr-s">vs prior year</div></div>
+    <div class="kpi"><div class="kpi-label">Fastest-Growing Community</div><div class="kpi-value red" id="vel-top">—</div><div class="kpi-sub" id="vel-top-s">Velocity score</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="cc">
+      <div class="ch">
+        <div><div class="ct">3-Year Moving Average — Unit Sales</div><div class="cs">Smoothed demand trend with annual bars</div></div>
+      </div>
+      <div class="cw" style="height:260px"><canvas id="c-mavg"></canvas></div>
+    </div>
+    <div class="cc">
+      <div class="ch">
+        <div><div class="ct">Community Velocity Score</div><div class="cs">Recent 2yr ÷ prior 2yr × 100 · base 100 = flat</div></div>
+      </div>
+      <div id="vel-bars"></div>
+    </div>
+  </div>
+
+  <!-- ===== COLLECTION RECOVERY ===== -->
+  <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin:22px 0 14px;display:flex;align-items:center;gap:10px">
+    Collection Recovery — Probability-Weighted Receivables
+    <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(192,57,43,0.15),transparent)"></div>
+  </div>
+
+  <div class="kpi-strip" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi"><div class="kpi-label">Total Outstanding</div><div class="kpi-value" id="rec-total-out">—</div><div class="kpi-sub" id="rec-total-out-s">Across all risk tiers</div></div>
+    <div class="kpi"><div class="kpi-label">Expected Recovery (24mo)</div><div class="kpi-value red" id="rec-recoverable">—</div><div class="kpi-sub" id="rec-recoverable-s">Probability-weighted</div></div>
+    <div class="kpi"><div class="kpi-label">High-Risk Receivables</div><div class="kpi-value" id="rec-highrisk">—</div><div class="kpi-sub" id="rec-highrisk-s" style="color:var(--red)">At greatest risk of loss</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="cc">
+      <div class="ch">
+        <div><div class="ct">Recovery by Risk Tier</div><div class="cs">Expected recovery vs at-risk balance · ₦B</div></div>
+        <span class="badge bg_" id="rec-tier-source">Tiers from % Paid</span>
+      </div>
+      <div class="cw" style="height:260px"><canvas id="c-recovery"></canvas></div>
+    </div>
+    <div class="cc">
+      <div class="ch">
+        <div><div class="ct">Cumulative Recovery Timeline</div><div class="cs">Projected over 24 months by tier maturity</div></div>
+      </div>
+      <div class="cw" style="height:260px"><canvas id="c-resolution"></canvas></div>
+    </div>
+  </div>
+
+  <div class="cc full" style="margin-bottom:14px">
+    <div class="ch">
+      <div><div class="ct">Recovery Waterfall — By Risk Tier</div><div class="cs">Expected vs at-risk balance for each tier across the whole portfolio</div></div>
+    </div>
+    <div id="rec-waterfall"></div>
+  </div>
 </div>
 
 </main>
@@ -995,9 +1057,11 @@ function computeAnalytics(rows) {
   data.commOutstanding= data.communities.map(c=>sumKey(byComm[c],'_out'));
 
   data.commYearMatrix = {};
-  data.communities.forEach(c=>{ data.commYearMatrix[c]={}; years.forEach(y=>{ data.commYearMatrix[c][y]=0; }); });
+  data.commYearUnits  = {};
+  data.communities.forEach(c=>{ data.commYearMatrix[c]={}; data.commYearUnits[c]={}; years.forEach(y=>{ data.commYearMatrix[c][y]=0; data.commYearUnits[c][y]=0; }); });
   valid.filter(r=>r._year).forEach(r=>{
     if(data.commYearMatrix[r.community]) data.commYearMatrix[r.community][r._year]=(data.commYearMatrix[r.community][r._year]||0)+r._sp;
+    if(data.commYearUnits[r.community])  data.commYearUnits[r.community][r._year] =(data.commYearUnits[r.community][r._year]||0)+1;
   });
 
   // ── By property ──
@@ -1525,7 +1589,7 @@ function renderFromRows(rows, fromCache) {
   // Predictive forecast runs ONCE on the full unfiltered dataset.
   // Filtering by community/agent/risk for a revenue forecast is statistically
   // meaningless, so we deliberately do NOT call this from applyFilters().
-  try { renderPredict(analytics); } catch(e) { console.warn('[predict] render failed:', e); }
+  try { renderPredict(analytics, rows); } catch(e) { console.warn('[predict] render failed:', e); }
   updateFreshness(fromCache);
   
   document.getElementById('filterCount').textContent = rows.length.toLocaleString()+' records';
@@ -1745,7 +1809,16 @@ function olsRegression(xs, ys) {
   return { a, b, r2, sigma, predict: x => a + b*x };
 }
 
-function renderPredict(d) {
+function renderPredict(d, rows) {
+  // Forecast (uses analytics object only)
+  renderForecast(d);
+  // Velocity (uses analytics object only)
+  try { renderVelocity(d); } catch(e) { console.warn('[predict] velocity failed:', e); }
+  // Recovery (needs raw rows for per-row _out and _ppct)
+  try { renderRecovery(rows || []); } catch(e) { console.warn('[predict] recovery failed:', e); }
+}
+
+function renderForecast(d) {
   if (!d || !d.years || d.years.length < 2) {
     setText('pr-nextyear', '—');
     setText('pr-nextyear-s', 'Need at least 2 years of data');
@@ -1914,6 +1987,300 @@ function renderPredict(d) {
       </div>`;
   });
 }
+
+/* =====================================================
+   DEMAND VELOCITY — Moving averages + community scores
+   ===================================================== */
+function renderVelocity(d) {
+  if (!d || !d.years || d.years.length < 2) return;
+
+  // ── 3-year moving average ──────────────────────────────────────────────
+  const movAvg = (arr, w) => arr.map((_, i) => {
+    const sl = arr.slice(Math.max(0, i - w + 1), i + 1);
+    return sl.reduce((s, v) => s + v, 0) / sl.length;
+  });
+  const ma3 = movAvg(d.unitsByYear, 3);
+  const ma2 = movAvg(d.unitsByYear, 2);
+
+  // Demand trend signal: slope of the 3yr MA (last vs 3 periods back)
+  const slope = ma3.length >= 3
+    ? ma3[ma3.length - 1] - ma3[Math.max(0, ma3.length - 3)]
+    : 0;
+  const trendLabel = slope > 2 ? 'Accelerating ▲' : slope < -2 ? 'Decelerating ▼' : 'Stable →';
+  setText('vel-trend', trendLabel);
+  setText('vel-trend-s', '3-yr MA slope: ' + (slope > 0 ? '+' : '') + slope.toFixed(1) + ' units');
+
+  // Last year units & change
+  const lastIdx  = d.unitsByYear.length - 1;
+  const lastU    = d.unitsByYear[lastIdx] || 0;
+  const priorU   = d.unitsByYear[lastIdx - 1] || 0;
+  const pctChg   = priorU > 0 ? ((lastU - priorU) / priorU * 100) : 0;
+  setText('vel-lastyr', lastU.toLocaleString() + ' units');
+  setText('vel-lastyr-s', priorU > 0
+    ? (pctChg >= 0 ? '+' : '') + pctChg.toFixed(0) + '% vs ' + d.years[lastIdx - 1] + ' (' + priorU + ')'
+    : '—');
+
+  // ── Per-community velocity (recent 2yr / prior 2yr × 100) ──────────────
+  // Uses ACTUAL UNIT COUNTS from commYearUnits — not revenue — so price
+  // inflation doesn't mask unit-volume changes.
+  const velScores = [];
+  if (d.years.length >= 4 && d.commYearUnits) {
+    const recentYrs = d.years.slice(-2);
+    const priorYrs  = d.years.slice(-4, -2);
+    (d.communities || []).forEach(comm => {
+      const recent = recentYrs.reduce((s, y) => s + (d.commYearUnits[comm]?.[y] || 0), 0) / 2;
+      const prior  = priorYrs.reduce((s, y) => s + (d.commYearUnits[comm]?.[y] || 0), 0) / 2;
+      // Require at least some prior activity to compute a meaningful score
+      if (prior <= 0) return;
+      const score = Math.round((recent / prior) * 100);
+      velScores.push({ comm, score, recent, prior });
+    });
+    velScores.sort((a, b) => b.score - a.score);
+  }
+
+  // Top community KPI
+  if (velScores.length) {
+    setText('vel-top', velScores[0].comm.length > 16
+      ? velScores[0].comm.slice(0, 15) + '…'
+      : velScores[0].comm);
+    setText('vel-top-s', 'Velocity ' + velScores[0].score + ' (base 100)');
+  } else {
+    setText('vel-top', '—');
+    setText('vel-top-s', 'Need 4+ years per community');
+  }
+
+  // ── Moving-average chart ───────────────────────────────────────────────
+  mkChart('c-mavg', {
+    type: 'bar',
+    data: {
+      labels: d.years,
+      datasets: [
+        { label: 'Annual Units', data: d.unitsByYear,
+          backgroundColor: 'rgba(192,57,43,0.15)', borderRadius: 4, borderSkipped: false },
+        { label: '3-yr MA', data: ma3.map(v => +v.toFixed(1)),
+          type: 'line', borderColor: C.red, backgroundColor: 'transparent',
+          borderWidth: 2.5, tension: 0.4, pointRadius: 3 },
+        { label: '2-yr MA', data: ma2.map(v => +v.toFixed(1)),
+          type: 'line', borderColor: C.blue, backgroundColor: 'transparent',
+          borderWidth: 1.5, borderDash: [4, 2], tension: 0.4, pointRadius: 0 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'top',
+          labels: { font: { size: 10 }, boxWidth: 9, boxHeight: 9 } },
+        tooltip: { callbacks: { label: c => c.dataset.label + ': ' + c.parsed.y.toFixed(1) + ' units' } }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v => v + ' u' } }
+      }
+    }
+  });
+
+  // ── Velocity bars ──────────────────────────────────────────────────────
+  const velEl = document.getElementById('vel-bars');
+  if (!velEl) return;
+  velEl.innerHTML = '';
+  if (!velScores.length) {
+    velEl.innerHTML = '<p style="color:var(--text3);font-size:11px;margin-top:8px">Need at least 4 years of revenue per community to compute velocity. Add more historical data to see scores here.</p>';
+    return;
+  }
+  velScores.forEach(({ comm, score }) => {
+    const col   = score > 110 ? C.green : score > 90 ? C.amber : C.red;
+    const label = score > 110 ? 'Accelerating' : score > 90 ? 'Stable' : 'Slowing';
+    velEl.innerHTML += `
+      <div class="sl-row">
+        <div class="sl-lbl">${comm}</div>
+        <div class="sl-bw"><div class="sl-bf" style="width:${Math.min(100, score/150*100).toFixed(0)}%;background:${col}"></div></div>
+        <div class="sl-val">${score} <span style="color:${col};font-size:9px">${label}</span></div>
+      </div>`;
+  });
+}
+
+
+/* =====================================================
+   COLLECTION RECOVERY — Probability-weighted receivables
+   Tiers derived from % Paid when Collection_Risk column
+   is not available in the sheet.
+   ===================================================== */
+function renderRecovery(rows) {
+  if (!rows || !rows.length) return;
+
+  // ── Fallback tier derivation from % paid ───────────────────────────────
+  // If the sheet ever gains a Collection_Risk column, the inline value wins;
+  // otherwise we derive from r._ppct using the rules below.
+  function deriveTier(r) {
+    if (r.collectionRisk && String(r.collectionRisk).trim() !== '') return r.collectionRisk;
+    const p = r._ppct || 0;
+    if (p >= 100) return 'Collected';
+    if (p >= 75)  return 'Near Completion';
+    if (p >= 50)  return 'Low Risk';
+    if (p >= 25)  return 'Medium Risk';
+    return 'High Risk';
+  }
+
+  // Recovery probability per tier (empirically reasonable defaults)
+  const RPROB = {
+    'Collected':       0.99,
+    'Near Completion': 0.92,
+    'Low Risk':        0.78,
+    'Medium Risk':     0.52,
+    'High Risk':       0.22,
+  };
+  // Months-to-resolve (used for the timeline chart)
+  const RMTHS = {
+    'Collected':       0,
+    'Near Completion': 3,
+    'Low Risk':        6,
+    'Medium Risk':     12,
+    'High Risk':       20,
+  };
+
+  const tierOrder = ['Collected','Near Completion','Low Risk','Medium Risk','High Risk'];
+  const tierData  = Object.fromEntries(tierOrder.map(t => [t, { out:0, exp:0, cnt:0 }]));
+
+  // Track whether tiers actually came from a real Collection_Risk column
+  // (so we can update the badge to be accurate)
+  let realRiskCol = 0;
+  let derivedRiskCol = 0;
+
+  rows.forEach(r => {
+    if (!(r._out > 0)) return;
+    const t = deriveTier(r);
+    if (!tierData[t]) return;
+    tierData[t].out += r._out;
+    tierData[t].exp += r._out * RPROB[t];
+    tierData[t].cnt += 1;
+    if (r.collectionRisk && String(r.collectionRisk).trim() !== '') realRiskCol++;
+    else derivedRiskCol++;
+  });
+
+  // Update badge to reflect actual data source
+  const badge = document.getElementById('rec-tier-source');
+  if (badge) {
+    if (realRiskCol > derivedRiskCol) {
+      badge.textContent = 'Tiers from sheet';
+      badge.className   = 'badge bgrn';
+    } else {
+      badge.textContent = 'Tiers from % Paid';
+      badge.className   = 'badge bg_';
+    }
+  }
+
+  const totalOut = tierOrder.reduce((s, t) => s + tierData[t].out, 0);
+  const totalExp = tierOrder.reduce((s, t) => s + tierData[t].exp, 0);
+  const highRisk = tierData['High Risk'].out;
+
+  // ── KPI cards ──────────────────────────────────────────────────────────
+  setText('rec-total-out', fB(totalOut));
+  setText('rec-total-out-s', tierOrder.reduce((s, t) => s + tierData[t].cnt, 0).toLocaleString() + ' units');
+  setText('rec-recoverable', fB(totalExp));
+  setText('rec-recoverable-s', totalOut > 0
+    ? (totalExp / totalOut * 100).toFixed(0) + '% of outstanding'
+    : '—');
+  setText('rec-highrisk', fB(highRisk));
+  setText('rec-highrisk-s', tierData['High Risk'].cnt + ' units below 25% paid');
+
+  // ── Tier-by-tier stacked bar (expected vs at-risk) ─────────────────────
+  const presentTiers = tierOrder.filter(t => tierData[t].out > 0);
+  mkChart('c-recovery', {
+    type: 'bar',
+    data: {
+      labels: presentTiers,
+      datasets: [
+        { label: 'Expected Recovery',
+          data: presentTiers.map(t => +(tierData[t].exp / 1e9).toFixed(2)),
+          backgroundColor: C.green, borderRadius: 4, borderSkipped: false },
+        { label: 'At Risk',
+          data: presentTiers.map(t => +((tierData[t].out - tierData[t].exp) / 1e9).toFixed(2)),
+          backgroundColor: 'rgba(192,57,43,0.35)', borderRadius: 4, borderSkipped: false },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'top',
+          labels: { font: { size: 10 }, boxWidth: 9, boxHeight: 9 } },
+        tooltip: { callbacks: { label: c => c.dataset.label + ': ₦' + c.parsed.y.toFixed(2) + 'B' } }
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v => '₦' + v + 'B' } }
+      }
+    }
+  });
+
+  // ── 24-month cumulative recovery timeline ──────────────────────────────
+  let cum = 0;
+  const timeline = Array.from({ length: 24 }, (_, i) => {
+    const m = i + 1;
+    tierOrder.forEach(t => {
+      const mtc = RMTHS[t];
+      if ((mtc === 0 && m === 1) || mtc === m) cum += tierData[t].exp;
+    });
+    return cum;
+  });
+
+  mkChart('c-resolution', {
+    type: 'line',
+    data: {
+      labels: Array.from({ length: 24 }, (_, i) => 'M' + (i + 1)),
+      datasets: [{
+        label: 'Cumulative Recovery',
+        data: timeline.map(v => +(v / 1e9).toFixed(2)),
+        borderColor: C.green, backgroundColor: 'rgba(39,174,96,0.10)',
+        fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 0,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { tooltip: { callbacks: { label: c => '₦' + c.parsed.y.toFixed(2) + 'B recovered' } } },
+      scales: {
+        x: { grid: { color: 'rgba(0,0,0,0.04)' } },
+        y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v => '₦' + v + 'B' } }
+      }
+    }
+  });
+
+  // ── Recovery waterfall ─────────────────────────────────────────────────
+  const wEl = document.getElementById('rec-waterfall');
+  if (!wEl) return;
+  wEl.innerHTML = '';
+  const maxOut = Math.max(...presentTiers.map(t => tierData[t].out), 1);
+  const tierColours = {
+    'Collected':       '#1E8449',
+    'Near Completion': '#27AE60',
+    'Low Risk':        '#2980B9',
+    'Medium Risk':     '#E67E22',
+    'High Risk':       '#C0392B',
+  };
+  presentTiers.forEach(t => {
+    const td      = tierData[t];
+    const recPct  = td.out > 0 ? (td.exp / td.out * 100).toFixed(0) : 0;
+    const expW    = (td.exp / maxOut * 100).toFixed(0);
+    const lossW   = ((td.out - td.exp) / maxOut * 100).toFixed(0);
+    wEl.innerHTML += `
+      <div class="sl-row" style="margin-bottom:11px">
+        <div class="sl-lbl" style="width:140px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${tierColours[t]};margin-right:6px;vertical-align:middle"></span>${t}</div>
+        <div style="flex:1;position:relative;height:16px;background:#F0F0F4;border-radius:4px;overflow:hidden">
+          <div style="position:absolute;left:0;top:0;height:100%;width:${expW}%;background:#27AE60"></div>
+          <div style="position:absolute;left:${expW}%;top:0;height:100%;width:${lossW}%;background:rgba(192,57,43,0.30)"></div>
+        </div>
+        <div class="sl-val" style="width:230px">${fB(td.exp)} of ${fB(td.out)} <span style="color:var(--text3)">(${recPct}% · ${td.cnt} units)</span></div>
+      </div>`;
+  });
+
+  // Append a note explaining the tier source if derived from % Paid
+  if (derivedRiskCol > realRiskCol) {
+    wEl.innerHTML += `
+      <div style="font-size:10px;color:var(--text3);margin-top:10px;padding:8px 12px;background:#F7F7F9;border-radius:6px;border-left:3px solid var(--red3)">
+        Risk tiers derived from <b>% Paid</b>: 100%+ = Collected, 75–99% = Near Completion, 50–74% = Low Risk, 25–49% = Medium Risk, &lt;25% = High Risk. Recovery probabilities (99/92/78/52/22%) are defaults — refine in code once you have empirical collection-team data.
+      </div>`;
+  }
+}
+
 
 /* =====================================================
    AUTO-REFRESH
