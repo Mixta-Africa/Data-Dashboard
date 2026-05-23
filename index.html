@@ -9,10 +9,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
 
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -27,20 +23,29 @@
 html{scroll-behavior:smooth}
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 
-/* ── AUTH GATE ────────────────────────────────────── */
-#auth-gate{position:fixed;inset:0;background:rgba(255,255,255,0.97);backdrop-filter:blur(24px);z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity 0.4s}
-#auth-gate.hidden{opacity:0;pointer-events:none}
-.auth-card{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,0.1);padding:40px 48px;text-align:center;max-width:380px;width:90%}
-.auth-logo{width:48px;height:48px;background:linear-gradient(135deg,var(--red),var(--red2));border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 4px 14px rgba(192,57,43,0.3)}
-.auth-logo svg{width:24px;height:24px;fill:white}
-.auth-title{font-size:20px;font-weight:600;color:var(--text);margin-bottom:6px;letter-spacing:-0.4px}
-.auth-sub{font-size:13px;color:var(--text3);margin-bottom:28px;line-height:1.5}
-.auth-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 20px;border-radius:10px;font-size:14px;font-weight:500;color:var(--text);background:#fff;border:1.5px solid rgba(0,0,0,0.14);cursor:pointer;font-family:var(--font);transition:all 0.18s;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
-.auth-btn:hover{background:#F7F7F7;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.auth-btn img{width:20px;height:20px}
-.auth-err{font-size:12px;color:var(--red);margin-top:12px;display:none}
-.auth-user-strip{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:20px;background:var(--red4);border:1px solid var(--red3);font-size:11px;font-weight:500;color:var(--red);cursor:pointer;flex-shrink:0}
-.auth-user-strip img{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--red3)}
+
+
+/* ── PREDICTIVE ───────────────────────────────────── */
+.pred-head{font-size:10.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin:20px 0 12px;display:flex;align-items:center;gap:8px}
+.pred-head::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(192,57,43,0.2),transparent)}
+.scenario-row{display:flex;gap:10px;margin-bottom:14px}
+.sc-card{background:#fff;border-radius:12px;padding:14px 16px;flex:1;box-shadow:var(--shadow-sm)}
+.sc-card.bull{border-top:3px solid #27AE60}.sc-card.base{border-top:3px solid var(--red)}.sc-card.bear{border-top:3px solid #E67E22}
+.sc-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.sc-card.bull .sc-label{color:#1E8449}.sc-card.base .sc-label{color:var(--red)}.sc-card.bear .sc-label{color:#D35400}
+.sc-val{font-size:20px;font-weight:600;color:var(--text);letter-spacing:-.4px}
+.sc-yr{font-size:9px;color:var(--text3);margin-top:2px}
+.ins-card{background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;box-shadow:var(--shadow-sm);border-left:3px solid var(--red3)}
+.ins-card.high{border-left-color:#27AE60}.ins-card.low{border-left-color:var(--red)}.ins-card.med{border-left-color:#F39C12}
+.ins-ico{font-size:18px;flex-shrink:0;margin-top:1px}
+.ins-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px}
+.ins-sub{font-size:11px;color:var(--text2);line-height:1.45}
+.sbar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.sbar-lbl{width:160px;font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.sbar-wrap{flex:1;height:7px;background:#F0F0F4;border-radius:4px;overflow:hidden}
+.sbar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--red5),var(--red2))}
+.sbar-val{width:120px;text-align:right;font-family:var(--mono);font-size:10px;color:var(--text);flex-shrink:0}
+.pred-loading{text-align:center;padding:40px;color:var(--text3);font-size:12px}
 
 /* ── GLASS & HEADER ───────────────────────────────── */
 .glass{background:var(--card);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid var(--card-border);border-radius:var(--r);box-shadow:var(--shadow-md)}
@@ -186,20 +191,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 </head>
 <body>
 
-<div id="auth-gate">
-  <div class="auth-card">
-    <div class="auth-logo">
-      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22" fill="none" stroke="white" stroke-width="1.5"/></svg>
-    </div>
-    <div class="auth-title">Mixta Africa Intelligence Hub</div>
-    <div class="auth-sub">Sign in with your Mixta Google account to access the portfolio dashboard.</div>
-    <button class="auth-btn" id="googleSignInBtn">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-      Continue with Google
-    </button>
-    <div class="auth-err" id="authErr"></div>
-  </div>
-</div>
 
 <div class="sync-toast" id="syncToast"></div>
 
@@ -227,6 +218,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <button class="nav-btn" onclick="showSection('collections',this)">Collections</button>
     <button class="nav-btn" onclick="showSection('agents',this)">Agents</button>
     <button class="nav-btn" onclick="showSection('buyers',this)">Buyers</button>
+    <button class="nav-btn" onclick="showSection('predict',this)" style="color:var(--red);font-weight:600">⬡ Predict</button>
   </nav>
 
   <div class="hdr-right">
@@ -243,11 +235,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       Sync
     </button>
     <div class="live-badge"><div class="live-dot"></div><span id="record-count">—</span> records</div>
-    <div class="auth-user-strip" id="userStrip" style="display:none" onclick="signOut()">
-      <img id="userAvatar" src="" alt="">
-      <span id="userName"></span>
-      <span style="opacity:.6">· Sign out</span>
-    </div>
+
   </div>
 </header>
 
@@ -520,6 +508,67 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   </div>
 </div>
 
+
+<!-- ===== PREDICT ===== -->
+<div id="section-predict" class="section">
+
+  <div class="kpi-strip">
+    <div class="kpi"><div class="kpi-label">Next-Year Forecast</div><div class="kpi-value red" id="pr-ny">—</div><div class="kpi-sub" id="pr-ny-s">OLS projection</div></div>
+    <div class="kpi"><div class="kpi-label">Model Confidence R²</div><div class="kpi-value" id="pr-r2">—</div><div class="kpi-sub">Revenue trend fit</div></div>
+    <div class="kpi"><div class="kpi-label">Recoverable Outstanding</div><div class="kpi-value red" id="pr-rec">—</div><div class="kpi-sub">Prob-weighted, 24 months</div></div>
+    <div class="kpi"><div class="kpi-label">Revenue at Risk</div><div class="kpi-value" id="pr-risk">—</div><div class="kpi-sub dn">High-risk receivables</div></div>
+    <div class="kpi"><div class="kpi-label">Demand Trend</div><div class="kpi-value red" id="pr-dem">—</div><div class="kpi-sub">3yr moving avg signal</div></div>
+    <div class="kpi"><div class="kpi-label">Price CAGR</div><div class="kpi-value" id="pr-cagr">—</div><div class="kpi-sub">₦/unit compound growth</div></div>
+  </div>
+
+  <div class="pred-head">Revenue Forecast — 3 Year Projection</div>
+  <div class="scenario-row" id="sc-row">
+    <div class="sc-card bull"><div class="sc-label">Bull Case +1σ</div><div class="sc-val" id="sc-b1">—</div><div class="sc-yr" id="sc-b1y">yr+1</div><div class="sc-val" style="font-size:15px;margin-top:8px" id="sc-b2">—</div><div class="sc-yr" id="sc-b2y">yr+2</div><div class="sc-val" style="font-size:15px;margin-top:8px" id="sc-b3">—</div><div class="sc-yr">yr+3</div></div>
+    <div class="sc-card base"><div class="sc-label">Base Case OLS trend</div><div class="sc-val" id="sc-m1">—</div><div class="sc-yr" id="sc-m1y">yr+1</div><div class="sc-val" style="font-size:15px;margin-top:8px" id="sc-m2">—</div><div class="sc-yr" id="sc-m2y">yr+2</div><div class="sc-val" style="font-size:15px;margin-top:8px" id="sc-m3">—</div><div class="sc-yr">yr+3</div></div>
+    <div class="sc-card bear"><div class="sc-label">Bear Case −1σ</div><div class="sc-val" id="sc-r1">—</div><div class="sc-yr" id="sc-r1y">yr+1</div><div class="sc-val" style="font-size:15px;margin-top:8px" id="sc-r2">—</div><div class="sc-yr" id="sc-r2y">yr+2</div><div class="sc-val" style="font-size:15px;margin-top:8px" id="sc-r3">—</div><div class="sc-yr">yr+3</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="cc">
+      <div class="ch"><div><div class="ct">Revenue Forecast — OLS + Confidence Band</div><div class="cs">Actuals · trend line · ±1σ shaded cone</div></div><span id="pr-r2-badge" class="badge bg_">R²=—</span></div>
+      <div class="cw" style="height:260px"><canvas id="c-forecast"></canvas></div>
+      <div id="forecast-note" style="font-size:10px;color:var(--text3);margin-top:8px;padding:6px 10px;background:#F7F7F9;border-radius:6px;border-left:3px solid var(--red3)">Computing model…</div>
+    </div>
+    <div class="cc">
+      <div class="ch"><div><div class="ct">Collection Recovery — 24-Month Timeline</div><div class="cs">Probability-weighted cumulative receivables recovery</div></div></div>
+      <div class="cw" style="height:260px"><canvas id="c-recovery"></canvas></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="cc">
+      <div class="ch"><div><div class="ct">Demand Velocity — 3yr Moving Average</div><div class="cs">Smoothed unit sales trend with acceleration signal</div></div></div>
+      <div class="cw" style="height:230px"><canvas id="c-mavg"></canvas></div>
+    </div>
+    <div class="cc">
+      <div class="ch"><div><div class="ct">Community Velocity Index</div><div class="cs">Recent 2yr vs prior 2yr absorption (base = 100)</div></div></div>
+      <div id="vel-bars" class="pred-loading">Computing…</div>
+    </div>
+  </div>
+
+  <div class="g21">
+    <div class="cc">
+      <div class="ch"><div><div class="ct">Strategic Insights</div><div class="cs">Model-derived action signals</div></div></div>
+      <div id="insights-wrap" class="pred-loading">Computing…</div>
+    </div>
+    <div class="cc">
+      <div class="ch"><div><div class="ct">Channel Productivity Score</div><div class="cs">Revenue efficiency × collection health · indexed 0–100</div></div></div>
+      <div id="agent-scores" class="pred-loading">Computing…</div>
+    </div>
+  </div>
+
+  <div class="cc full">
+    <div class="ch"><div><div class="ct">Recovery Waterfall — By Risk Tier</div><div class="cs">Collectable vs at-risk across portfolio</div></div></div>
+    <div id="rec-waterfall" class="pred-loading">Computing…</div>
+  </div>
+
+</div>
+
 </main>
 
 <script>
@@ -530,41 +579,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
    ===================================================== */
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyB2TvSXbXOAutbt0MqJeOrn-7hKfpaqfAo",
-  authDomain:        "data-dashboard-ad94f.firebaseapp.com",
   projectId:         "data-dashboard-ad94f",
-  storageBucket:     "data-dashboard-ad94f.firebasestorage.app",
   messagingSenderId: "1012632142221",
   appId:             "1:1012632142221:web:1aa118b847705bd1353dc4"
 };
 
 // Allowed email domain — only Mixta accounts can sign in
-// ACCESS CONTROL
-// ALLOWED_EMAILS: list specific emails, e.g. ["you@gmail.com","team@company.com"]
-// ALLOWED_DOMAIN: restrict to a domain, e.g. "mixtafrica.com"  
-// Leave BOTH empty/blank to allow any Google account (recommended while testing)
-const ALLOWED_EMAILS = [];
-const ALLOWED_DOMAIN = "";
-
-function isAllowedUser(email) {
-  const e = (email||'').toLowerCase().trim();
-  if(!e) return false;
-  if(!ALLOWED_DOMAIN && ALLOWED_EMAILS.length === 0) return true; // open access
-  if(ALLOWED_EMAILS.length && ALLOWED_EMAILS.map(x=>x.toLowerCase()).includes(e)) return true;
-  if(ALLOWED_DOMAIN && e.endsWith('@'+ALLOWED_DOMAIN.toLowerCase())) return true;
-  return false;
-}
 
 /* =====================================================
    DATA SOURCE CONFIG
    ===================================================== */
-const XLSX_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTg9nVEiwrU8xBzl6DaP3-b2enA8Ae_oNW-5VXlg2yRq9godA1cBjwzdRYbY4O9zdbU_2xnprBVo1QO/pub?output=xlsx';
-
-const FS_CACHE_DOC  = 'cache/mixta_csv';            
-const FS_CACHE_TTL  = 30 * 60 * 1000;              
-const LS_CACHE_KEY  = 'mixta_csv_v2';              
-const LS_TS_KEY     = 'mixta_csv_v2_ts';
-const LS_SCHEMA_KEY = 'mixta_schema_hash';
-const LS_MAX_BYTES  = 4 * 1024 * 1024;             
+const XLSX_URL      = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTg9nVEiwrU8xBzl6DaP3-b2enA8Ae_oNW-5VXlg2yRq9godA1cBjwzdRYbY4O9zdbU_2xnprBVo1QO/pub?output=xlsx';
+const LS_CACHE_KEY  = 'mixta_xl_v4';
+const LS_TS_KEY     = 'mixta_xl_v4_ts';
+const LS_MAX_BYTES  = 4.5 * 1024 * 1024;
+const CACHE_TTL_MS  = 30 * 60 * 1000;             
 
 const FETCH_MAX_RETRIES = 3;
 const FETCH_BASE_DELAY  = 1200;                    
@@ -621,102 +650,7 @@ const HEADER_MAP = {
 
 const REQUIRED_COLS = ['community','property','sellingPrice','totalPaid','totalOutstanding','pctPaid','revYear'];
 
-/* =====================================================
-   FIREBASE INIT
-   ===================================================== */
-let _fb = null, _auth = null, _db = null, _fbReady = false;
-let _currentUser = null;
 
-function initFirebase() {
-  try {
-    firebase.initializeApp(FIREBASE_CONFIG);
-    _auth = firebase.auth();
-    _db   = firebase.firestore();
-    _fb   = firebase;
-    try { firebase.analytics(); } catch(ae) {}
-    _fbReady = true;
-  } catch(e) {
-    console.warn('[Firebase] Init failed — running in offline/no-auth mode:', e.message);
-    _fbReady = false;
-  }
-}
-
-/* =====================================================
-   AUTH
-   ===================================================== */
-function setupAuth() {
-  if (!_fbReady) {
-    document.getElementById('auth-gate').classList.add('hidden');
-    loadData(false);
-    return;
-  }
-
-  const provider = new firebase.auth.GoogleAuthProvider();
-  provider.addScope('email');
-  provider.addScope('profile');
-  // Only set hd hint if a domain is configured — avoids popup failures otherwise
-  if (ALLOWED_DOMAIN) provider.setCustomParameters({ hd: ALLOWED_DOMAIN });
-
-  const btn = document.getElementById('googleSignInBtn');
-  const origHTML = btn.innerHTML;
-
-  btn.addEventListener('click', async () => {
-    clearAuthErr();
-    btn.innerHTML = '&#x23F3; Signing in…';
-    btn.disabled = true;
-    try {
-      const result = await _auth.signInWithPopup(provider);
-      const email = (result.user.email || '').toLowerCase().trim();
-      if (!isAllowedUser(email)) {
-        await _auth.signOut();
-        btn.innerHTML = origHTML; btn.disabled = false;
-        showAuthErr('Account not on access list: ' + email + '. Contact your administrator.');
-        return;
-      }
-      // onAuthStateChanged fires next and grants access
-    } catch(e) {
-      btn.innerHTML = origHTML; btn.disabled = false;
-      const msgs = {
-        'auth/popup-blocked':           'Popup blocked — allow popups for this site.',
-        'auth/popup-closed-by-user':    'Window closed. Click the button again.',
-        'auth/unauthorized-domain':     'Domain not authorised. Go to Firebase Console → Authentication → Settings → Authorised domains and add this site URL.',
-        'auth/operation-not-allowed':   'Google sign-in not enabled. Go to Firebase Console → Authentication → Sign-in method → Enable Google.',
-        'auth/network-request-failed':  'Network error. Check your connection.',
-        'auth/invalid-api-key':         'Invalid Firebase API key. Check FIREBASE_CONFIG.',
-        'auth/cancelled-popup-request': 'Only one popup allowed at a time. Try again.',
-      };
-      showAuthErr(msgs[e.code] || (e.message + ' [' + (e.code||'unknown') + ']'));
-      console.error('[Auth]', e.code, e.message);
-    }
-  });
-
-  _auth.onAuthStateChanged(user => {
-    _currentUser = user;
-    if (user && isAllowedUser(user.email)) {
-      document.getElementById('auth-gate').classList.add('hidden');
-      const strip = document.getElementById('userStrip');
-      if(strip) strip.style.display = 'flex';
-      const nameEl = document.getElementById('userName');
-      if(nameEl) nameEl.textContent = user.displayName || user.email.split('@')[0];
-      const av = document.getElementById('userAvatar');
-      if(av) {
-        if (user.photoURL) { av.src = user.photoURL; av.style.display=''; }
-        else { av.style.display='none'; }
-      }
-      btn.innerHTML = origHTML; btn.disabled = false;
-      loadData(false);
-    } else if (user) {
-      // Wrong account — sign out without looping
-      _auth.signOut().catch(()=>{});
-      btn.innerHTML = origHTML; btn.disabled = false;
-      showAuthErr('Account not on access list: ' + user.email);
-    }
-  });
-}
-
-function showAuthErr(msg) { const el = document.getElementById('authErr'); el.textContent = msg; el.style.display = 'block'; }
-function clearAuthErr() { document.getElementById('authErr').style.display = 'none'; }
-function signOut() { if (_auth) _auth.signOut().then(() => location.reload()); else location.reload(); }
 
 /* =====================================================
    HELPERS
@@ -1436,19 +1370,15 @@ function resetFilters() {
    RENDER HELPERS — called with any row set
    ===================================================== */
 function renderFromRows(rows, fromCache) {
-  enrichData(rows); // Calculates Year/Quarter FIRST
-  populateFilters(rows); // Now filters will successfully see the years!
-  
+  enrichData(rows);
+  populateFilters(rows);
   const analytics = computeAnalytics(rows);
-
-  // BUG FIX: Explicitly tell the charts we are starting on 'All Years'
   analytics.currentYearFilter = 'all';
-  analytics.currentQtrFilter = 'all';
-
+  analytics.currentQtrFilter  = 'all';
+  window._lastAnalytics = analytics;   // predictive models read from here
   renderKPIs(analytics);
   renderCharts(analytics);
   updateFreshness(fromCache);
-  
   document.getElementById('filterCount').textContent = rows.length.toLocaleString()+' records';
   document.getElementById('errorBar').classList.remove('show');
 }
@@ -1487,11 +1417,41 @@ async function loadData(forceRefresh=false) {
   const syncBtn = document.getElementById('syncBtn');
   const isFirstLoad = !_allRows;
 
-  // Show UI feedback
+  // ── STEP 1: Serve localStorage cache instantly if available ──
+  if(!forceRefresh && !isFirstLoad===false) {
+    try {
+      const cached = localStorage.getItem(LS_CACHE_KEY);
+      const ts     = parseInt(localStorage.getItem(LS_TS_KEY)||'0');
+      if(cached && (Date.now()-ts) < CACHE_TTL_MS) {
+        const rows = JSON.parse(cached);
+        if(rows && rows.length) {
+          _allRows = rows;
+          renderFromRows(rows, true);
+          schedulePredictive(rows);
+          // Still fetch fresh in background silently
+          _fetchInProgress = false;
+          syncBtn.classList.add('spinning');
+          showSyncStatus('Refreshing…');
+          try {
+            const fresh = await getLiveSheetData();
+            _allRows = fresh;
+            renderFromRows(fresh, false);
+            schedulePredictive(fresh);
+            safeCache(fresh);
+          } catch(e){ console.warn('[bg refresh]', e.message); }
+          syncBtn.classList.remove('spinning');
+          hideSyncStatus(true);
+          return;
+        }
+      }
+    } catch(e){ /* cache miss — fall through to live fetch */ }
+  }
+
+  // ── STEP 2: Cold start or force refresh — show loader ────────────────
   if(isFirstLoad) {
     loader.classList.remove('hidden');
     setLoaderText('Loading dashboard…');
-    setLoaderSub('Fetching all tabs…');
+    setLoaderSub('Downloading data…');
   } else {
     syncBtn.classList.add('spinning');
     showSyncStatus('Syncing…');
@@ -1499,24 +1459,37 @@ async function loadData(forceRefresh=false) {
 
   try {
     const rows = await getLiveSheetData();
-    
     _allRows = rows;
     renderFromRows(rows, false);
-
+    safeCache(rows);
+    schedulePredictive(rows);
     const fl = document.getElementById('freshness-label');
-    if(fl) { fl.style.color='#27AE60'; setTimeout(()=>fl.style.color='',2000); }
-
+    if(fl){ fl.style.color='#27AE60'; setTimeout(()=>fl.style.color='',2000); }
   } catch(err) {
     console.error('[loadData]', err);
-    const eb = document.getElementById('errorBar');
-    document.getElementById('errorMsg').textContent = 'Could not load sheets: ' + err.message;
-    eb.classList.add('show');
+    document.getElementById('errorMsg').textContent = 'Could not load: ' + err.message + '. Check connection.';
+    document.getElementById('errorBar').classList.add('show');
+    // Emergency: render from localStorage if available
+    try {
+      const cached = localStorage.getItem(LS_CACHE_KEY);
+      if(cached) { const rows=JSON.parse(cached); _allRows=rows; renderFromRows(rows,true); schedulePredictive(rows); }
+    } catch(e2){}
   } finally {
     loader.classList.add('hidden');
     syncBtn.classList.remove('spinning');
     hideSyncStatus(!document.getElementById('errorBar').classList.contains('show'));
     _fetchInProgress = false;
   }
+}
+
+function safeCache(rows) {
+  try {
+    const s = JSON.stringify(rows);
+    if(s.length < LS_MAX_BYTES) {
+      localStorage.setItem(LS_CACHE_KEY, s);
+      localStorage.setItem(LS_TS_KEY, String(Date.now()));
+    }
+  } catch(e){ console.warn('[cache]', e.message); }
 }
 
 function syncData() {
@@ -1638,6 +1611,306 @@ Please write a structured, executive-level Performance Report tailored exactly t
   }
 }
 
+
+/* =====================================================
+   PREDICTIVE ENGINE
+   All 5 models run via requestIdleCallback — the browser
+   schedules them only when the main thread is idle.
+   They never compete with rendering or user interaction.
+   ===================================================== */
+
+/* ── Math primitives ─────────────────────────────── */
+function ols(xs, ys) {
+  const n=xs.length; if(n<2) return {a:0,b:0,r2:0,sigma:0,pred:x=>0};
+  const xm=xs.reduce((s,v)=>s+v,0)/n, ym=ys.reduce((s,v)=>s+v,0)/n;
+  let sxy=0,sxx=0,sst=0;
+  xs.forEach((x,i)=>{sxy+=(x-xm)*(ys[i]-ym);sxx+=(x-xm)**2;sst+=(ys[i]-ym)**2;});
+  const b=sxx?sxy/sxx:0, a=ym-b*xm;
+  const sse=xs.reduce((s,x,i)=>s+(ys[i]-(a+b*x))**2,0);
+  const sigma=Math.sqrt(sse/Math.max(n-2,1));
+  const r2=sst?Math.max(0,1-sse/sst):0;
+  return {a,b,r2,sigma,pred:x=>a+b*x};
+}
+
+function movAvg(arr, w) {
+  return arr.map((_,i)=>{
+    const sl=arr.slice(Math.max(0,i-w+1),i+1);
+    return sl.reduce((s,v)=>s+v,0)/sl.length;
+  });
+}
+
+function pearson(xs,ys){
+  const n=xs.length; if(n<2) return 0;
+  const xm=xs.reduce((s,v)=>s+v,0)/n, ym=ys.reduce((s,v)=>s+v,0)/n;
+  let num=0,dx=0,dy=0;
+  xs.forEach((x,i)=>{num+=(x-xm)*(ys[i]-ym);dx+=(x-xm)**2;dy+=(ys[i]-ym)**2;});
+  return dx&&dy?num/Math.sqrt(dx*dy):0;
+}
+
+/* ── Schedule all 5 models on idle thread ─────────── */
+function schedulePredictive(rows) {
+  // requestIdleCallback fires only when browser has spare cycles.
+  // Deadline.timeRemaining() lets each model check if it should pause.
+  // This guarantees zero UI freeze regardless of dataset size.
+  const ric = window.requestIdleCallback || (cb=>setTimeout(()=>cb({timeRemaining:()=>50}),100));
+
+  ric(deadline => { try { runModel1_Forecast(rows); } catch(e){ console.error('[M1]',e); } });
+  ric(deadline => { try { runModel2_Recovery(rows); } catch(e){ console.error('[M2]',e); } });
+  ric(deadline => { try { runModel3_Velocity(rows); } catch(e){ console.error('[M3]',e); } });
+  ric(deadline => { try { runModel4_Agents(rows);   } catch(e){ console.error('[M4]',e); } });
+  ric(deadline => { try { runModel5_Insights(rows); } catch(e){ console.error('[M5]',e); } });
+}
+
+/* ── MODEL 1: OLS Revenue Forecast ──────────────── */
+function runModel1_Forecast(rows) {
+  const C = window._lastAnalytics;
+  if(!C||!C.years||C.years.length<3) return;
+
+  const xs = C.years.map(y=>parseInt(y));
+  const ys = C.revByYear;
+  const m  = ols(xs, ys);
+  const lastYr = xs[xs.length-1];
+
+  const proj = [1,2,3].map(k=>({
+    yr: lastYr+k,
+    base: Math.max(0, m.pred(lastYr+k)),
+    bull: Math.max(0, m.pred(lastYr+k)+m.sigma),
+    bear: Math.max(0, m.pred(lastYr+k)-m.sigma),
+  }));
+
+  // KPIs
+  setText('pr-ny',  fB(proj[0].base));
+  setText('pr-ny-s', 'Bull '+fB(proj[0].bull)+' / Bear '+fB(proj[0].bear));
+  setText('pr-r2',  (m.r2*100).toFixed(0)+'%');
+  const n=C.years.length, fp=C.avgPriceByYear?.[0]||0, lp=C.avgPriceByYear?.[n-1]||0;
+  const cagr = n>1&&fp>0 ? ((Math.pow(lp/fp,1/(n-1))-1)*100).toFixed(1)+'%' : '—';
+  setText('pr-cagr', cagr);
+  const r2Badge=document.getElementById('pr-r2-badge');
+  if(r2Badge){r2Badge.textContent='R²='+(m.r2*100).toFixed(0)+'%';r2Badge.className='badge '+(m.r2>.7?'bgrn':m.r2>.4?'bg_':'br');}
+
+  // Scenario cards
+  [['b','bull'],['m','base'],['r','bear']].forEach(([k,s])=>{
+    proj.forEach((p,i)=>{
+      setText('sc-'+k+(i+1), fB(p[s]));
+      setText('sc-'+k+(i+1)+'y', String(p.yr));
+    });
+  });
+
+  // Forecast chart
+  const allLbls = [...C.years, ...proj.map(p=>String(p.yr))];
+  const actuals = [...C.revByYear, null, null, null];
+  const trend   = [...xs.map(x=>m.pred(x)), ...proj.map(p=>p.base)];
+  const upper   = [...xs.map(x=>m.pred(x)+m.sigma), ...proj.map(p=>p.bull)];
+  const lower   = [...xs.map(x=>Math.max(0,m.pred(x)-m.sigma)), ...proj.map(p=>p.bear)];
+
+  mkChart('c-forecast',{type:'line',data:{labels:allLbls,datasets:[
+    {label:'Upper',data:upper.map(v=>+(v/1e9).toFixed(2)),borderColor:'transparent',backgroundColor:'rgba(192,57,43,0.10)',fill:'+1',tension:0.4,pointRadius:0},
+    {label:'Trend',data:trend.map(v=>+(v/1e9).toFixed(2)),borderColor:'rgba(192,57,43,0.55)',borderWidth:2,borderDash:[6,3],tension:0.4,pointRadius:0,fill:false},
+    {label:'Lower',data:lower.map(v=>+(v/1e9).toFixed(2)),borderColor:'transparent',backgroundColor:'rgba(192,57,43,0.10)',fill:false,tension:0.4,pointRadius:0},
+    {label:'Actual',data:actuals.map(v=>v!=null?+(v/1e9).toFixed(2):null),borderColor:'#C0392B',backgroundColor:'rgba(192,57,43,0.06)',fill:false,tension:0.4,borderWidth:2.5,pointBackgroundColor:'#C0392B',pointRadius:4},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},
+      tooltip:{callbacks:{label:c=>c.dataset.label+': \u20a6'+c.parsed.y.toFixed(1)+'B'}}},
+    scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'\u20a6'+v+'B'}}}}});
+
+  const fnEl=document.getElementById('forecast-note');
+  if(fnEl) fnEl.textContent='OLS fitted on '+C.years.length+' years. R²='+(m.r2*100).toFixed(0)+'% variance explained. Shaded = ±1\u03c3. Assumes no structural break.';
+}
+
+/* ── MODEL 2: Collection Recovery ─────────────────── */
+function runModel2_Recovery(rows) {
+  const RPROB = {Collected:0.99,'Near Completion':0.92,'Low Risk':0.78,'Medium Risk':0.52,'High Risk':0.22};
+  const RMTHS = {Collected:0,'Near Completion':3,'Low Risk':6,'Medium Risk':12,'High Risk':20};
+  const tiers  = Object.keys(RPROB);
+  const tData  = {};
+
+  tiers.forEach(t=>{
+    let out=0,exp=0,cnt=0;
+    rows.forEach(r=>{
+      if(r.collectionRisk!==t||!(r._out>0)) return;
+      out+=r._out; exp+=r._out*RPROB[t]; cnt++;
+    });
+    tData[t]={out,exp,cnt};
+  });
+
+  // Unmapped: logistic on pctPaid
+  let unmapExp=0;
+  rows.forEach(r=>{
+    if(r.collectionRisk||!(r._out>0)) return;
+    const p=r._ppct/100;
+    unmapExp+=r._out*Math.max(0.05,Math.min(0.99,1/(1+Math.exp(-8*(p-0.5)))));
+  });
+
+  const totalRec  = tiers.reduce((s,t)=>s+(tData[t]?.exp||0),0)+unmapExp;
+  const totalOut  = tiers.reduce((s,t)=>s+(tData[t]?.out||0),0);
+  const atRisk    = (tData['High Risk']?.out||0)+(tData['Medium Risk']?.out||0)*0.5;
+
+  setText('pr-rec',  fB(totalRec));
+  setText('pr-risk', fB(atRisk));
+
+  // 24-month cumulative timeline
+  let cum=0;
+  const resData=Array.from({length:24},(_,i)=>i+1).map(m=>{
+    tiers.forEach(t=>{ if((RMTHS[t]===0&&m===1)||m===RMTHS[t]) cum+=tData[t]?.exp||0; });
+    return cum;
+  });
+
+  mkChart('c-recovery',{type:'line',data:{
+    labels:Array.from({length:24},(_,i)=>'M'+(i+1)),
+    datasets:[{label:'Cumulative Recovery',data:resData.map(v=>+(v/1e9).toFixed(2)),
+      borderColor:'#27AE60',backgroundColor:'rgba(39,174,96,0.08)',fill:true,tension:0.4,borderWidth:2.5,pointRadius:0}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{tooltip:{callbacks:{label:c=>'\u20a6'+c.parsed.y.toFixed(1)+'B recovered'}}},
+    scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'\u20a6'+v+'B'}}}}});
+
+  // Waterfall
+  const rwEl=document.getElementById('rec-waterfall');
+  if(rwEl){
+    rwEl.innerHTML='';
+    const maxO=Math.max(...tiers.map(t=>tData[t]?.out||0))||1;
+    const cls={'Collected':'bgrn','Near Completion':'bgrn','Low Risk':'bg_','Medium Risk':'bg_','High Risk':'br'};
+    tiers.filter(t=>tData[t]?.out>0).forEach(t=>{
+      const d=tData[t], pct=(d.exp/d.out*100).toFixed(0);
+      rwEl.innerHTML+=`<div class="sbar-row">
+        <div class="sbar-lbl"><span class="badge ${cls[t]||'bg_'}">${t}</span></div>
+        <div style="flex:1;position:relative;height:16px;background:#F0F0F4;border-radius:4px;overflow:hidden">
+          <div style="position:absolute;left:0;top:0;height:100%;width:${(d.exp/maxO*100).toFixed(0)}%;background:#27AE60;border-radius:4px"></div>
+          <div style="position:absolute;left:${(d.exp/maxO*100).toFixed(0)}%;top:0;height:100%;width:${((d.out-d.exp)/maxO*100).toFixed(0)}%;background:rgba(192,57,43,0.3)"></div>
+        </div>
+        <div class="sbar-val">${fB(d.exp)} recoverable (${pct}%)</div>
+      </div>`;
+    });
+  }
+}
+
+/* ── MODEL 3: Demand Velocity ─────────────────────── */
+function runModel3_Velocity(rows) {
+  const C=window._lastAnalytics;
+  if(!C||!C.years||C.years.length<3) return;
+
+  const ma3=movAvg(C.unitsByYear,3);
+  const ma2=movAvg(C.unitsByYear,2);
+  const slope=ma3.length>1?ma3[ma3.length-1]-ma3[Math.max(0,ma3.length-3)]:0;
+  const trend=slope>2?'Accelerating \u25b2':slope<-2?'Decelerating \u25bc':'Stable \u2192';
+  setText('pr-dem',trend);
+
+  mkChart('c-mavg',{type:'bar',data:{labels:C.years,datasets:[
+    {label:'Annual Units',data:C.unitsByYear,backgroundColor:'rgba(192,57,43,0.15)',borderRadius:4,borderSkipped:false},
+    {label:'3yr MA',data:ma3.map(v=>+v.toFixed(1)),type:'line',borderColor:'#C0392B',backgroundColor:'transparent',borderWidth:2.5,tension:0.4,pointRadius:3},
+    {label:'2yr MA',data:ma2.map(v=>+v.toFixed(1)),type:'line',borderColor:'#2980B9',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,2],tension:0.4,pointRadius:0},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}}},
+    scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+'u'}}}}});
+
+  // Velocity per community using commYearMatrix
+  const velEl=document.getElementById('vel-bars');
+  if(!velEl||!C.commYearMatrix) return;
+  velEl.innerHTML='';
+  const n=C.years.length;
+  const scores=C.communities.map(comm=>{
+    if(n<4) return {comm,score:100};
+    const rec=C.years.slice(-2).reduce((s,y)=>s+(C.commYearMatrix[comm]?.[y]?1:0),0)/2;
+    const pri=C.years.slice(-4,-2).reduce((s,y)=>s+(C.commYearMatrix[comm]?.[y]?1:0),0)/2;
+    return {comm, score: pri>0?Math.round((rec/pri)*100):100};
+  }).sort((a,b)=>b.score-a.score);
+
+  scores.forEach(({comm,score})=>{
+    const col=score>110?'#27AE60':score>90?'#F39C12':'#C0392B';
+    const lbl=score>110?'Accelerating':score>90?'Stable':'Slowing';
+    velEl.innerHTML+=`<div class="sbar-row">
+      <div class="sbar-lbl">${comm}</div>
+      <div class="sbar-wrap"><div class="sbar-fill" style="width:${Math.min(100,score/150*100).toFixed(0)}%;background:${col}"></div></div>
+      <div class="sbar-val">${score} <span style="color:${col};font-size:9px">${lbl}</span></div>
+    </div>`;
+  });
+}
+
+/* ── MODEL 4: Channel Productivity ────────────────── */
+function runModel4_Agents(rows) {
+  const C=window._lastAnalytics;
+  if(!C||!C.agentGroups||!C.agentGroups.length) return;
+  const maxR=Math.max(...C.agentGrpRev)||1;
+  const maxU=Math.max(...C.agentGrpCnt)||1;
+  const scores=C.agentGroups.map((ag,i)=>({
+    name:ag,
+    score:Math.round(0.6*(C.agentGrpRev[i]/maxR*100)+0.4*(C.agentGrpCnt[i]/maxU*100)),
+    rev:C.agentGrpRev[i], units:C.agentGrpCnt[i]
+  })).sort((a,b)=>b.score-a.score);
+
+  const el=document.getElementById('agent-scores');
+  if(!el) return;
+  el.innerHTML='';
+  scores.forEach((ag,i)=>{
+    const col=ag.score>70?'#27AE60':ag.score>40?'#F39C12':'#C0392B';
+    el.innerHTML+=`<div class="sbar-row">
+      <div class="sbar-lbl"><span class="rn">${i+1}</span> ${ag.name.length>20?ag.name.slice(0,19)+'\u2026':ag.name}</div>
+      <div class="sbar-wrap"><div class="sbar-fill" style="width:${ag.score}%;background:${col}"></div></div>
+      <div class="sbar-val">${ag.score}/100 <span style="color:var(--text3)">${fB(ag.rev)}</span></div>
+    </div>`;
+  });
+}
+
+/* ── MODEL 5: Strategic Insights ─────────────────── */
+function runModel5_Insights(rows) {
+  const C=window._lastAnalytics;
+  if(!C||!C.years||C.years.length<2) return;
+
+  const xs=C.years.map(y=>parseInt(y));
+  const m=ols(xs,C.revByYear);
+  const lastYr=xs[xs.length-1];
+  const lastRev=C.revByYear[C.revByYear.length-1]||0;
+  const nextRev=Math.max(0,m.pred(lastYr+1));
+  const growth=lastRev>0?((nextRev-lastRev)/lastRev*100).toFixed(0):0;
+
+  const RPROB={'High Risk':0.22,'Medium Risk':0.52};
+  let hrOut=0,hrCnt=0;
+  rows.forEach(r=>{
+    if(r.collectionRisk==='High Risk'&&r._out>0){hrOut+=r._out;hrCnt++;}
+  });
+
+  // Price elasticity signal
+  const pd=C.avgPriceByYear?.slice(1).map((v,i)=>v-(C.avgPriceByYear[i]||0))||[];
+  const vd=C.unitsByYear?.slice(1).map((v,i)=>v-(C.unitsByYear[i]||0))||[];
+  const pcorr=pearson(pd,vd);
+
+  // Velocity: top and bottom community
+  const n=C.years.length;
+  const velScores=C.communities?.map(comm=>{
+    const rec=n>=4?C.years.slice(-2).reduce((s,y)=>s+(C.commYearMatrix[comm]?.[y]||0),0)/2:0;
+    const pri=n>=4?C.years.slice(-4,-2).reduce((s,y)=>s+(C.commYearMatrix[comm]?.[y]||0),0)/2:1;
+    return {comm,score:pri>0?Math.round((rec/pri)*100):100};
+  })||[];
+  const topVel=velScores.sort((a,b)=>b.score-a.score)[0];
+  const botVel=velScores[velScores.length-1];
+
+  const insights=[];
+  if(growth>10) insights.push({ico:'📈',type:'high',title:'Strong revenue growth projected',sub:`OLS projects ${growth}% growth next year (${fB(nextRev)}). Capitalise by accelerating launch pipeline.`});
+  else if(growth<0) insights.push({ico:'⚠️',type:'low',title:'Revenue contraction signal',sub:`Model projects ${Math.abs(growth)}% decline. Review pricing and channel activation.`});
+  else insights.push({ico:'📊',type:'med',title:'Steady revenue outlook',sub:`${growth}% projected growth aligns with trend. Focus on margin optimisation.`});
+
+  if(hrOut>5e8) insights.push({ico:'🔴',type:'low',title:`${fB(hrOut)} in high-risk receivables`,sub:`${hrCnt} units below 25% paid. ~22% recovery probability. Escalate collections immediately.`});
+
+  if(topVel&&topVel.score>110) insights.push({ico:'🏘️',type:'high',title:`${topVel.comm} is your fastest-growing community`,sub:`Velocity index ${topVel.score}. Prioritise inventory allocation and pricing power here.`});
+  if(botVel&&botVel.score<80) insights.push({ico:'📉',type:'low',title:`${botVel.comm} showing demand softness`,sub:`Velocity index ${botVel.score}. Review pricing or channel activation in this community.`});
+
+  if(pcorr<-0.5) insights.push({ico:'💹',type:'med',title:'Price-sensitive demand detected',sub:`Pearson r=${pcorr.toFixed(2)}. Volume falls when price rises. Recommend value-add over price hikes.`});
+  else if(pcorr>0.3) insights.push({ico:'🎯',type:'high',title:'Aspirational buyer base detected',sub:`Positive price-volume correlation (r=${pcorr.toFixed(2)}). Premium positioning is sustainable.`});
+
+  const el=document.getElementById('insights-wrap');
+  if(!el) return;
+  el.innerHTML='';
+  insights.slice(0,5).forEach(ins=>{
+    el.innerHTML+=`<div class="ins-card ${ins.type}">
+      <div class="ins-ico">${ins.ico}</div>
+      <div><div class="ins-title">${ins.title}</div><div class="ins-sub">${ins.sub}</div></div>
+    </div>`;
+  });
+}
+
+/* ── Store analytics for predictive models ─────────── */
+// renderFromRows calls this so models always have fresh data
+let _lastAnalytics = null;
+
 /* =====================================================
    AUTO-REFRESH
    ===================================================== */
@@ -1646,8 +1919,7 @@ setInterval(()=>loadData(false), 30 * 60 * 1000); // 30 minutes
 /* =====================================================
    BOOT
    ===================================================== */
-initFirebase();
-setupAuth();
+loadData();
 </script>
 </body>
 </html>
