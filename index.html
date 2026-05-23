@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
 <!-- Firebase SDKs — must be in <head> so they are defined before
      dashboard-auth-28.js runs. The auth file initialises Firebase
@@ -658,7 +659,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 /* =====================================================
    DATA SOURCE CONFIG
    ===================================================== */
-const XLSX_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTg9nVEiwrU8xBzl6DaP3-b2enA8Ae_oNW-5VXlg2yRq9godA1cBjwzdRYbY4O9zdbU_2xnprBVo1QO/pub?output=xlsx';
+const CSV_URL  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTg9nVEiwrU8xBzl6DaP3-b2enA8Ae_oNW-5VXlg2yRq9godA1cBjwzdRYbY4O9zdbU_2xnprBVo1QO/pub?output=csv';
 
 const LS_CACHE_KEY  = 'mixta_csv_v2';
 const LS_TS_KEY     = 'mixta_csv_v2_ts';
@@ -824,29 +825,47 @@ let _fetchInProgress = false;
    FETCH AND PARSE EXCEL TABS
    ===================================================== */
 async function getLiveSheetData() {
-  setLoaderSub('Downloading all tabs from Google Sheets…');
-  const arrayBuffer = await fetchWithRetry(XLSX_URL);
-  const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
-  let allRows = [];
-  let rawHeaders = [];
+  setLoaderSub('Downloading from Google Sheets…');
 
-  wb.SheetNames.forEach(sheetName => {
-    const ws = wb.Sheets[sheetName];
-    const sheetRows = XLSX.utils.sheet_to_json(ws, { defval: '' });
-    if (sheetRows.length > 0 && rawHeaders.length === 0) {
-      rawHeaders = Object.keys(sheetRows[0]); 
-    }
-    allRows = allRows.concat(sheetRows);
+  // Fetch as plain text — CSV has no CORS issues unlike xlsx binary
+  const csvText = await fetchWithRetryCSV(CSV_URL);
+
+  setLoaderSub('Parsing records…');
+  const result = Papa.parse(csvText, {
+    header:       true,
+    skipEmptyLines: true,
+    dynamicTyping: false,
+    transformHeader: h => h.trim(),
   });
 
-  if(!allRows.length) throw new Error('No data found in any sheets');
+  if (!result.data || !result.data.length) throw new Error('CSV returned no rows');
 
-  const normalised = allRows
+  const rawHeaders = Object.keys(result.data[0] || {});
+  const normalised = result.data
     .map(r => normaliseRow(r, HEADER_MAP))
     .filter(r => r.community && r.community.trim() !== '' && r.community !== 'Community');
 
-  if(normalised.length) validateSchema(normalised[0], rawHeaders);
+  if (!normalised.length) throw new Error('No valid community rows found in sheet');
+  validateSchema(normalised[0], rawHeaders);
   return normalised;
+}
+
+// CSV-specific fetch — returns text, not arrayBuffer
+async function fetchWithRetryCSV(url, retries=FETCH_MAX_RETRIES, delay=FETCH_BASE_DELAY) {
+  for(let attempt=0; attempt<=retries; attempt++) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if(res.ok) return await res.text();
+      if(res.status === 429 || res.status >= 500) {
+        if(attempt < retries) { await sleep(delay * Math.pow(2, attempt)); continue; }
+        throw new Error(`HTTP ${res.status} after ${retries} retries`);
+      }
+      throw new Error(`HTTP ${res.status}`);
+    } catch(e) {
+      if(attempt < retries && e.name !== 'AbortError') { await sleep(delay * Math.pow(2, attempt)); continue; }
+      throw e;
+    }
+  }
 }
 
 /* =====================================================
@@ -1597,12 +1616,36 @@ async function loadData(forceRefresh=false) {
     showSyncStatus('Syncing…');
   }
 
+  // Serve localStorage cache immediately if available (stale-while-revalidate)
+  if (!forceRefresh && !_allRows) {
+    try {
+      const cached = localStorage.getItem(LS_CACHE_KEY);
+      const ts     = parseInt(localStorage.getItem(LS_TS_KEY) || '0');
+      if (cached && (Date.now() - ts) < 60 * 60 * 1000) { // 1hr cache
+        const rows = JSON.parse(cached);
+        if (rows && rows.length) {
+          _allRows = rows;
+          await renderFromRows(rows, true);
+          if (typeof window.onPostSync === 'function') window.onPostSync(rows);
+        }
+      }
+    } catch(ce) { /* cache miss — continue to live fetch */ }
+  }
+
   try {
     const rows = await getLiveSheetData();
-    
     _allRows = rows;
+
+    // Save to localStorage for offline/fast-reload fallback
+    try {
+      const s = JSON.stringify(rows);
+      if (s.length < LS_MAX_BYTES) {
+        localStorage.setItem(LS_CACHE_KEY, s);
+        localStorage.setItem(LS_TS_KEY, String(Date.now()));
+      }
+    } catch(se) { /* storage full — skip */ }
+
     await renderFromRows(rows, false);
-    // Notify analytics engine after every sync — mirrors dashboard-pi-engine.js in index 29
     if (typeof window.onPostSync === 'function') window.onPostSync(rows);
 
     const fl = document.getElementById('freshness-label');
@@ -1611,8 +1654,22 @@ async function loadData(forceRefresh=false) {
   } catch(err) {
     console.error('[loadData]', err);
     const eb = document.getElementById('errorBar');
-    document.getElementById('errorMsg').textContent = 'Could not load sheets: ' + err.message;
+    document.getElementById('errorMsg').textContent =
+      'Could not load data: ' + err.message + ' — check your connection or try Sync.';
     eb.classList.add('show');
+
+    // Emergency fallback: render from cache even if fetch failed
+    if (!_allRows) {
+      try {
+        const cached = localStorage.getItem(LS_CACHE_KEY);
+        if (cached) {
+          const rows = JSON.parse(cached);
+          _allRows = rows;
+          await renderFromRows(rows, true);
+          if (typeof window.onPostSync === 'function') window.onPostSync(rows);
+        }
+      } catch(fe) { /* no cache available */ }
+    }
   } finally {
     loader.classList.add('hidden');
     syncBtn.classList.remove('spinning');
@@ -1634,6 +1691,18 @@ function showSection(name, btn) {
   const el = document.getElementById('section-'+name);
   if(el) el.classList.add('active');
   if(btn) btn.classList.add('active');
+}
+
+// signOut — delegates to dashboard-auth-28.js public API.
+// Called by the header user strip onclick and any inline onclick="signOut()".
+function signOut() {
+  if (window._authGate28 && window._authGate28.signOut) {
+    window._authGate28.signOut();
+  } else if (window._authGate && window._authGate.signOut) {
+    window._authGate.signOut();
+  } else {
+    location.reload();
+  }
 }
 
 /* =====================================================
