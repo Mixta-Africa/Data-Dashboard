@@ -226,7 +226,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 </head>
 <body>
 
-<!-- auth overlay injected by dashboard-auth-28.js -->
+<!-- auth gate injected inline at the bottom of body -->
 
 <div class="sync-toast" id="syncToast"></div>
 
@@ -2446,9 +2446,220 @@ window.onAuthGateReady = window.onAuthGateReady || function () {
 // as <script src="..."> tags at the end of <body> — they boot themselves.
 </script>
 
-<!-- Auth gate — self-contained, no dependency on inline scripts -->
-<!-- Mirrors the role of dashboard-auth.js in index 29             -->
-<script src="dashboard-auth-28.js"></script>
+<!-- ════════════════════════════════════════════════════════════════
+     INLINE AUTH GATE — Firebase Google sign-in
+     Restricted to @mixtafrica.com email domain
+     Self-contained: injects its own DOM and styles
+     ════════════════════════════════════════════════════════════════ -->
+<div id="auth-gate" style="display:flex">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22" fill="none" stroke="white" stroke-width="1.5"/></svg>
+    </div>
+    <div class="auth-title">Mixta Africa</div>
+    <div class="auth-sub">Portfolio Intelligence Hub<br><span style="font-size:11px;color:var(--text3)">Sign in with your @mixtafrica.com account</span></div>
+    <button class="auth-btn" id="googleSignInBtn" onclick="doGoogleSignIn()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="">
+      <span id="googleSignInLabel">Continue with Google</span>
+    </button>
+    <div class="auth-err" id="authErr"></div>
+    <div style="font-size:10px;color:var(--text3);margin-top:18px;line-height:1.5">
+      Access is restricted to authorised Mixta Africa staff. By signing in you agree to our internal data handling policy.
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   FIREBASE AUTH — fully inline, no external auth file
+   ════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyB2TvSXbXOAutbt0MqJeOrn-7hKfpaqfAo",
+    authDomain: "data-dashboard-ad94f.firebaseapp.com",
+    projectId: "data-dashboard-ad94f",
+    storageBucket: "data-dashboard-ad94f.firebasestorage.app",
+    messagingSenderId: "1012632142221",
+    appId: "1:1012632142221:web:1aa118b847705bd1353dc4"
+  };
+
+  const ALLOWED_DOMAIN = 'mixtafrica.com';
+
+  // ── Safety: verify Firebase SDK actually loaded ─────────────────
+  if (typeof firebase === 'undefined' || !firebase.auth) {
+    console.error('[AUTH] Firebase SDK failed to load. Check <head> script tags.');
+    showAuthErr('Firebase SDK failed to load. Check your network and reload.');
+    return;
+  }
+
+  // ── Initialise Firebase once ────────────────────────────────────
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  } catch (e) {
+    console.error('[AUTH] Firebase init failed:', e);
+    showAuthErr('Firebase initialisation failed: ' + e.message);
+    return;
+  }
+
+  const auth = firebase.auth();
+  // Persist sign-in across reloads (so users don't sign in on every visit)
+  auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e =>
+    console.warn('[AUTH] Could not set LOCAL persistence:', e.message));
+
+  let _gateBooted = false;
+
+  // ── Helpers ─────────────────────────────────────────────────────
+  function showAuthErr(msg) {
+    const el = document.getElementById('authErr');
+    if (el) { el.textContent = msg; el.style.display = 'block'; }
+    console.warn('[AUTH]', msg);
+  }
+  function hideAuthErr() {
+    const el = document.getElementById('authErr');
+    if (el) { el.textContent = ''; el.style.display = 'none'; }
+  }
+  function setBtnLoading(loading) {
+    const btn = document.getElementById('googleSignInBtn');
+    const lbl = document.getElementById('googleSignInLabel');
+    if (btn) btn.disabled = loading;
+    if (lbl) lbl.textContent = loading ? 'Signing in…' : 'Continue with Google';
+  }
+  function showUserStrip(user) {
+    const strip = document.getElementById('userStrip');
+    const av    = document.getElementById('userAvatar');
+    const nm    = document.getElementById('userName');
+    if (strip) strip.style.display = 'flex';
+    if (av && user.photoURL) av.src = user.photoURL;
+    if (nm) nm.textContent = user.displayName || user.email;
+  }
+  function hideGate() {
+    const gate = document.getElementById('auth-gate');
+    if (!gate) return;
+    gate.classList.add('hidden');
+    setTimeout(() => { gate.style.display = 'none'; }, 450);
+  }
+  function showGate() {
+    const gate = document.getElementById('auth-gate');
+    if (!gate) return;
+    gate.style.display = 'flex';
+    requestAnimationFrame(() => gate.classList.remove('hidden'));
+  }
+
+  // ── Boot the dashboard exactly once ─────────────────────────────
+  function bootDashboard(user) {
+    if (_gateBooted) return;
+    _gateBooted = true;
+    console.log('[AUTH] Signed in as', user.email, '— booting dashboard.');
+    showUserStrip(user);
+    hideGate();
+    // Hand off to the dashboard's data loader (defined in the inline script above)
+    if (typeof window.onAuthGateReady === 'function') {
+      try { window.onAuthGateReady(); }
+      catch (e) { console.error('[AUTH] onAuthGateReady threw:', e); }
+    } else if (typeof window.loadData === 'function') {
+      // Fallback in case onAuthGateReady was overwritten
+      window.loadData(false);
+    } else {
+      console.error('[AUTH] No dashboard boot function found.');
+    }
+  }
+
+  // ── Google sign-in handler ──────────────────────────────────────
+  window.doGoogleSignIn = async function () {
+    hideAuthErr();
+    setBtnLoading(true);
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ hd: ALLOWED_DOMAIN, prompt: 'select_account' });
+      const result = await auth.signInWithPopup(provider);
+      // signInWithPopup resolves → onAuthStateChanged will fire next
+      // We let onAuthStateChanged do the domain check and boot to keep one code path
+      if (!result || !result.user) {
+        setBtnLoading(false);
+        showAuthErr('Sign-in returned no user. Please try again.');
+      }
+    } catch (e) {
+      setBtnLoading(false);
+      console.error('[AUTH] signInWithPopup failed:', e);
+      // Surface the actual reason instead of leaving the user on a blank screen
+      if (e.code === 'auth/popup-blocked') {
+        showAuthErr('Pop-up was blocked by your browser. Allow pop-ups for this site and try again.');
+      } else if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
+        showAuthErr('Sign-in cancelled. Click "Continue with Google" to try again.');
+      } else if (e.code === 'auth/unauthorized-domain') {
+        showAuthErr('This domain is not authorised in Firebase. Add it under Authentication → Settings → Authorised domains.');
+      } else if (e.code === 'auth/network-request-failed') {
+        showAuthErr('Network error. Check your connection and try again.');
+      } else {
+        showAuthErr('Sign-in failed: ' + (e.message || e.code || 'unknown error'));
+      }
+    }
+  };
+
+  // ── Sign out handler (called by header user strip) ──────────────
+  window.signOut = function () {
+    auth.signOut().then(() => {
+      _gateBooted = false;
+      const strip = document.getElementById('userStrip');
+      if (strip) strip.style.display = 'none';
+      // Hard reload so cached dashboard state is cleared
+      location.reload();
+    }).catch(e => console.error('[AUTH] signOut failed:', e));
+  };
+  // Also expose under the public API name the existing code looks for
+  window._authGate28 = { signOut: window.signOut };
+
+  // ── Domain check ────────────────────────────────────────────────
+  function isAllowedEmail(email) {
+    if (!email) return false;
+    const parts = email.toLowerCase().split('@');
+    return parts.length === 2 && parts[1] === ALLOWED_DOMAIN;
+  }
+
+  // ── Master state listener: fires on initial load AND every change ──
+  // This is the ONLY place that decides "show gate" vs "boot dashboard".
+  auth.onAuthStateChanged(user => {
+    if (!user) {
+      // Not signed in → show the gate, do nothing else
+      _gateBooted = false;
+      showGate();
+      setBtnLoading(false);
+      return;
+    }
+    if (!isAllowedEmail(user.email)) {
+      // Signed in but wrong domain → sign them out and show error
+      console.warn('[AUTH] Blocked unauthorised email:', user.email);
+      auth.signOut().then(() => {
+        showGate();
+        setBtnLoading(false);
+        showAuthErr('Access denied. You signed in as ' + user.email +
+          ', but only @' + ALLOWED_DOMAIN + ' accounts are permitted.');
+      });
+      return;
+    }
+    // Signed in AND allowed → boot
+    bootDashboard(user);
+  });
+
+  // ── Safety net: if Firebase never fires onAuthStateChanged within 5s ──
+  // (e.g. network down on first load), still show the gate so the user
+  // sees something instead of a blank page.
+  setTimeout(() => {
+    if (!_gateBooted) {
+      const gate = document.getElementById('auth-gate');
+      if (gate && gate.style.display !== 'none' && !gate.classList.contains('hidden')) {
+        // Gate already visible — nothing to do
+        return;
+      }
+      console.warn('[AUTH] No auth state after 5s — showing gate as fallback.');
+      showGate();
+    }
+  }, 5000);
+
+})();
+</script>
 
 <!-- Predictive analytics engine — runs models on idle thread     -->
 <!-- Mirrors the role of dashboard-pi-engine.js in index 29       -->
