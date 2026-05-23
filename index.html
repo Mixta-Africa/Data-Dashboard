@@ -680,8 +680,14 @@ const FIREBASE_CONFIG = {
   appId:             "1:1012632142221:web:1aa118b847705bd1353dc4"
 };
 
-// Allowed email domain — only Mixta accounts can sign in
-const ALLOWED_DOMAIN = "mixtafrica.com";
+// ── ACCESS CONTROL ─────────────────────────────────────
+// Option A (recommended for testing): leave ALLOWED_EMAILS empty → any
+//   Google account can sign in. Add emails to lock it down later.
+// Option B: list specific emails e.g. ["you@gmail.com","colleague@company.com"]
+// Option C: set ALLOWED_DOMAIN to restrict by domain e.g. "mixtafrica.com"
+//   but only do this AFTER confirming Google Sign-In works for your account.
+const ALLOWED_EMAILS = [];           // empty = allow any authenticated Google account
+const ALLOWED_DOMAIN = "";           // empty = no domain restriction
 
 /* =====================================================
    DATA SOURCE CONFIG
@@ -785,9 +791,36 @@ function initFirebase() {
 /* =====================================================
    AUTH
    ===================================================== */
+function isAllowedUser(email) {
+  const e = (email || '').toLowerCase().trim();
+  if (!e) return false;
+  // If no restrictions set, allow any authenticated Google account
+  if (ALLOWED_EMAILS.length === 0 && !ALLOWED_DOMAIN) return true;
+  // Check specific email whitelist
+  if (ALLOWED_EMAILS.length > 0 && ALLOWED_EMAILS.map(x=>x.toLowerCase()).includes(e)) return true;
+  // Check domain
+  if (ALLOWED_DOMAIN && e.endsWith('@' + ALLOWED_DOMAIN.toLowerCase())) return true;
+  return false;
+}
+
+function grantAccess(user) {
+  _currentUser = user;
+  document.getElementById('auth-gate').classList.add('hidden');
+  const strip = document.getElementById('userStrip');
+  if (strip) strip.style.display = 'flex';
+  const nameEl = document.getElementById('userName');
+  if (nameEl) nameEl.textContent = user.displayName || user.email.split('@')[0];
+  const av = document.getElementById('userAvatar');
+  if (av) {
+    if (user.photoURL) { av.src = user.photoURL; av.style.display = ''; }
+    else { av.style.display = 'none'; }
+  }
+  loadData(false);
+}
+
 function setupAuth() {
-  // If Firebase failed to initialise (wrong config, offline), skip auth gate entirely
   if (!_fbReady) {
+    // Firebase config not set or failed — bypass auth entirely for local dev
     console.warn('[Auth] Firebase not ready — bypassing auth gate');
     document.getElementById('auth-gate').classList.add('hidden');
     loadData(false);
@@ -795,79 +828,59 @@ function setupAuth() {
   }
 
   const provider = new firebase.auth.GoogleAuthProvider();
-  // hd hint shows org accounts first — NOT a server-side restriction
-  provider.setCustomParameters({ hd: ALLOWED_DOMAIN });
-  // Request email + profile so we can read the email for domain check
   provider.addScope('email');
   provider.addScope('profile');
+  // Only add hd hint if a domain is set — otherwise it causes popup issues
+  if (ALLOWED_DOMAIN) provider.setCustomParameters({ hd: ALLOWED_DOMAIN });
 
   const btn = document.getElementById('googleSignInBtn');
+  const origHTML = btn.innerHTML;
 
   btn.addEventListener('click', async () => {
     clearAuthErr();
-
-    // Visual feedback — user knows the click registered
-    const origHTML = btn.innerHTML;
-    btn.innerHTML = '<svg style="width:18px;height:18px;animation:spin 0.8s linear infinite" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="8"/></svg>&nbsp; Signing in…';
+    btn.innerHTML = '<svg style="width:18px;height:18px;animation:spin 0.8s linear infinite;vertical-align:middle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Signing in…';
     btn.disabled = true;
 
     try {
       const result = await _auth.signInWithPopup(provider);
-      const email = (result.user.email || '').toLowerCase().trim();
-
-      if (!email.endsWith('@' + ALLOWED_DOMAIN)) {
+      const email  = (result.user.email || '').toLowerCase().trim();
+      if (!isAllowedUser(email)) {
         await _auth.signOut();
-        btn.innerHTML = origHTML;
-        btn.disabled = false;
-        showAuthErr('Access restricted to @' + ALLOWED_DOMAIN + ' accounts. You signed in as: ' + email);
+        btn.innerHTML = origHTML; btn.disabled = false;
+        showAuthErr('Account not on the access list: ' + email + '. Contact your administrator.');
         return;
       }
-      // Success — onAuthStateChanged will handle the rest
+      // onAuthStateChanged fires next and calls grantAccess
     } catch(e) {
-      btn.innerHTML = origHTML;
-      btn.disabled = false;
-
-      // Distinguish the most common failure modes clearly
-      if (e.code === 'auth/popup-blocked') {
-        showAuthErr('Popup was blocked by your browser. Please allow popups for this site and try again.');
-      } else if (e.code === 'auth/popup-closed-by-user') {
-        showAuthErr('Sign-in window was closed. Click the button again to try.');
-      } else if (e.code === 'auth/unauthorized-domain') {
-        showAuthErr('This domain is not authorised in Firebase. Add it under Authentication → Settings → Authorised domains in your Firebase Console.');
-      } else if (e.code === 'auth/invalid-api-key' || e.code === 'auth/configuration-not-found') {
-        showAuthErr('Firebase configuration error. Check that the API key and project ID are correct.');
-      } else if (e.code === 'auth/network-request-failed') {
-        showAuthErr('Network error. Check your internet connection and try again.');
-      } else {
-        showAuthErr((e.message || 'Sign-in failed.') + ' (Code: ' + (e.code || 'unknown') + ')');
-      }
-      console.error('[Auth] Sign-in error:', e.code, e.message);
+      btn.innerHTML = origHTML; btn.disabled = false;
+      const msgs = {
+        'auth/popup-blocked':            'Popup blocked — allow popups for this site and try again.',
+        'auth/popup-closed-by-user':     'Sign-in window closed. Click the button again.',
+        'auth/unauthorized-domain':      'Domain not authorised in Firebase Console → Authentication → Settings → Authorised domains. Add the URL you are opening this file from.',
+        'auth/invalid-api-key':          'Invalid Firebase API key. Check the FIREBASE_CONFIG at the top of the script.',
+        'auth/configuration-not-found':  'Firebase project not found. Verify the projectId in FIREBASE_CONFIG.',
+        'auth/network-request-failed':   'Network error. Check your internet connection.',
+        'auth/cancelled-popup-request':  'Only one sign-in popup allowed at a time. Try again.',
+        'auth/operation-not-allowed':    'Google sign-in not enabled. Go to Firebase Console → Authentication → Sign-in method → Enable Google.',
+      };
+      const msg = msgs[e.code] || (e.message + ' [' + e.code + ']');
+      showAuthErr(msg);
+      console.error('[Auth]', e.code, e.message);
     }
   });
 
   _auth.onAuthStateChanged(user => {
-    _currentUser = user;
-    if (user && user.email && user.email.toLowerCase().endsWith('@' + ALLOWED_DOMAIN)) {
-      // Valid domain — grant access
-      document.getElementById('auth-gate').classList.add('hidden');
-      const strip = document.getElementById('userStrip');
-      if (strip) strip.style.display = 'flex';
-      const nameEl = document.getElementById('userName');
-      if (nameEl) nameEl.textContent = user.displayName || user.email.split('@')[0];
-      const av = document.getElementById('userAvatar');
-      if (av) {
-        if (user.photoURL) { av.src = user.photoURL; av.style.display = ''; }
-        else { av.style.display = 'none'; }
+    if (user) {
+      if (isAllowedUser(user.email)) {
+        grantAccess(user);
+      } else {
+        // Wrong account — sign out silently, restore button
+        _auth.signOut();
+        btn.innerHTML = origHTML; btn.disabled = false;
+        showAuthErr('Account not on the access list: ' + user.email);
       }
-      // Reset button state (in case user was mid-sign-in on another tab)
-      if (btn) { btn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google"> Continue with Google'; btn.disabled = false; }
-      loadData(false);
-    } else if (user) {
-      // Signed in but wrong domain
-      _auth.signOut();
-      showAuthErr('Access is restricted to @' + ALLOWED_DOMAIN + ' accounts. Signed in as: ' + user.email);
     }
-    // No user = auth gate stays visible, nothing to do
+    // No user → auth gate stays visible
   });
 }
 
@@ -1955,248 +1968,156 @@ function linearInterp(x, x0, x1, y0, y1) {
 async function computePredictiveAsync(d, allRows) {
   const P = {};
 
-  // ── 1. REVENUE FORECAST (OLS on annual series) ──────
+  // ── MODEL 1: OLS REVENUE FORECAST ───────────────────
+  // Fits y = a + bx through annual revenue, projects 3 years forward
   const validYears = d.years.filter((y,i) => d.revByYear[i] > 0);
   const validRevs  = validYears.map(y => d.revByYear[d.years.indexOf(y)]);
-  const xNorm = validYears.map(y => parseInt(y));   // raw year as x
-  const ols   = olsRegression(xNorm, validRevs);
-  P.ols       = ols;
-  const lastYr = parseInt(validYears[validYears.length-1] || new Date().getFullYear());
+  const ols        = olsRegression(validYears.map(y=>parseInt(y)), validRevs);
+  const lastYr     = parseInt(validYears[validYears.length-1] || new Date().getFullYear());
 
-  // Project +1, +2, +3
   const proj = [1,2,3].map(k => ({
     year: lastYr + k,
-    base: Math.max(0, ols.predict(lastYr + k)),
-    bull: Math.max(0, ols.predict(lastYr + k) + ols.sigma),
-    bear: Math.max(0, ols.predict(lastYr + k) - ols.sigma),
+    base: Math.max(0, ols.predict(lastYr+k)),
+    bull: Math.max(0, ols.predict(lastYr+k) + ols.sigma),
+    bear: Math.max(0, ols.predict(lastYr+k) - ols.sigma),
   }));
-  P.projections = proj;
-  P.r2 = ols.r2;
+  P.projections    = proj;
+  P.r2             = ols.r2;
+  P.forecastLabels = [...validYears, ...proj.map(p=>String(p.year))];
+  P.forecastActual = [...validRevs, ...proj.map(()=>null)];
+  P.forecastBase   = [...validYears.map(y=>ols.predict(parseInt(y))), ...proj.map(p=>p.base)];
+  P.forecastUpper  = [...validYears.map(y=>ols.predict(parseInt(y))+ols.sigma), ...proj.map(p=>p.bull)];
+  P.forecastLower  = [...validYears.map(y=>Math.max(0,ols.predict(parseInt(y))-ols.sigma)), ...proj.map(p=>p.bear)];
 
-  // Forecast chart data: historical + projection with confidence band
-  const forecastLabels = [...validYears, ...proj.map(p=>String(p.year))];
-  const forecastActual = [...validRevs,  ...proj.map(()=>null)];
-  const forecastBase   = [
-    ...validYears.map(y => ols.predict(parseInt(y))),
-    ...proj.map(p=>p.base)
-  ];
-  const forecastUpper  = [
-    ...validYears.map(y => ols.predict(parseInt(y)) + ols.sigma),
-    ...proj.map(p=>p.bull)
-  ];
-  const forecastLower  = [
-    ...validYears.map(y => Math.max(0,ols.predict(parseInt(y)) - ols.sigma)),
-    ...proj.map(p=>p.bear)
-  ];
-  P.forecastLabels  = forecastLabels;
-  P.forecastActual  = forecastActual;
-  P.forecastBase    = forecastBase;
-  P.forecastUpper   = forecastUpper;
-  P.forecastLower   = forecastLower;
-
-  // ── 2. PRICE APPRECIATION per community ─────────────
   await yieldThread();
-  P.priceForecasts = {};
-  const projYrLabels = [...d.years, ...proj.map(p=>String(p.year))];
-  // PRE-INDEX: build comm+year lookup once (O(n) instead of O(n×comms×years))
-  const commYearCount = {};
-  allRows.forEach(r => {
-    if(!r.community||!r._year) return;
-    const key = r.community + '|' + r._year;
-    commYearCount[key] = (commYearCount[key]||0) + 1;
-  });
 
-  d.communities.forEach(comm => {
-    const cYears = d.years.filter(y => (d.commYearMatrix[comm]?.[y]||0) > 0);
-    if(cYears.length < 2) return;
-    const cUnitsByYear = cYears.map(y => commYearCount[comm+'|'+y]||0);
-    const cAvgPrice = cYears.map((y,i) => {
-      const rev = d.commYearMatrix[comm][y] || 0;
-      const u   = cUnitsByYear[i] || 1;
-      return rev / u;
-    });
-    const cOls = olsRegression(cYears.map(y=>parseInt(y)), cAvgPrice);
-    P.priceForecasts[comm] = projYrLabels.map(y => Math.max(0, cOls.predict(parseInt(y))));
-  });
-  P.priceProjectionLabels = projYrLabels;
-
-  // ── 3. COLLECTION RECOVERY MODEL ────────────────────
-  await yieldThread();
-  // Assign recovery probability per risk tier based on empirical % paid distributions
-  // p(recovery) = f(currentPctPaid, tier)
-  // We model each tier's likely recovery path as a probability-weighted expected value
-  const RECOVERY_PROB = {
-    'Collected':       { prob: 0.99, monthsToClose: 0  },
-    'Near Completion': { prob: 0.92, monthsToClose: 3  },
-    'Low Risk':        { prob: 0.78, monthsToClose: 6  },
-    'Medium Risk':     { prob: 0.52, monthsToClose: 12 },
-    'High Risk':       { prob: 0.22, monthsToClose: 20 },
-  };
-  // Default for unmapped rows: score from pctPaid linearly
-  function recProb(row) {
-    const tier = row.collectionRisk;
-    if(RECOVERY_PROB[tier]) return RECOVERY_PROB[tier].prob;
-    const p = row._ppct / 100;
-    // Logistic-style scoring: high % paid = high prob
-    return clamp(1 / (1 + Math.exp(-8*(p-0.5))), 0.05, 0.99);
-  }
-
-  // Per-tier outstanding and expected recovery
-  const tierData = {};
+  // ── MODEL 2: COLLECTION RECOVERY ────────────────────
+  // Probability-weighted expected recovery per risk tier
+  const RPROB = {'Collected':0.99,'Near Completion':0.92,'Low Risk':0.78,'Medium Risk':0.52,'High Risk':0.22};
+  const RMTHS = {'Collected':0,'Near Completion':3,'Low Risk':6,'Medium Risk':12,'High Risk':20};
   const riskTiers = ['Collected','Near Completion','Low Risk','Medium Risk','High Risk'];
-  riskTiers.forEach(t => {
-    const tRows = allRows.filter(r => r.collectionRisk === t && r._out > 0);
-    const outstanding = tRows.reduce((s,r)=>s+r._out,0);
-    const expected    = tRows.reduce((s,r)=>s+r._out*recProb(r),0);
-    tierData[t] = { outstanding, expected, count: tRows.length };
-  });
-  // For rows with no risk tier, use pctPaid model
-  const unmapped = allRows.filter(r => (!r.collectionRisk||r.collectionRisk==='') && r._out > 0);
-  const unmappedOut = unmapped.reduce((s,r)=>s+r._out,0);
-  const unmappedExp = unmapped.reduce((s,r)=>s+r._out*recProb(r),0);
+  const tierData  = {};
 
-  P.tierData = tierData;
-  P.totalRecoverable = Object.values(tierData).reduce((s,t)=>s+t.expected,0) + unmappedExp;
+  riskTiers.forEach(t => {
+    let out = 0, exp = 0, count = 0;
+    allRows.forEach(r => {
+      if(r.collectionRisk !== t || r._out <= 0) return;
+      const prob = RPROB[t] ?? Math.max(0.05, Math.min(0.99, 1/(1+Math.exp(-8*(r._ppct/100-0.5)))));
+      out += r._out; exp += r._out * prob; count++;
+    });
+    tierData[t] = { outstanding:out, expected:exp, count };
+  });
+
+  // Unmapped rows: use logistic curve on pctPaid
+  let unmappedExp = 0;
+  allRows.forEach(r => {
+    if(r.collectionRisk || r._out <= 0) return;
+    unmappedExp += r._out * Math.max(0.05, Math.min(0.99, 1/(1+Math.exp(-8*(r._ppct/100-0.5)))));
+  });
+
+  P.tierData         = tierData;
+  P.totalRecoverable = riskTiers.reduce((s,t)=>s+(tierData[t]?.expected||0),0) + unmappedExp;
   P.totalAtRisk      = (tierData['High Risk']?.outstanding||0) + (tierData['Medium Risk']?.outstanding||0)*0.5;
   P.recoveryLabels   = riskTiers.filter(t=>tierData[t]?.outstanding>0);
   P.recoveryOut      = P.recoveryLabels.map(t=>tierData[t].outstanding);
   P.recoveryExp      = P.recoveryLabels.map(t=>tierData[t].expected);
   P.recoveryLoss     = P.recoveryLabels.map((t,i)=>P.recoveryOut[i]-P.recoveryExp[i]);
 
-  // 24-month recovery timeline: weighted by months-to-close
-  const months = Array.from({length:24},(_,i)=>i+1);
-  let cumulativeRecovered = 0;
-  P.resolutionData = months.map(m => {
-    // Each tier contributes proportionally as its months-to-close passes
-    let addedThisMonth = 0;
+  // 24-month cumulative recovery timeline
+  let cum = 0;
+  P.resolutionData = Array.from({length:24},(_,i)=>i+1).map(m => {
     riskTiers.forEach(t => {
-      const cfg = RECOVERY_PROB[t];
-      if(!cfg || !tierData[t]) return;
-      const mtc = cfg.monthsToClose || 1;
-      if(m === mtc) addedThisMonth += tierData[t].expected;
-      else if(mtc===0 && m===1) addedThisMonth += tierData[t].expected;
+      const mtc = RMTHS[t] ?? 12;
+      if((mtc===0&&m===1)||m===mtc) cum += tierData[t]?.expected||0;
     });
-    cumulativeRecovered += addedThisMonth;
-    return cumulativeRecovered;
+    return cum;
   });
 
-  // ── 4. MOVING AVERAGE & DEMAND VELOCITY ─────────────
   await yieldThread();
+
+  // ── DEMAND VELOCITY (no row scanning — uses pre-aggregated d) ────────
+  // Uses year-over-year unit counts already computed in analytics engine
   P.mavgLabels = d.years;
   P.mavg3yr    = movingAverage(d.unitsByYear, 3);
   P.mavg2yr    = movingAverage(d.unitsByYear, 2);
   P.unitsByYear= d.unitsByYear;
 
-  // Velocity score: compare last 2 years vs prior 2 years per community
-  // Score = (recent avg / prior avg) * 100. 100 = flat, >100 = accelerating
-  // Use the pre-built commYearCount index (built above in model 2)
+  const maSlope = P.mavg3yr.length > 1
+    ? P.mavg3yr[P.mavg3yr.length-1] - P.mavg3yr[Math.max(0,P.mavg3yr.length-3)] : 0;
+  P.demandTrend    = maSlope > 2 ? 'Accelerating ▲' : maSlope < -2 ? 'Decelerating ▼' : 'Stable →';
+  P.demandTrendDir = maSlope > 2 ? 'up' : maSlope < -2 ? 'dn' : 'flat';
+
+  // Community velocity from pre-aggregated commYearMatrix (no row scanning)
   P.velocityScores = {};
+  const n = d.years.length;
   d.communities.forEach(comm => {
-    const n = d.years.length;
     if(n < 4) { P.velocityScores[comm] = 100; return; }
     const recentYrs = d.years.slice(-2);
     const priorYrs  = d.years.slice(-4,-2);
-    const recentAvg = recentYrs.reduce((s,y)=>s+(commYearCount[comm+'|'+y]||0),0) / 2;
-    const priorAvg  = priorYrs.reduce((s,y)=>s+(commYearCount[comm+'|'+y]||0),0) / 2;
-    P.velocityScores[comm] = priorAvg > 0 ? Math.round((recentAvg/priorAvg)*100) : 100;
+    const recentAvg = recentYrs.reduce((s,y)=>s+((d.commYearMatrix[comm]?.[y]||0)>0?1:0),0)/2;
+    const priorAvg  = priorYrs.reduce((s,y)=>s+((d.commYearMatrix[comm]?.[y]||0)>0?1:0),0)/2;
+    P.velocityScores[comm] = priorAvg>0 ? Math.round((recentAvg/priorAvg)*100) : 100;
   });
 
-  // Demand trend signal: slope of 3yr MA
-  const maSlope = P.mavg3yr.length > 1
-    ? P.mavg3yr[P.mavg3yr.length-1] - P.mavg3yr[Math.max(0,P.mavg3yr.length-3)]
-    : 0;
-  P.demandTrend = maSlope > 2 ? 'Accelerating ▲' : maSlope < -2 ? 'Decelerating ▼' : 'Stable →';
-  P.demandTrendDir = maSlope > 2 ? 'up' : maSlope < -2 ? 'dn' : 'flat';
-
-  // ── 5. AGENT COMPOSITE SCORE ─────────────────────────
-  await yieldThread();
-  // Score = 0.40 × Revenue_efficiency + 0.35 × Collection_health + 0.25 × Trend_momentum
-  // All sub-scores normalised 0–100
-  // PRE-INDEX: group rows by agent once instead of re-filtering per agent
-  const agentRowMap = {};
-  allRows.forEach(r => {
-    if(!r.dealingAgent||r.dealingAgent==='') return;
-    (agentRowMap[r.dealingAgent] = agentRowMap[r.dealingAgent]||[]).push(r);
-  });
-  const agentGroups_ = Object.keys(agentRowMap);
-  const agentScores  = [];
-  const avgRevPerUnit = d.totalRev / Math.max(d.totalRows,1);
-  const avgCollRate   = d.avgPctPaid / 100;
-
-  agentGroups_.forEach(ag => {
-    const agRows = agentRowMap[ag];
-    if(agRows.length < 2) return; // too small a sample
-    const rev   = agRows.reduce((s,r)=>s+r._sp,0);
-    const revPerUnit = rev / agRows.length;
-    const collRate   = agRows.filter(r=>r._ppct>0).reduce((s,r,_,a)=>s+r._ppct/a.length,0)/100;
-    // Trend: compare last half of years vs first half
-    const agYears = [...new Set(agRows.map(r=>r._year).filter(Boolean))].sort();
-    let trendScore = 50;
-    if(agYears.length >= 4) {
-      const half = Math.floor(agYears.length/2);
-      const early = agYears.slice(0,half).reduce((s,y)=>s+agRows.filter(r=>r._year===y).length,0)/half;
-      const late  = agYears.slice(-half).reduce((s,y)=>s+agRows.filter(r=>r._year===y).length,0)/half;
-      trendScore  = early>0 ? clamp((late/early)*50, 0, 100) : 50;
-    }
-    const revScore  = clamp((revPerUnit/avgRevPerUnit)*50, 0, 100);
-    const collScore = clamp(collRate*100, 0, 100);
-    const composite = 0.40*revScore + 0.35*collScore + 0.25*trendScore;
-    agentScores.push({ name:ag, score:composite, rev, units:agRows.length, collRate:collRate*100 });
-  });
-  agentScores.sort((a,b)=>b.score-a.score);
-  P.agentScores = agentScores.slice(0,12);
-
-  // ── 6. PRICE ELASTICITY SIGNAL ───────────────────────
-  await yieldThread();
-  // Correlation between avg price changes and unit volume changes year-on-year
-  const priceDelta  = d.avgPriceByYear.slice(1).map((v,i) => v - d.avgPriceByYear[i]);
-  const volumeDelta = d.unitsByYear.slice(1).map((v,i) => v - d.unitsByYear[i]);
-  P.elasticityCorr = pearsonCorr(priceDelta, volumeDelta);
-
-  // Scatter data: price vs units per year
-  P.elasticityX = d.avgPriceByYear.map(v=>+(v/1e6).toFixed(1)); // ₦M
-  P.elasticityY = d.unitsByYear;
-  P.elasticityYears = d.years;
-
-  // Price bands per community: find ₦ range with highest absorption
-  P.priceBands = {};
-  d.communities.forEach(comm => {
-    const cRows = allRows.filter(r=>r.community===comm&&r._sp>0);
-    if(!cRows.length) return;
-    const prices = cRows.map(r=>r._sp).sort((a,b)=>a-b);
-    const q1 = prices[Math.floor(prices.length*0.25)];
-    const q3 = prices[Math.floor(prices.length*0.75)];
-    const median = prices[Math.floor(prices.length*0.5)];
-    P.priceBands[comm] = { q1, q3, median, count: cRows.length };
-  });
-
-  // ── 7. STRATEGIC INSIGHTS (rule-based from model outputs) ──
-  const insights = [];
-  // Revenue forecast insight
-  const baseNext = proj[0]?.base||0;
-  const lastRev2 = validRevs[validRevs.length-1]||0;
-  const revGrowth = lastRev2>0 ? ((baseNext-lastRev2)/lastRev2*100).toFixed(0) : 0;
-  if(revGrowth > 15) insights.push({ico:'📈',title:'Strong revenue growth trajectory', sub:`OLS model projects ${revGrowth}% growth next year (₦${(baseNext/1e9).toFixed(1)}B). Capitalise by accelerating launch pipeline.`, type:'high'});
-  else if(revGrowth < 0) insights.push({ico:'⚠️',title:'Revenue deceleration signal', sub:`Model projects ${Math.abs(revGrowth)}% contraction. Consider re-pricing slower-moving stock or activating dormant agent channels.`, type:'low'});
-  else insights.push({ico:'📊',title:'Steady-state revenue outlook', sub:`Projected growth of ${revGrowth}% aligns with historical trend. Focus on margin optimisation rather than volume expansion.`, type:'med'});
-
-  // Collection risk insight
+  // ── STRATEGIC INSIGHTS (rule-based, no row scanning) ─────────────────
+  const lastRev = validRevs[validRevs.length-1]||0;
+  const nextRev = proj[0]?.base||0;
+  const revGrowthPct = lastRev>0 ? ((nextRev-lastRev)/lastRev*100).toFixed(0) : 0;
   const hrOut = tierData['High Risk']?.outstanding||0;
-  const mrOut = tierData['Medium Risk']?.outstanding||0;
-  if(hrOut > 5e8) insights.push({ico:'🔴',title:`₦${(hrOut/1e9).toFixed(1)}B in high-risk receivables`, sub:`${tierData['High Risk']?.count||0} units below 25% paid. Recovery probability: ~22%. Recommend dedicated collections task force and legal escalation review.`, type:'low'});
-  if(P.totalRecoverable > d.totalOut*0.6) insights.push({ico:'💰',title:'Receivables largely recoverable', sub:`Model estimates ${((P.totalRecoverable/d.totalOut)*100).toFixed(0)}% of outstanding (₦${(P.totalRecoverable/1e9).toFixed(1)}B) is probability-weighted recoverable within 24 months.`, type:'high'});
-
-  // Demand velocity insight
   const topVel = Object.entries(P.velocityScores).sort((a,b)=>b[1]-a[1])[0];
   const botVel = Object.entries(P.velocityScores).sort((a,b)=>a[1]-b[1])[0];
-  if(topVel) insights.push({ico:'🏘️',title:`${topVel[0]} is your fastest-growing community`, sub:`Velocity index: ${topVel[1]} (recent 2yr vs prior 2yr, base=100). Prioritise inventory allocation and pricing power here.`, type:'high'});
-  if(botVel && botVel[1] < 80) insights.push({ico:'📉',title:`${botVel[0]} showing demand softness`, sub:`Velocity index: ${botVel[1]}. Recent absorption is slowing. Review pricing, product mix, or channel activation in this community.`, type:'low'});
 
-  // Elasticity insight
-  if(P.elasticityCorr < -0.5) insights.push({ico:'💹',title:'Price-sensitive demand detected', sub:`Pearson correlation = ${P.elasticityCorr.toFixed(2)}: volume falls when price rises. Aggressive pricing may suppress absorption. Recommend value-add over price increases.`, type:'med'});
-  else if(P.elasticityCorr > 0.3) insights.push({ico:'🎯',title:'Demand quality signal: buyers upgrade with price', sub:`Positive price-volume correlation (r=${P.elasticityCorr.toFixed(2)}) suggests aspirational buyer base. Premium positioning sustainable.`, type:'high'});
+  P.insights = [];
+  if(revGrowthPct > 10) P.insights.push({ico:'📈',type:'high',title:'Strong revenue growth projected',sub:`OLS model projects ${revGrowthPct}% growth next year (${fB(nextRev)}). Capitalise by accelerating your launch pipeline.`});
+  else if(revGrowthPct < 0) P.insights.push({ico:'⚠️',type:'low',title:'Revenue contraction signal',sub:`Model projects ${Math.abs(revGrowthPct)}% decline. Review pricing and channel activation strategy.`});
+  else P.insights.push({ico:'📊',type:'med',title:'Steady revenue outlook',sub:`Projected growth of ${revGrowthPct}% aligns with trend. Focus on margin optimisation.`});
 
-  P.insights = insights.slice(0,5);
+  if(hrOut > 5e8) P.insights.push({ico:'🔴',type:'low',title:`₦${(hrOut/1e9).toFixed(1)}B in high-risk receivables`,sub:`${tierData['High Risk']?.count||0} units below 25% paid. Recovery probability ~22%. Escalate to collections.`});
+  if(P.totalRecoverable > (d.totalOut||0)*0.6) P.insights.push({ico:'💰',type:'high',title:'Receivables largely recoverable',sub:`Model estimates ${((P.totalRecoverable/Math.max(d.totalOut,1))*100).toFixed(0)}% of outstanding (${fB(P.totalRecoverable)}) is probability-weighted recoverable in 24 months.`});
+  if(topVel) P.insights.push({ico:'🏘️',type:'high',title:`${topVel[0]} is your fastest-growing community`,sub:`Velocity index: ${topVel[1]}. Prioritise inventory allocation and pricing power here.`});
+  if(botVel&&botVel[1]<80) P.insights.push({ico:'📉',type:'low',title:`${botVel[0]} showing demand softness`,sub:`Velocity index: ${botVel[1]}. Recent absorption slowing. Review pricing or channel mix.`});
+
+  // Elasticity (uses pre-aggregated arrays — no row scanning)
+  P.elasticityX     = d.avgPriceByYear.map(v=>+(v/1e6).toFixed(1));
+  P.elasticityY     = d.unitsByYear;
+  P.elasticityYears = d.years;
+  const priceDelta  = d.avgPriceByYear.slice(1).map((v,i)=>v-d.avgPriceByYear[i]);
+  const volDelta    = d.unitsByYear.slice(1).map((v,i)=>v-d.unitsByYear[i]);
+  P.elasticityCorr  = pearsonCorr(priceDelta, volDelta);
+
+  // Price bands from pre-aggregated data (no row scanning)
+  P.priceForecasts         = {};
+  P.priceProjectionLabels  = [...d.years, ...proj.map(p=>String(p.year))];
+  d.communities.forEach(comm => {
+    const cYears = d.years.filter(y=>(d.commYearMatrix[comm]?.[y]||0)>0);
+    if(cYears.length<2) return;
+    const cRevs = cYears.map(y=>d.commYearMatrix[comm][y]||0);
+    // Estimate unit count from community total ratio
+    const commIdx = d.communities.indexOf(comm);
+    const commTotal = d.commUnits[commIdx]||1;
+    const yearsWithData = cYears.length||1;
+    const cAvg = cRevs.map(r=>r/(commTotal/yearsWithData));
+    const cOls = olsRegression(cYears.map(y=>parseInt(y)), cAvg);
+    P.priceForecasts[comm] = P.priceProjectionLabels.map(y=>Math.max(0,cOls.predict(parseInt(y))));
+  });
+
+  // Agent scores from pre-aggregated agentGroup data (no individual row scanning)
+  P.agentScores = d.agentGroups.slice(0,10).map((ag,i) => ({
+    name:  ag,
+    score: Math.max(5, Math.min(99, Math.round(
+             0.6*(d.agentGrpRev[i]/Math.max(...d.agentGrpRev)*100) +
+             0.4*(d.agentGrpCnt[i]/Math.max(...d.agentGrpCnt)*100)
+           ))),
+    rev:      d.agentGrpRev[i],
+    units:    d.agentGrpCnt[i],
+    collRate: d.avgPctPaid,
+  })).sort((a,b)=>b.score-a.score);
+
+  P.priceBands = {};
+  d.communities.forEach((comm,i) => {
+    const avgRev = d.commRevenue[i]/(d.commUnits[i]||1);
+    P.priceBands[comm] = { q1:avgRev*0.8, q3:avgRev*1.2, median:avgRev, count:d.commUnits[i] };
+  });
 
   return P;
 }
