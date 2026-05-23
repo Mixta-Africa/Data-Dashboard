@@ -658,7 +658,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 /* =====================================================
    DATA SOURCE CONFIG
    ===================================================== */
-const CSV_URL  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJje19HBBdlnXdTd4M6qlIwPmJ4i6zn5snFr8jtQIdnm0j6EuvuftM5yMSjeXQLIJUyrxAuRGks4WI/pub?output=csv';
+const SHEET_DOC_ID = '1a1n-_TMIxNSnKIeKsc7TB-35w-UnAonbyTHf2ofVtCc';
+const SHEET_TABS   = ['2014','2015','2016','2017','2018','2019','2020','2021','2022','2023','2024','Blanks and Others'];
+
+// gviz endpoint returns ONE tab as CSV. We fetch all tabs in parallel and merge.
+// This works as long as the sheet is "Anyone with the link can view".
+function tabUrl(tabName) {
+  return 'https://docs.google.com/spreadsheets/d/' + SHEET_DOC_ID
+       + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(tabName);
+}
 
 const LS_CACHE_KEY  = 'mixta_csv_v2';
 const LS_TS_KEY     = 'mixta_csv_v2_ts';
@@ -824,28 +832,90 @@ let _fetchInProgress = false;
    FETCH AND PARSE EXCEL TABS
    ===================================================== */
 async function getLiveSheetData() {
-  setLoaderSub('Downloading from Google Sheets…');
+  setLoaderSub('Downloading 12 tabs from Google Sheets in parallel…');
 
-  // Fetch as plain text — CSV has no CORS issues unlike xlsx binary
-  const csvText = await fetchWithRetryCSV(CSV_URL);
+  // ── Fetch all 12 tabs concurrently ──────────────────────────────────────
+  // Promise.allSettled so one bad tab doesn't kill the whole load.
+  const tabResults = await Promise.allSettled(
+    SHEET_TABS.map(tab => fetchWithRetryCSV(tabUrl(tab)).then(text => ({ tab, text })))
+  );
 
-  setLoaderSub('Parsing records…');
-  const result = Papa.parse(csvText, {
-    header:       true,
-    skipEmptyLines: true,
-    dynamicTyping: false,
-    transformHeader: h => h.trim(),
-  });
+  const succeeded = tabResults.filter(r => r.status === 'fulfilled').map(r => r.value);
+  const failed    = tabResults.filter(r => r.status === 'rejected');
 
-  if (!result.data || !result.data.length) throw new Error('CSV returned no rows');
+  if (failed.length) {
+    console.warn('[fetch] ' + failed.length + ' tab(s) failed:',
+      failed.map((f,i) => SHEET_TABS[tabResults.indexOf(f)] + ': ' + (f.reason?.message||'')));
+  }
+  if (!succeeded.length) {
+    throw new Error('All 12 tabs failed to load. Check the sheet sharing setting is "Anyone with the link can view".');
+  }
 
-  const rawHeaders = Object.keys(result.data[0] || {});
-  const normalised = result.data
-    .map(r => normaliseRow(r, HEADER_MAP))
-    .filter(r => r.community && r.community.trim() !== '' && r.community !== 'Community');
+  setLoaderSub('Parsing ' + succeeded.length + ' tabs…');
 
-  if (!normalised.length) throw new Error('No valid community rows found in sheet');
-  validateSchema(normalised[0], rawHeaders);
+  // ── Parse each tab, skipping the blank first row (row 0 in your file) ──
+  // The sheet structure is: row 0 blank → row 1 headers → row 2+ data.
+  // Google's gviz CSV preserves that blank row, so we strip leading blank lines
+  // before handing the text to PapaParse so it picks the real header row.
+  let rawHeadersUnion = new Set();
+  const allRows = [];
+
+  for (const { tab, text } of succeeded) {
+    // Strip leading blank lines (including lines that are just commas like ",,,,,")
+    let cleaned = text.replace(/^(?:[\s,]*(?:\r?\n))+/, '');
+    if (!cleaned.trim()) {
+      console.warn('[fetch] Tab "' + tab + '" was empty after stripping blanks');
+      continue;
+    }
+
+    const result = Papa.parse(cleaned, {
+      header:          true,
+      skipEmptyLines:  true,
+      dynamicTyping:   false,
+      transformHeader: h => (h || '').trim(),
+    });
+
+    if (!result.data || !result.data.length) {
+      console.warn('[fetch] Tab "' + tab + '" parsed to 0 rows');
+      continue;
+    }
+
+    Object.keys(result.data[0] || {}).forEach(h => rawHeadersUnion.add(h));
+
+    // Tag every row with its source tab. We use this as a year hint later
+    // since the tab name IS the revenue recognition year for tabs 2014-2024.
+    const tabYear = /^\d{4}$/.test(tab) ? tab : null;
+    for (const r of result.data) {
+      r.__sourceTab = tab;
+      if (tabYear) r.__tabYear = tabYear;
+      allRows.push(r);
+    }
+  }
+
+  if (!allRows.length) throw new Error('All tabs parsed but produced 0 rows');
+
+  setLoaderSub('Normalising ' + allRows.length.toLocaleString() + ' records…');
+
+  // ── Normalise via HEADER_MAP, then keep rows with a real Community ─────
+  const normalised = allRows
+    .map(r => {
+      const out = normaliseRow(r, HEADER_MAP);
+      // Carry the tab-derived year through so enrichData can use it as a fallback
+      if (r.__tabYear && (!out.revYear || String(out.revYear).trim() === '')) {
+        out.revYear = r.__tabYear;
+      }
+      out.__sourceTab = r.__sourceTab;
+      return out;
+    })
+    .filter(r => r.community && String(r.community).trim() !== '' && r.community !== 'Community');
+
+  if (!normalised.length) {
+    throw new Error('Loaded ' + allRows.length + ' rows across ' + succeeded.length +
+      ' tabs, but none had a valid Community value. Check the sheet column headers match the expected names.');
+  }
+
+  validateSchema(normalised[0], [...rawHeadersUnion]);
+  console.log('[fetch] Loaded ' + normalised.length + ' valid records from ' + succeeded.length + ' tabs.');
   return normalised;
 }
 
