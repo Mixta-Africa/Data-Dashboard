@@ -656,6 +656,72 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
    are now handled by dashboard-auth-28.js */
 
 /* =====================================================
+   DATA SOURCE CONFIG
+   ===================================================== */
+const XLSX_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTg9nVEiwrU8xBzl6DaP3-b2enA8Ae_oNW-5VXlg2yRq9godA1cBjwzdRYbY4O9zdbU_2xnprBVo1QO/pub?output=xlsx';
+
+const LS_CACHE_KEY  = 'mixta_csv_v2';
+const LS_TS_KEY     = 'mixta_csv_v2_ts';
+const LS_SCHEMA_KEY = 'mixta_schema_hash';
+const LS_MAX_BYTES  = 4 * 1024 * 1024;
+const CACHE_TTL_MS  = 30 * 60 * 1000;
+
+const FETCH_MAX_RETRIES = 3;
+const FETCH_BASE_DELAY  = 1200;
+
+const SCHEMA_VERSION = 'v3-2025-06';
+
+/* =====================================================
+   EXPANDED HEADER MAP
+   ===================================================== */
+const HEADER_MAP = {
+  community:         ['Community'],
+  property:          ['Property'],
+  unitNo:            ['Unit No','Unit No.','UnitNo'],
+  unitType:          ['Unit Type','UnitType'],
+  refNo:             ['Ref No','Ref No.','RefNo','Reference No'],
+  bedrooms:          ['Bedrooms','Bedroom'],
+  builtup:           ['Builtup Area','Built-up Area','BuiltupArea','Builtup (sqm)'],
+  phase:             ['Phase'],
+  finishType:        ['Finish Type','FinishType','Finish'],
+  primaryView:       ['Primary View','PrimaryView','View'],
+  unitStatus:        ['Unit Status','UnitStatus','Status'],
+  soldDate:          ['Sold Date','SoldDate','Date Sold'],
+  paymentReceipt:    ['Sale Payment Receipt Date','Receipt Date'],
+  paymentPaid:       ['Sale Payment Paid Date','Paid Date'],
+  paymentPlan:       ['Payment Plan','PaymentPlan'],
+  agentGroup:        ['Agent Group','AgentGroup','Channel'],
+  dealingAgent:      ['Dealing Agent','DealingAgent','Agent'],
+  mortgage:          ['Mortgage'],
+  sellingPrice:      ['Selling Price','SellingPrice','Sale Price'],
+  basePrice:         ['Base Price','BasePrice'],
+  legalFees:         ['Legal Fees','LegalFees'],
+  agencyFee:         ['Agency Fee (Seller)','Agency Fee','AgencyFee'],
+  vat:               ['VAT'],
+  serviceCharge:     ['Service Charge','ServiceCharge'],
+  discounts:         ['Discounts','Discount'],
+  discountPct:       ['% Discount','PercentDiscount','Discount %'],
+  totalPaid:         ['Total Paid','TotalPaid'],
+  pctPaid:           ['% Paid','%Paid','Percent Paid','Pct Paid'],
+  totalOutstanding:  ['Total Outstanding','TotalOutstanding'],
+  outstandingToDate: ['Outstanding to Date','OutstandingToDate'],
+  revYear:           ['Revenue Recognition Year','RevenueRecognitionYear','Rev Year'],
+  handoverYear:      ['Handover Year','HandoverYear'],
+  buyerType:         ['Buyer_Type','Buyer Type','BuyerType'],
+  collectionRisk:    ['Collection_Risk','Collection Risk','CollectionRisk'],
+  pctPaidBucket:     ['Pct_Paid_Bucket','Pct Paid Bucket','Payment Bucket'],
+  pricePerSqM:       ['Price_Per_SqM','Price Per SqM','₦/sqm','Price/sqm'],
+  nationality:       ['Buyer Nationality','BuyerNationality','Nationality'],
+  state:             ['Buyer State','BuyerState','Buyer Lead Country','Lead Country'],
+  residency:         ['Buyer Residency','BuyerResidency','Residency'],
+  salutation:        ['Buyer Salutation','BuyerSalutation','Salutation'],
+  buyerFirstName:    ['Buyer First Name','First Name'],
+  buyerFamilyName:   ['Buyer Family Name','Family Name','Last Name'],
+};
+
+const REQUIRED_COLS = ['community','property','sellingPrice','totalPaid','totalOutstanding','pctPaid','revYear'];
+
+/* =====================================================
    HELPERS
    ===================================================== */
 const fB  = v => '₦' + (v/1e9).toFixed(1) + 'B';
