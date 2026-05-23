@@ -8,13 +8,12 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
-<!-- Firebase SDKs — must be in <head> so they are defined before
-     dashboard-auth-28.js runs. The auth file initialises Firebase
-     but does not load these scripts itself. -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<!-- Firebase v10 modular SDK via compat shim (no build step needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
 
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -29,65 +28,6 @@
 html{scroll-behavior:smooth}
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 
-
-/* ── PREDICTIVE SECTION ───────────────────────────────── */
-.pred-section-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin:22px 0 14px;display:flex;align-items:center;gap:10px}
-.pred-section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(192,57,43,0.15),transparent)}
-.pred-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:9.5px;font-weight:600;letter-spacing:.3px}
-.pb-high{background:#EAFAF1;color:#1E8449}
-.pb-med{background:#FEF9E7;color:#D68910}
-.pb-low{background:#FDECEA;color:var(--red)}
-.pb-neutral{background:#F0F0F4;color:var(--text2)}
-.conf-band{opacity:0.18}
-.pred-insight{background:linear-gradient(135deg,var(--red4) 0%,rgba(255,255,255,0.6) 100%);border:1px solid var(--red3);border-radius:12px;padding:14px 18px;margin-bottom:12px;display:flex;gap:14px;align-items:flex-start}
-.pred-insight-ico{width:34px;height:34px;border-radius:8px;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.pred-insight-body{}
-.pred-insight-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:3px}
-.pred-insight-sub{font-size:11px;color:var(--text2);line-height:1.5}
-.score-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.score-bar-lbl{width:160px;font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
-.score-bar-wrap{flex:1;height:8px;background:#F0F0F4;border-radius:4px;overflow:hidden}
-.score-bar-fill{height:100%;border-radius:4px;transition:width 0.6s ease}
-.score-bar-val{width:90px;text-align:right;font-family:var(--mono);font-size:10px;color:var(--text);flex-shrink:0}
-.metric-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:500;background:rgba(255,255,255,0.85);border:1px solid rgba(0,0,0,0.07);color:var(--text2);margin:3px}
-.metric-pill span{font-weight:600;color:var(--text)}
-.forecast-note{font-size:10px;color:var(--text3);margin-top:8px;padding:6px 10px;background:#F7F7F9;border-radius:6px;border-left:3px solid var(--red3)}
-
-/* ── SO WHAT CALLOUTS ─────────────────────────────── */
-.sowhat{border-radius:12px;padding:14px 18px 14px 54px;margin-bottom:14px;position:relative;border:1px solid transparent}
-.sowhat::before{content:attr(data-ico);position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;line-height:1}
-.sowhat.sw-pos{background:linear-gradient(135deg,#EAFAF1 0%,rgba(255,255,255,0.7) 100%);border-color:#A9DFBF}
-.sowhat.sw-neg{background:linear-gradient(135deg,#FDECEA 0%,rgba(255,255,255,0.7) 100%);border-color:var(--red3)}
-.sowhat.sw-med{background:linear-gradient(135deg,#FEF9E7 0%,rgba(255,255,255,0.7) 100%);border-color:#FAD7A0}
-.sowhat.sw-neu{background:linear-gradient(135deg,#EBF5FB 0%,rgba(255,255,255,0.7) 100%);border-color:#AED6F1}
-.sowhat-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
-.sowhat.sw-pos .sowhat-label{color:#1E8449}
-.sowhat.sw-neg .sowhat-label{color:var(--red5)}
-.sowhat.sw-med .sowhat-label{color:#D35400}
-.sowhat.sw-neu .sowhat-label{color:#1A5276}
-.sowhat-headline{font-size:13px;font-weight:600;color:var(--text);letter-spacing:-.2px;margin-bottom:3px}
-.sowhat-body{font-size:11.5px;color:var(--text2);line-height:1.6}
-.sowhat-body strong{color:var(--text);font-weight:600}
-
-/* ── COMING SOON ──────────────────────────────────── */
-.coming-soon-block{background:repeating-linear-gradient(45deg,rgba(0,0,0,0.015) 0px,rgba(0,0,0,0.015) 2px,transparent 2px,transparent 8px);border:1.5px dashed rgba(192,57,43,0.22);border-radius:var(--r);padding:32px 28px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
-.cs-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;background:linear-gradient(135deg,var(--red4),#fff0ee);color:var(--red);border:1px solid var(--red3)}
-.cs-title{font-size:16px;font-weight:600;color:var(--text);letter-spacing:-.3px}
-.cs-sub{font-size:12px;color:var(--text3);max-width:380px;line-height:1.6}
-.cs-formula{font-family:var(--mono);font-size:10.5px;color:var(--text2);background:rgba(0,0,0,0.04);border-radius:6px;padding:6px 12px;margin-top:4px;letter-spacing:.2px}
-.prob-ring{width:70px;height:70px;flex-shrink:0}
-.scenario-card{background:rgba(255,255,255,0.85);border:1px solid rgba(0,0,0,0.07);border-radius:12px;padding:14px 16px;flex:1}
-.scenario-card.bull{border-top:3px solid #27AE60}
-.scenario-card.base{border-top:3px solid var(--red)}
-.scenario-card.bear{border-top:3px solid #E67E22}
-.scenario-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
-.scenario-card.bull .scenario-title{color:#1E8449}
-.scenario-card.base .scenario-title{color:var(--red)}
-.scenario-card.bear .scenario-title{color:#D35400}
-.scenario-val{font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.5px}
-.scenario-sub{font-size:10px;color:var(--text3);margin-top:3px}
-.scenarios-row{display:flex;gap:10px;margin-bottom:14px}
-
 /* ── AUTH GATE ────────────────────────────────────── */
 #auth-gate{position:fixed;inset:0;background:rgba(255,255,255,0.97);backdrop-filter:blur(24px);z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity 0.4s}
 #auth-gate.hidden{opacity:0;pointer-events:none}
@@ -99,9 +39,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .auth-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 20px;border-radius:10px;font-size:14px;font-weight:500;color:var(--text);background:#fff;border:1.5px solid rgba(0,0,0,0.14);cursor:pointer;font-family:var(--font);transition:all 0.18s;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
 .auth-btn:hover{background:#F7F7F7;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
 .auth-btn img{width:20px;height:20px}
-.auth-err{font-size:12px;color:var(--red);margin-top:12px;display:none;text-align:left;line-height:1.5;background:var(--red4);border:1px solid var(--red3);border-radius:8px;padding:8px 12px}
-.auth-btn:disabled{opacity:0.65;cursor:not-allowed;pointer-events:none}
-.auth-btn:disabled svg{display:inline-block}
+.auth-err{font-size:12px;color:var(--red);margin-top:12px;display:none}
 .auth-user-strip{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:20px;background:var(--red4);border:1px solid var(--red3);font-size:11px;font-weight:500;color:var(--red);cursor:pointer;flex-shrink:0}
 .auth-user-strip img{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--red3)}
 
@@ -249,20 +187,33 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 </head>
 <body>
 
-<!-- auth overlay injected by dashboard-auth-28.js -->
+<!-- AUTH GATE -->
+<div id="auth-gate">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22" fill="none" stroke="white" stroke-width="1.5"/></svg>
+    </div>
+    <div class="auth-title">Mixta Africa Intelligence Hub</div>
+    <div class="auth-sub">Sign in with your Mixta Google account to access the portfolio dashboard.</div>
+    <button class="auth-btn" id="googleSignInBtn">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+      Continue with Google
+    </button>
+    <div class="auth-err" id="authErr"></div>
+  </div>
+</div>
 
+<!-- SYNC TOAST (non-blocking progress bar at top) -->
 <div class="sync-toast" id="syncToast"></div>
 
-<div class="loader-overlay hidden" id="loader">
+<!-- LOADER (first cold-load only) -->
+<div class="loader-overlay" id="loader">
   <div class="loader-spinner"></div>
   <div class="loader-text" id="loader-text">Loading dashboard…</div>
   <div class="loader-sub" id="loader-sub">Fetching data</div>
-  <div style="margin-top:12px;width:260px;height:3px;background:rgba(192,57,43,0.12);border-radius:2px;overflow:hidden">
-    <div id="loader-progress" style="height:100%;background:var(--red);border-radius:2px;width:0%;transition:width 0.4s ease"></div>
-  </div>
-  <div id="loader-step" style="font-size:9.5px;color:var(--text3);margin-top:6px;font-family:var(--mono)">step 1/7</div>
 </div>
 
+<!-- HEADER -->
 <header class="hdr">
   <div class="brand">
     <div class="brand-icon">
@@ -281,10 +232,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <button class="nav-btn" onclick="showSection('collections',this)">Collections</button>
     <button class="nav-btn" onclick="showSection('agents',this)">Agents</button>
     <button class="nav-btn" onclick="showSection('buyers',this)">Buyers</button>
-    <button class="nav-btn pred-tab" onclick="showSection('predict',this)" style="background:linear-gradient(135deg,var(--red4),#fff0ee);color:var(--red);border:1px solid var(--red3);font-weight:600">⬡ Predict</button>
+    <button class="nav-btn" onclick="showSection('predict',this)" style="background:linear-gradient(135deg,var(--red4),#fff0ee);color:var(--red);border:1px solid var(--red3);font-weight:600">⬡ Predict</button>
   </nav>
 
   <div class="hdr-right">
+<div class="hdr-right">
     <div class="freshness" id="freshness-label">—</div>
     
     <button class="sync-btn" id="reportBtn" onclick="downloadAIReport()" style="background:#EBF5FB;color:#2980B9;border-color:#AED6F1;margin-right:10px;">
@@ -306,29 +258,32 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   </div>
 </header>
 
+<!-- ERROR BAR -->
 <div class="error-bar" id="errorBar">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
   <span id="errorMsg">Could not load live data. Showing cached fallback.</span>
 </div>
 
+<!-- SCHEMA WARNING -->
 <div class="schema-warn" id="schemaWarn">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
   <span id="schemaWarnMsg">Sheet schema changed — some columns may be missing. Dashboard shows available data.</span>
 </div>
 
+<!-- FILTER BAR -->
 <div class="filter-bar" id="filterBar">
   <span class="filter-label">Filter</span>
   <div class="filter-divider"></div>
   <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Year</span>
-  <select class="filter-select" id="filterYear" onchange="updateQuarterDropdown(); applyFilters()">
-    <option value="all">All Years</option>
-  </select>
-  <div class="filter-divider"></div>
-  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Quarter</span>
-  <select class="filter-select" id="filterQuarter" onchange="applyFilters()" disabled>
-    <option value="all">All Quarters</option>
-  </select>
-  <div class="filter-divider"></div>
+  <select class="filter-select" id="filterYear" onchange="updateQuarterDropdown(); applyFilters()">
+    <option value="all">All Years</option>
+  </select>
+  <div class="filter-divider"></div>
+  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Quarter</span>
+  <select class="filter-select" id="filterQuarter" onchange="applyFilters()" disabled>
+    <option value="all">All Quarters</option>
+  </select>
+  <div class="filter-divider"></div>
   <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Community</span>
   <select class="filter-select" id="filterCommunity" onchange="applyFilters()">
     <option value="all">All Communities</option>
@@ -352,8 +307,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <span class="filter-count" id="filterCount"></span>
 </div>
 
+<!-- MAIN -->
 <main class="main">
 
+<!-- ===== OVERVIEW ===== -->
 <div id="section-overview" class="section active">
   <div class="kpi-strip">
     <div class="kpi"><div class="kpi-label">Total Portfolio Revenue</div><div class="kpi-value red" id="k-totalrev">—</div><div class="kpi-sub" id="k-totalrev-sub">loading…</div></div>
@@ -408,6 +365,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   </div>
 </div>
 
+<!-- ===== REVENUE ===== -->
 <div id="section-revenue" class="section">
   <div class="kpi-strip">
     <div class="kpi"><div class="kpi-label">Peak Year</div><div class="kpi-value red" id="rv-peakyr">—</div><div class="kpi-sub" id="rv-peakyr-s">—</div></div>
@@ -444,6 +402,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   </div>
 </div>
 
+<!-- ===== PORTFOLIO ===== -->
 <div id="section-portfolio" class="section">
   <div class="kpi-strip">
     <div class="kpi"><div class="kpi-label">Distinct Properties</div><div class="kpi-value red" id="pf-props">—</div><div class="kpi-sub">Development projects</div></div>
@@ -469,11 +428,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       <div class="ch"><div><div class="ct">Finish Type — Volume & Revenue</div><div class="cs">Units and cumulative ₦ by specification</div></div></div>
       <div class="cw" style="height:230px"><canvas id="c-finishmix"></canvas></div>
     </div>
-    <div class="cc" style="overflow: hidden;">
+    <div class="cc">
       <div class="ch"><div><div class="ct">Revenue Heatmap — Community × Year</div><div class="cs">Intensity = ₦B recognized (darker = higher)</div></div></div>
-      <div id="heatmap-wrap" style="width:100%; overflow-x:auto; padding-bottom:8px; display:block;"></div>
+      <div id="heatmap-wrap" style="overflow-x:auto;padding-bottom:4px"></div>
     </div>
   </div>
+  <!-- NEW: Phase breakdown -->
   <div class="g2">
     <div class="cc">
       <div class="ch"><div><div class="ct">Phase Distribution</div><div class="cs">Units and revenue by development phase</div></div></div>
@@ -486,6 +446,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   </div>
 </div>
 
+<!-- ===== COLLECTIONS ===== -->
 <div id="section-collections" class="section">
   <div class="kpi-strip">
     <div class="kpi"><div class="kpi-label">Total Collected</div><div class="kpi-value red" id="cl-collected">—</div><div class="kpi-sub">Cumulative across all years</div></div>
@@ -502,8 +463,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     </div>
     <div class="cc">
       <div class="ch"><div><div class="ct">Collection Rate Distribution</div><div class="cs">Units by payment completion bracket</div></div></div>
-      <div class="cw" style="height:230px"><canvas id="c-collrate"></canvas></div>
-      <div class="legend" id="leg-collrate" style="margin-top: 15px;"></div>
+      <div class="cw" style="height:270px"><canvas id="c-collrate"></canvas></div>
     </div>
   </div>
   <div class="g2">
@@ -518,6 +478,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   </div>
 </div>
 
+<!-- ===== AGENTS ===== -->
 <div id="section-agents" class="section">
   <div class="kpi-strip">
     <div class="kpi"><div class="kpi-label">Top Agent Revenue</div><div class="kpi-value red" id="ag-top-rev">—</div><div class="kpi-sub" id="ag-top-name">—</div></div>
@@ -544,6 +505,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   </div>
 </div>
 
+<!-- ===== BUYERS ===== -->
 <div id="section-buyers" class="section">
   <div class="kpi-strip">
     <div class="kpi"><div class="kpi-label">Dominant State</div><div class="kpi-value red" id="by-top-state">—</div><div class="kpi-sub" id="by-top-state-s">—</div></div>
@@ -553,6 +515,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <div class="kpi"><div class="kpi-label">Mortgage Buyers</div><div class="kpi-value" id="by-mortgage">—</div><div class="kpi-sub">Financed purchases</div></div>
     <div class="kpi"><div class="kpi-label">Countries Represented</div><div class="kpi-value" id="by-countries">—</div><div class="kpi-sub">Buyer nationalities</div></div>
   </div>
+  <!-- NEW: Buyer Type (Local/Diaspora/Staff/Corporate) -->
   <div class="g2">
     <div class="cc">
       <div class="ch"><div><div class="ct">Buyer Type Breakdown</div><div class="cs">Local vs Diaspora vs Staff vs Corporate</div></div></div>
@@ -575,137 +538,147 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   </div>
 </div>
 
-
-<!-- ===== PREDICTIVE INTELLIGENCE ===== -->
+<!-- ===== PREDICTIVE INTELLIGENCE (Stage 1: forecast only) ===== -->
 <div id="section-predict" class="section">
-
-  <!-- Predictive model error bar (hidden unless a model throws) -->
-  <div id="predict-model-warn" style="display:none;background:#FFF3CD;border:1px solid #FFEAA7;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:12px;color:#856404;align-items:center;gap:8px">
-    ⚠️ <span></span>
-  </div>
-
-  <!-- KPI strip: model outputs -->
   <div class="kpi-strip">
     <div class="kpi"><div class="kpi-label">Next-Year Revenue Forecast</div><div class="kpi-value red" id="pr-nextyear">—</div><div class="kpi-sub" id="pr-nextyear-s">OLS linear projection</div></div>
     <div class="kpi"><div class="kpi-label">Forecast Confidence</div><div class="kpi-value" id="pr-r2">—</div><div class="kpi-sub">R² model fit score</div></div>
-    <div class="kpi"><div class="kpi-label">Projected Collections Recovery</div><div class="kpi-value red" id="pr-recovery">—</div><div class="kpi-sub" id="pr-recovery-s">High + Med risk outstanding</div></div>
-    <div class="kpi"><div class="kpi-label">Portfolio Price CAGR</div><div class="kpi-value" id="pr-pcagr">—</div><div class="kpi-sub">₦/unit compound growth</div></div>
-    <div class="kpi"><div class="kpi-label">Demand Trend</div><div class="kpi-value red" id="pr-demtrend">—</div><div class="kpi-sub" id="pr-demtrend-s">Volume momentum signal</div></div>
-    <div class="kpi"><div class="kpi-label">Revenue at Risk</div><div class="kpi-value" id="pr-revatrisk">—</div><div class="kpi-sub dn" id="pr-revatrisk-s">High risk outstanding</div></div>
+    <div class="kpi"><div class="kpi-label">Revenue CAGR</div><div class="kpi-value red" id="pr-cagr2">—</div><div class="kpi-sub">Recognised across all years</div></div>
   </div>
 
-  <!-- Scenario planner -->
-  <div class="pred-section-title">Revenue Scenario Planner — Next 3 Years</div>
-  <div class="scenarios-row" id="scenarios-row">
-    <div class="scenario-card bull"><div class="scenario-title">Bull Case (+1σ)</div><div class="scenario-val" id="sc-bull-1">—</div><div class="scenario-sub" id="sc-bull-1s">Year +1</div><div class="scenario-val" style="font-size:16px;margin-top:6px" id="sc-bull-2">—</div><div class="scenario-sub" id="sc-bull-2s">Year +2</div><div class="scenario-val" style="font-size:16px;margin-top:6px" id="sc-bull-3">—</div><div class="scenario-sub">Year +3</div></div>
-    <div class="scenario-card base"><div class="scenario-title">Base Case (OLS trend)</div><div class="scenario-val" id="sc-base-1">—</div><div class="scenario-sub" id="sc-base-1s">Year +1</div><div class="scenario-val" style="font-size:16px;margin-top:6px" id="sc-base-2">—</div><div class="scenario-sub" id="sc-base-2s">Year +2</div><div class="scenario-val" style="font-size:16px;margin-top:6px" id="sc-base-3">—</div><div class="scenario-sub">Year +3</div></div>
-    <div class="scenario-card bear"><div class="scenario-title">Bear Case (−1σ)</div><div class="scenario-val" id="sc-bear-1">—</div><div class="scenario-sub" id="sc-bear-1s">Year +1</div><div class="scenario-val" style="font-size:16px;margin-top:6px" id="sc-bear-2">—</div><div class="scenario-sub" id="sc-bear-2s">Year +2</div><div class="scenario-val" style="font-size:16px;margin-top:6px" id="sc-bear-3">—</div><div class="scenario-sub">Year +3</div></div>
-  </div>
-
-  <div class="g2">
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Revenue Forecast — OLS Regression + Confidence Band</div><div class="cs">Historical actuals · trend line · ±1σ cone</div></div><span class="pred-badge pb-neutral" id="pr-r2-badge">R²=—</span></div>
-      <div class="cw" style="height:270px"><canvas id="c-forecast"></canvas></div>
-      <div class="forecast-note" id="forecast-note">Loading model…</div>
-    </div>
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Price Appreciation Trajectory</div><div class="cs">Avg ₦/unit per year + 3yr projection by community</div></div></div>
-      <div class="cw" style="height:270px"><canvas id="c-priceforecast"></canvas></div>
-    </div>
-  </div>
-  <!-- So What: Revenue Forecast -->
-  <div class="sowhat sw-neu" id="sw-forecast" data-ico="💡" style="display:none">
-    <div class="sowhat-label">So What — Revenue Forecast</div>
-    <div class="sowhat-headline" id="sw-forecast-headline">—</div>
-    <div class="sowhat-body" id="sw-forecast-body">—</div>
-  </div>
-
-  <!-- Collections recovery model -->
-  <div class="pred-section-title">Collections Recovery Model — Probability-Weighted Receivables</div>
-  <div class="g2">
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Recovery Probability by Risk Tier</div><div class="cs">Expected ₦ recoverable vs at-risk per segment</div></div></div>
-      <div class="cw" style="height:250px"><canvas id="c-recovery"></canvas></div>
-    </div>
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Outstanding Resolution Timeline</div><div class="cs">Projected cumulative recovery over 24 months</div></div></div>
-      <div class="cw" style="height:250px"><canvas id="c-resolution"></canvas></div>
-    </div>
-  </div>
   <div class="cc full" style="margin-bottom:14px">
-    <div class="ch"><div><div class="ct">Recovery Waterfall — By Risk Tier</div><div class="cs">Collectable · probable · at-risk breakdown across portfolio</div></div></div>
-    <div id="recovery-waterfall"></div>
-  </div>
-  <!-- So What: Collections Recovery -->
-  <div class="sowhat sw-neu" id="sw-recovery" data-ico="💡" style="display:none">
-    <div class="sowhat-label">So What — Collections Recovery</div>
-    <div class="sowhat-headline" id="sw-recovery-headline">—</div>
-    <div class="sowhat-body" id="sw-recovery-body">—</div>
+    <div class="ch">
+      <div>
+        <div class="ct">Revenue Forecast — OLS Regression with ±1σ Confidence Band</div>
+        <div class="cs">Historical actuals · linear trend · 3-year projection</div>
+      </div>
+      <span class="badge br" id="pr-r2-badge">R²=—</span>
+    </div>
+    <div class="cw" style="height:300px"><canvas id="c-forecast"></canvas></div>
+    <div id="forecast-note" style="font-size:10px;color:var(--text3);margin-top:8px;padding:6px 10px;background:#F7F7F9;border-radius:6px;border-left:3px solid var(--red3)">Loading model…</div>
   </div>
 
-  <!-- Demand velocity -->
-  <div class="pred-section-title">Demand Velocity — Sales Momentum Analysis</div>
+  <div class="cc full">
+    <div class="ch">
+      <div>
+        <div class="ct">Strategic Insights</div>
+        <div class="cs">Model-derived signals from historical revenue trajectory</div>
+      </div>
+    </div>
+    <div id="strategy-insights"></div>
+  </div>
+
+  <!-- ===== DEMAND VELOCITY ===== -->
+  <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin:22px 0 14px;display:flex;align-items:center;gap:10px">
+    Demand Velocity — Sales Momentum
+    <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(192,57,43,0.15),transparent)"></div>
+  </div>
+
+  <div class="kpi-strip" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi"><div class="kpi-label">Demand Trend</div><div class="kpi-value red" id="vel-trend">—</div><div class="kpi-sub" id="vel-trend-s">3-year MA slope</div></div>
+    <div class="kpi"><div class="kpi-label">Total Units Last Year</div><div class="kpi-value" id="vel-lastyr">—</div><div class="kpi-sub" id="vel-lastyr-s">vs prior year</div></div>
+    <div class="kpi"><div class="kpi-label">Fastest-Growing Community</div><div class="kpi-value red" id="vel-top">—</div><div class="kpi-sub" id="vel-top-s">Velocity score</div></div>
+  </div>
+
   <div class="g2">
     <div class="cc">
-      <div class="ch"><div><div class="ct">3-Year Moving Average — Unit Sales</div><div class="cs">Smoothed demand trend with acceleration signal</div></div></div>
-      <div class="cw" style="height:240px"><canvas id="c-mavg"></canvas></div>
+      <div class="ch">
+        <div><div class="ct">3-Year Moving Average — Unit Sales</div><div class="cs">Smoothed demand trend with annual bars</div></div>
+      </div>
+      <div class="cw" style="height:260px"><canvas id="c-mavg"></canvas></div>
     </div>
     <div class="cc">
-      <div class="ch"><div><div class="ct">Community Velocity Score</div><div class="cs">Sales momentum: recent 2yr vs prior 2yr (indexed to 100)</div></div></div>
-      <div id="velocity-bars"></div>
+      <div class="ch">
+        <div><div class="ct">Community Velocity Score</div><div class="cs">Recent 2yr ÷ prior 2yr × 100 · base 100 = flat</div></div>
+      </div>
+      <div id="vel-bars"></div>
     </div>
   </div>
-  <!-- So What: Demand Velocity -->
-  <div class="sowhat sw-neu" id="sw-demand" data-ico="💡" style="display:none">
-    <div class="sowhat-label">So What — Demand Velocity</div>
-    <div class="sowhat-headline" id="sw-demand-headline">—</div>
-    <div class="sowhat-body" id="sw-demand-body">—</div>
+
+  <!-- ===== COLLECTION RECOVERY ===== -->
+  <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin:22px 0 14px;display:flex;align-items:center;gap:10px">
+    Collection Recovery — Probability-Weighted Receivables
+    <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(192,57,43,0.15),transparent)"></div>
   </div>
 
-  <!-- Agent productivity — Coming Soon -->
-  <div class="pred-section-title">Agent Productivity Index — Composite Performance Score</div>
-  <div class="coming-soon-block" style="margin-bottom:14px">
-    <div class="cs-badge">⬡ In Development</div>
-    <div class="cs-title">Agent Productivity Index</div>
-    <div class="cs-sub">A composite score ranking agent performance across three weighted dimensions: revenue efficiency, collection health, and trend momentum. Model outputs will include per-agent composite scores, cohort benchmarking, and strategic activation signals.</div>
-    <div class="cs-formula">Score = 0.40 × Revenue Efficiency + 0.35 × Collection Health + 0.25 × Trend Momentum</div>
+  <div class="kpi-strip" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi"><div class="kpi-label">Total Outstanding</div><div class="kpi-value" id="rec-total-out">—</div><div class="kpi-sub" id="rec-total-out-s">Across all risk tiers</div></div>
+    <div class="kpi"><div class="kpi-label">Expected Recovery (24mo)</div><div class="kpi-value red" id="rec-recoverable">—</div><div class="kpi-sub" id="rec-recoverable-s">Probability-weighted</div></div>
+    <div class="kpi"><div class="kpi-label">High-Risk Receivables</div><div class="kpi-value" id="rec-highrisk">—</div><div class="kpi-sub" id="rec-highrisk-s" style="color:var(--red)">At greatest risk of loss</div></div>
   </div>
 
-  <!-- Price elasticity signal — Coming Soon -->
-  <div class="pred-section-title">Pricing Intelligence — Price vs Demand Elasticity</div>
-  <div class="coming-soon-block" style="margin-bottom:14px">
-    <div class="cs-badge">⬡ In Development</div>
-    <div class="cs-title">Price Elasticity Signal</div>
-    <div class="cs-sub">A Pearson correlation model mapping price changes to unit absorption rates across years and communities. Will surface optimal price bands per community and flag whether demand is price-sensitive or aspirationally driven.</div>
-    <div class="cs-formula">Elasticity = Pearson(ΔAvgPrice, ΔUnitsSold) · IQR Band by Community</div>
+  <div class="g2">
+    <div class="cc">
+      <div class="ch">
+        <div><div class="ct">Recovery by Risk Tier</div><div class="cs">Expected recovery vs at-risk balance · ₦B</div></div>
+        <span class="badge bg_" id="rec-tier-source">Tiers from % Paid</span>
+      </div>
+      <div class="cw" style="height:260px"><canvas id="c-recovery"></canvas></div>
+    </div>
+    <div class="cc">
+      <div class="ch">
+        <div><div class="ct">Cumulative Recovery Timeline</div><div class="cs">Projected over 24 months by tier maturity</div></div>
+      </div>
+      <div class="cw" style="height:260px"><canvas id="c-resolution"></canvas></div>
+    </div>
   </div>
 
+  <div class="cc full" style="margin-bottom:14px">
+    <div class="ch">
+      <div><div class="ct">Recovery Waterfall — By Risk Tier</div><div class="cs">Expected vs at-risk balance for each tier across the whole portfolio</div></div>
+    </div>
+    <div id="rec-waterfall"></div>
+  </div>
 </div>
 
 </main>
 
 <script>
-/* Firebase config, auth state, and user management
-   are now handled by dashboard-auth-28.js */
+/* =====================================================
+   FIREBASE CONFIG
+   ⚠️  Replace these placeholder values with your actual
+       Firebase project credentials before deploying.
+       Get them from: Firebase Console → Project Settings
+       → Your apps → Web app → Config snippet
+   ===================================================== */
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyB2TvSXbXOAutbt0MqJeOrn-7hKfpaqfAo",
+  authDomain:        "data-dashboard-ad94f.firebaseapp.com",
+  projectId:         "data-dashboard-ad94f",
+  storageBucket:     "data-dashboard-ad94f.firebasestorage.app",
+  messagingSenderId: "1012632142221",
+  appId:             "1:1012632142221:web:1aa118b847705bd1353dc4"
+};
+
+// Allowed email domain — only Mixta accounts can sign in
+// Change to match your company domain e.g. "mixtafrica.com"
+const ALLOWED_DOMAIN = "mixtafrica.com";
 
 /* =====================================================
    DATA SOURCE CONFIG
    ===================================================== */
-const CSV_URL  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJje19HBBdlnXdTd4M6qlIwPmJ4i6zn5snFr8jtQIdnm0j6EuvuftM5yMSjeXQLIJUyrxAuRGks4WI/pub?output=csv';
+const XLSX_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJje19HBBdlnXdTd4M6qlIwPmJ4i6zn5snFr8jtQIdnm0j6EuvuftM5yMSjeXQLIJUyrxAuRGks4WI/pub?output=xlsx';
 
-const LS_CACHE_KEY  = 'mixta_csv_v2';
+// Firestore cache settings — shared across all users (zero extra fetches when cache is warm)
+const FS_CACHE_DOC  = 'cache/mixta_csv';           // Firestore document path
+const FS_CACHE_TTL  = 30 * 60 * 1000;              // 30 min shared server-side cache
+const LS_CACHE_KEY  = 'mixta_csv_v2';              // localStorage fallback (offline)
 const LS_TS_KEY     = 'mixta_csv_v2_ts';
 const LS_SCHEMA_KEY = 'mixta_schema_hash';
-const LS_MAX_BYTES  = 4 * 1024 * 1024;
-const CACHE_TTL_MS  = 30 * 60 * 1000;
+const LS_MAX_BYTES  = 4 * 1024 * 1024;             // 4 MB guard (localStorage limit ~5MB)
 
+// Retry config (exponential backoff for Google Sheets throttle)
 const FETCH_MAX_RETRIES = 3;
-const FETCH_BASE_DELAY  = 1200;
+const FETCH_BASE_DELAY  = 1200;                     // ms
 
+// SCHEMA_VERSION — bump this string when you deliberately rename columns.
+// Cached data from a prior version will be invalidated automatically.
 const SCHEMA_VERSION = 'v3-2025-06';
 
 /* =====================================================
    EXPANDED HEADER MAP
+   Maps every canonical field name to all known aliases
+   in the published CSV (handles column renames gracefully)
    ===================================================== */
 const HEADER_MAP = {
   community:         ['Community'],
@@ -752,7 +725,89 @@ const HEADER_MAP = {
   buyerFamilyName:   ['Buyer Family Name','Family Name','Last Name'],
 };
 
+// Columns expected in a healthy sheet — used for schema validation
 const REQUIRED_COLS = ['community','property','sellingPrice','totalPaid','totalOutstanding','pctPaid','revYear'];
+
+/* =====================================================
+   FIREBASE INIT
+   ===================================================== */
+let _fb = null, _auth = null, _db = null, _fbReady = false;
+let _currentUser = null;
+
+function initFirebase() {
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    _auth = firebase.auth();
+    _db   = firebase.firestore();
+    _fb   = firebase;
+    // Analytics — gracefully skip if blocked by adblocker
+    try { firebase.analytics(); } catch(ae) { console.info('[Analytics] Skipped:', ae.message); }
+    _fbReady = true;
+  } catch(e) {
+    console.warn('[Firebase] Init failed — running in offline/no-auth mode:', e.message);
+    _fbReady = false;
+  }
+}
+
+/* =====================================================
+   AUTH
+   ===================================================== */
+function setupAuth() {
+  if (!_fbReady) {
+    // No Firebase config set yet — bypass auth gate for local dev
+    document.getElementById('auth-gate').classList.add('hidden');
+    loadData(false);
+    return;
+  }
+
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({ hd: ALLOWED_DOMAIN }); // Hint GSuite domain
+
+  document.getElementById('googleSignInBtn').addEventListener('click', async () => {
+    clearAuthErr();
+    try {
+      const result = await _auth.signInWithPopup(provider);
+      const email = result.user.email || '';
+      if (!email.endsWith('@' + ALLOWED_DOMAIN)) {
+        await _auth.signOut();
+        showAuthErr('Access restricted to @' + ALLOWED_DOMAIN + ' accounts.');
+        return;
+      }
+    } catch(e) {
+      showAuthErr(e.message || 'Sign-in failed. Please try again.');
+    }
+  });
+
+  _auth.onAuthStateChanged(user => {
+    _currentUser = user;
+    if (user && user.email && user.email.endsWith('@' + ALLOWED_DOMAIN)) {
+      document.getElementById('auth-gate').classList.add('hidden');
+      // Show user strip in header
+      const strip = document.getElementById('userStrip');
+      strip.style.display = 'flex';
+      document.getElementById('userName').textContent = user.displayName || user.email.split('@')[0];
+      const av = document.getElementById('userAvatar');
+      if (user.photoURL) { av.src = user.photoURL; av.style.display=''; }
+      else { av.style.display='none'; }
+      loadData(false);
+    } else if (user) {
+      // Wrong domain — sign out silently
+      _auth.signOut();
+      showAuthErr('Access restricted to @' + ALLOWED_DOMAIN + ' accounts.');
+    }
+    // If no user, gate remains visible
+  });
+}
+
+function showAuthErr(msg) {
+  const el = document.getElementById('authErr');
+  el.textContent = msg; el.style.display = 'block';
+}
+function clearAuthErr() { document.getElementById('authErr').style.display = 'none'; }
+function signOut() {
+  if (_auth) _auth.signOut().then(() => location.reload());
+  else location.reload();
+}
 
 /* =====================================================
    HELPERS
@@ -766,36 +821,20 @@ const groupBy  = (arr,key) => arr.reduce((acc,r)=>{ const k=r[key]||'Unknown'; (
 const sumKey   = (arr,key) => arr.reduce((s,r)=>s+num(r[key]),0);
 const topN     = (obj,n,valFn) => Object.entries(obj).map(([k,v])=>({k,v:valFn(v)})).sort((a,b)=>b.v-a.v).slice(0,n);
 const setText  = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
-const sleep      = ms => new Promise(r => setTimeout(r, ms));
-// yieldThread: releases the main thread for ONE event-loop tick (0ms).
-// This lets the browser repaint, process input events, and prevents
-// "page unresponsive" freezes during long synchronous computation.
-const yieldThread = () => new Promise(r => setTimeout(r, 0));
-
-// telemetryError: surface model errors visibly instead of swallowing them
-function telemetryError(stage, err) {
-  console.error('[Pipeline] ' + stage + ' failed:', err.message, err.stack);
-  const eb = document.getElementById('errorBar');
-  const em = document.getElementById('errorMsg');
-  if(eb && em) {
-    em.textContent = 'Pipeline error in [' + stage + ']: ' + err.message;
-    eb.classList.add('show');
-  }
-}
-
-// showPredictiveError: yellow warning in the predict section itself
-function showPredictiveError(msg) {
-  const el = document.getElementById('predict-model-warn');
-  if(el) { el.textContent = 'Predictive model error: ' + msg + '. Other dashboard sections are unaffected.'; el.style.display='flex'; }
-}
+const sleep    = ms => new Promise(r => setTimeout(r, ms));
 
 function schemaHash(headers) {
+  // Lightweight deterministic hash of header list for change detection
   const sorted = [...headers].sort().join(',');
   let h = 0;
   for(let i=0;i<sorted.length;i++){ h=(Math.imul(31,h)+sorted.charCodeAt(i))|0; }
   return h.toString(36);
 }
 
+/* =====================================================
+   COLUMN NORMALISER
+   Maps raw CSV headers → canonical field names
+   ===================================================== */
 function normaliseRow(rawRow, headerMap) {
   const r = {};
   for(const [canonical, aliases] of Object.entries(headerMap)) {
@@ -807,10 +846,21 @@ function normaliseRow(rawRow, headerMap) {
   return r;
 }
 
+function parseRevYear(raw) {
+  if(!raw || String(raw).trim()==='') return null;
+  const m = String(raw).match(/(\d{4})/);
+  return m ? m[1] : null;
+}
+
+/* =====================================================
+   SCHEMA VALIDATION
+   Warns (never fails) if expected columns are missing
+   ===================================================== */
 function validateSchema(sampleRow, rawHeaders) {
   const missing = [];
   for(const canonical of REQUIRED_COLS) {
     if(sampleRow[canonical] === undefined || sampleRow[canonical] === '') {
+      // Check if any alias even existed in raw headers
       const aliases = HEADER_MAP[canonical] || [];
       const found = aliases.some(a => rawHeaders.includes(a));
       if(!found) missing.push(canonical);
@@ -827,6 +877,11 @@ function validateSchema(sampleRow, rawHeaders) {
   return missing;
 }
 
+/* =====================================================
+   FETCH WITH EXPONENTIAL BACKOFF
+   Retries up to FETCH_MAX_RETRIES on network or 5xx errors.
+   Handles Google Sheets rate limiting gracefully.
+   ===================================================== */
 async function fetchWithRetry(url, retries=FETCH_MAX_RETRIES, delay=FETCH_BASE_DELAY) {
   for(let attempt=0; attempt<=retries; attempt++) {
     try {
@@ -851,76 +906,84 @@ async function fetchWithRetry(url, retries=FETCH_MAX_RETRIES, delay=FETCH_BASE_D
   }
 }
 
+/* =====================================================
+   FETCH MUTEX
+   Prevents concurrent fetches (multiple tabs / rapid clicks)
+   ===================================================== */
 let _fetchInProgress = false;
 
 /* =====================================================
    FETCH AND PARSE EXCEL TABS
    ===================================================== */
 async function getLiveSheetData() {
-  setLoaderSub('Downloading from Google Sheets…');
+  setLoaderSub('Downloading all tabs from Google Sheets…');
+  
+  // 1. Fetch the Excel file as binary data
+  const arrayBuffer = await fetchWithRetry(XLSX_URL);
 
-  // Fetch as plain text — CSV has no CORS issues unlike xlsx binary
-  const csvText = await fetchWithRetryCSV(CSV_URL);
+  // 2. Read the workbook using SheetJS
+  const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+  
+  let allRows = [];
+  let rawHeaders = [];
 
-  setLoaderSub('Parsing records…');
-  const result = Papa.parse(csvText, {
-    header:       true,
-    skipEmptyLines: true,
-    dynamicTyping: false,
-    transformHeader: h => h.trim(),
+  // 3. Loop through EVERY tab in the spreadsheet
+  wb.SheetNames.forEach(sheetName => {
+    const ws = wb.Sheets[sheetName];
+    // Convert the tab into an array of objects
+    const sheetRows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    
+    // Grab headers from the first sheet for schema validation
+    if (sheetRows.length > 0 && rawHeaders.length === 0) {
+      rawHeaders = Object.keys(sheetRows[0]); 
+    }
+
+    // Add this tab's rows to our master list
+    allRows = allRows.concat(sheetRows);
   });
 
-  if (!result.data || !result.data.length) throw new Error('CSV returned no rows');
+  if(!allRows.length) throw new Error('No data found in any sheets');
 
-  const rawHeaders = Object.keys(result.data[0] || {});
-  const normalised = result.data
+  // 4. Clean up the rows using your existing HEADER_MAP
+  const normalised = allRows
     .map(r => normaliseRow(r, HEADER_MAP))
     .filter(r => r.community && r.community.trim() !== '' && r.community !== 'Community');
 
-  if (!normalised.length) throw new Error('No valid community rows found in sheet');
-  validateSchema(normalised[0], rawHeaders);
+  // 5. Validate columns
+  if(normalised.length) validateSchema(normalised[0], rawHeaders);
+
   return normalised;
 }
-
-// CSV-specific fetch — returns text, not arrayBuffer
-async function fetchWithRetryCSV(url, retries=FETCH_MAX_RETRIES, delay=FETCH_BASE_DELAY) {
-  for(let attempt=0; attempt<=retries; attempt++) {
-    try {
-      const res = await fetch(url, { cache: 'no-store' });
-      if(res.ok) return await res.text();
-      if(res.status === 429 || res.status >= 500) {
-        if(attempt < retries) { await sleep(delay * Math.pow(2, attempt)); continue; }
-        throw new Error(`HTTP ${res.status} after ${retries} retries`);
-      }
-      throw new Error(`HTTP ${res.status}`);
-    } catch(e) {
-      if(attempt < retries && e.name !== 'AbortError') { await sleep(delay * Math.pow(2, attempt)); continue; }
-      throw e;
-    }
-  }
-}
-
 /* =====================================================
    ANALYTICS ENGINE
    ===================================================== */
+// NEW: Processes dates BEFORE filters are built
+// NEW: Processes dates and perfectly converts Excel serial numbers
 function enrichData(rows) {
+  // Helper to safely extract a Year from text OR an Excel Date Serial
   function getYearFromVal(val) {
     if (!val) return null;
     let s = String(val).trim();
+    
+    // Check if it's an Excel serial number (e.g., 45334)
     if (/^\d{5}$/.test(s)) {
        let n = parseInt(s, 10);
-       if (n > 30000 && n < 60000) { 
+       if (n > 30000 && n < 60000) { // Valid dates between 1982 and 2064
           let d = new Date((n - 25569) * 86400 * 1000);
           return String(d.getFullYear());
        }
     }
+    // Otherwise look for a normal 4-digit year (e.g. 2018, Dec 2023)
     let yrMatch = s.match(/\b(20\d{2})\b/);
     return yrMatch ? yrMatch[1] : null;
   }
 
+  // Helper to safely extract a Quarter from text OR an Excel Date Serial
   function getQuarterFromVal(val) {
     if (!val) return null;
     let s = String(val).trim();
+    
+    // Check if it's an Excel serial number (e.g., 45334)
     if (/^\d{5}$/.test(s)) {
        let n = parseInt(s, 10);
        if (n > 30000 && n < 60000) {
@@ -928,6 +991,7 @@ function enrichData(rows) {
           return 'Q' + Math.ceil((d.getMonth() + 1) / 3);
        }
     }
+    // Otherwise look for month text (e.g. Jan, February)
     const monthMap = {jan:1,feb:1,mar:1,apr:2,may:2,jun:2,jul:3,aug:3,sep:3,oct:4,nov:4,dec:4};
     let moMatch = s.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/i);
     if (moMatch) {
@@ -945,6 +1009,7 @@ function enrichData(rows) {
     r._psqm  = num(r.pricePerSqM);
     r._base  = num(r.basePrice);
     
+    // Safely Extract Year & Quarter from the best available date columns
     r._year = getYearFromVal(r.revYear) || getYearFromVal(r.soldDate) || getYearFromVal(r.paymentReceipt);
     r._quarter = getQuarterFromVal(r.revYear) || getQuarterFromVal(r.soldDate) || getQuarterFromVal(r.paymentReceipt);
   });
@@ -952,14 +1017,16 @@ function enrichData(rows) {
 
 function computeAnalytics(rows) {
   const data = {};
+  // Values are now assigned in enrichData() beforehand
+
   const valid = rows.filter(r => r.community && r.community !== 'Unknown');
-  
   data.totalRows    = valid.length;
   data.totalRev     = sumKey(valid,'_sp');
   data.totalPaid    = sumKey(valid,'_paid');
   data.totalOut     = sumKey(valid,'_out');
   data.mortgageCount= valid.filter(r=>r._mort>0).length;
 
+  // ── By year ──
   const byYear = groupBy(valid.filter(r=>r._year), '_year');
   const years  = Object.keys(byYear).filter(y=>y&&y.match(/^\d{4}$/)).sort();
   data.years        = years;
@@ -972,15 +1039,17 @@ function computeAnalytics(rows) {
   data.peakYear    = years[maxRevIdx]; data.peakYearRev = data.revByYear[maxRevIdx];
   data.lowYear     = years[minRevIdx]; data.lowYearRev  = data.revByYear[minRevIdx];
 
-  const firstRev = data.revByYear[0] || 0, lastRev = data.revByYear[data.revByYear.length-1] || 0;
+  const firstRev = data.revByYear[0], lastRev = data.revByYear[data.revByYear.length-1];
   const n = years.length - 1;
   data.cagr = n > 0 && firstRev > 0 ? ((Math.pow(lastRev/firstRev,1/n)-1)*100).toFixed(0)+'%' : '—';
   data.latestYear      = years[years.length-1];
   data.latestAvgPrice  = data.avgPriceByYear[data.avgPriceByYear.length-1];
 
+  // Avg Price per SqM (portfolio-wide, units with >0 sqm price)
   const psqmValid = valid.filter(r=>r._psqm>0);
   data.avgPricePerSqM = psqmValid.length ? sumKey(psqmValid,'_psqm')/psqmValid.length : 0;
 
+  // ── By community ──
   const byComm = groupBy(valid,'community');
   data.communities    = Object.keys(byComm);
   data.commRevenue    = data.communities.map(c=>sumKey(byComm[c],'_sp'));
@@ -988,11 +1057,14 @@ function computeAnalytics(rows) {
   data.commOutstanding= data.communities.map(c=>sumKey(byComm[c],'_out'));
 
   data.commYearMatrix = {};
-  data.communities.forEach(c=>{ data.commYearMatrix[c]={}; years.forEach(y=>{ data.commYearMatrix[c][y]=0; }); });
+  data.commYearUnits  = {};
+  data.communities.forEach(c=>{ data.commYearMatrix[c]={}; data.commYearUnits[c]={}; years.forEach(y=>{ data.commYearMatrix[c][y]=0; data.commYearUnits[c][y]=0; }); });
   valid.filter(r=>r._year).forEach(r=>{
     if(data.commYearMatrix[r.community]) data.commYearMatrix[r.community][r._year]=(data.commYearMatrix[r.community][r._year]||0)+r._sp;
+    if(data.commYearUnits[r.community])  data.commYearUnits[r.community][r._year] =(data.commYearUnits[r.community][r._year]||0)+1;
   });
 
+  // ── By property ──
   const byProp = groupBy(valid,'property');
   data.propRevenue = topN(byProp, 20, arr=>sumKey(arr,'_sp'));
   data.propUnits   = {};
@@ -1001,6 +1073,7 @@ function computeAnalytics(rows) {
   const propAvg = Object.entries(byProp).map(([k,v])=>({k,avg:sumKey(v,'_sp')/(v.length||1),cnt:v.length})).filter(x=>x.cnt>=5).sort((a,b)=>b.avg-a.avg);
   data.bestAvgProp = propAvg[0];
 
+  // ── By agent group ──
   const byAG = groupBy(valid,'agentGroup');
   const agSorted_ = Object.keys(byAG).filter(k=>k&&k!=='Unknown').map(g=>({g,r:sumKey(byAG[g],'_sp'),c:byAG[g].length})).sort((a,b)=>b.r-a.r);
   data.agentGroups  = agSorted_.map(x=>x.g);
@@ -1031,6 +1104,7 @@ function computeAnalytics(rows) {
   data.thirdRev = sumKey(thirdGrp,'_sp'); data.thirdCnt=thirdGrp.length;
   data.armRev   = sumKey(armFA,'_sp')+sumKey(armBD,'_sp'); data.armCnt=armFA.length+armBD.length;
 
+  // ── By finish type ──
   const byFT = groupBy(valid.filter(r=>r.finishType&&r.finishType!=='N/A'&&r.finishType!=='nan'),'finishType');
   const ftSorted_ = Object.keys(byFT).map(f=>({f,r:sumKey(byFT[f],'_sp'),u:byFT[f].length,a:byFT[f].length?sumKey(byFT[f],'_sp')/byFT[f].length:0})).sort((a,b)=>b.a-a.a);
   data.finishTypes  = ftSorted_.map(x=>x.f);
@@ -1039,26 +1113,31 @@ function computeAnalytics(rows) {
   data.finishAvg    = ftSorted_.map(x=>x.a);
   data.ftypeCount   = data.finishTypes.length;
 
+  // ── By unit status ──
   const bySt = groupBy(valid,'unitStatus');
   data.statusLabels  = Object.keys(bySt);
   data.statusCounts  = data.statusLabels.map(s=>bySt[s].length);
   data.reservedCount = (bySt['Reserved']||[]).length;
   data.soldCount     = (bySt['Sold']||[]).length;
 
+  // ── By unit type ──
   const byUT = groupBy(valid,'unitType');
   const utTop= topN(byUT,10,arr=>sumKey(arr,'_sp'));
   data.unitTypes    = utTop.map(x=>x.k);
   data.unitTypeRevs = utTop.map(x=>x.v);
 
+  // ── By bedroom ──
   const byBR = groupBy(valid.filter(r=>r.bedrooms&&r.bedrooms!=='nan'&&r.bedrooms!=='NA'),'bedrooms');
   data.bedroomLabels = Object.keys(byBR).sort((a,b)=>sumKey(byBR[b],'_sp')-sumKey(byBR[a],'_sp'));
   data.bedroomRevs   = data.bedroomLabels.map(b=>sumKey(byBR[b],'_sp'));
 
+  // ── By payment plan ──
   const byPP = groupBy(valid.filter(r=>r.paymentPlan&&r.paymentPlan!=='nan'),'paymentPlan');
   const ppTop= topN(byPP,8,arr=>arr.length);
   data.ppLabels = ppTop.map(x=>x.k);
   data.ppCounts  = ppTop.map(x=>x.v);
 
+  // ── Collections ──
   data.avgPctPaid = valid.filter(r=>r._ppct>0).reduce((s,r,_,a)=>s+r._ppct/a.length,0);
   data.fullyPaidCnt = valid.filter(r=>r._ppct>=100).length;
   data.highRiskCnt  = valid.filter(r=>r._ppct>0&&r._ppct<25).length;
@@ -1082,12 +1161,14 @@ function computeAnalytics(rows) {
   const lpArr = Object.entries(byProp).sort((a,b)=>b[1].length-a[1].length);
   data.largestProp = lpArr[0];
 
+  // ── NEW: Phase breakdown ──
   const byPhase = groupBy(valid.filter(r=>r.phase&&r.phase!=='nan'&&r.phase!==''),'phase');
   const phaseSorted = Object.keys(byPhase).map(p=>({p,r:sumKey(byPhase[p],'_sp'),u:byPhase[p].length})).sort((a,b)=>b.r-a.r);
   data.phaseLabels = phaseSorted.map(x=>x.p);
   data.phaseRevs   = phaseSorted.map(x=>x.r);
   data.phaseUnits  = phaseSorted.map(x=>x.u);
 
+  // ── NEW: Collection Risk Tier (from derived column) ──
   const byRisk = groupBy(valid.filter(r=>r.collectionRisk&&r.collectionRisk!==''),'collectionRisk');
   const riskOrder = ['Collected','Near Completion','Low Risk','Medium Risk','High Risk'];
   data.riskLabels = riskOrder.filter(r=>byRisk[r]);
@@ -1095,12 +1176,14 @@ function computeAnalytics(rows) {
   data.riskRevs   = data.riskLabels.map(r=>sumKey(byRisk[r],'_sp'));
   data.riskOuts   = data.riskLabels.map(r=>sumKey(byRisk[r],'_out'));
 
+  // ── NEW: Buyer Type ──
   const byBT = groupBy(valid.filter(r=>r.buyerType&&r.buyerType!==''),'buyerType');
   const btTop = topN(byBT,6,arr=>arr.length);
   data.buyerTypeLabels = btTop.map(x=>x.k);
   data.buyerTypeCounts = btTop.map(x=>x.v);
   data.buyerTypeRevs   = btTop.map(x=>sumKey(byBT[x.k],'_sp'));
 
+  // ── Buyers ──
   const byState = groupBy(valid.filter(r=>r.state&&r.state!=='nan'),'state');
   const stTop = topN(byState,10,arr=>arr.length).filter(x=>x.k!=='Unknown'&&x.k!=='nan');
   data.stateLabels  = stTop.map(x=>x.k);
@@ -1174,6 +1257,7 @@ function renderKPIs(d) {
   setText('ins-top-channel-lbl', d.topChannelPct+' of deal count ('+(d.agentGrpCnt[0]||0)+' units)');
   setText('ov-years-badge', d.years.length+' years');
 
+  // Revenue
   setText('rv-peakyr', d.peakYear||'—');
   setText('rv-peakyr-s', fB(d.peakYearRev||0)+' recognized');
   setText('rv-lowyr', d.lowYear||'—');
@@ -1181,12 +1265,13 @@ function renderKPIs(d) {
   setText('rv-bestavg', fN(d.bestAvgProp?.avg||0));
   setText('rv-bestavg-s', d.bestAvgProp?.k||'—');
   setText('rv-latestprice', fN(d.latestAvgPrice||0));
-  const firstValidAvg = d.avgPriceByYear?.find(v=>v>0)||0;
-  const firstValidYr  = d.years?.[d.avgPriceByYear?.findIndex(v=>v>0)]||d.years?.[0];
+  const firstValidAvg = d.avgPriceByYear.find(v=>v>0)||0;
+  const firstValidYr  = d.years[d.avgPriceByYear.findIndex(v=>v>0)]||d.years[0];
   setText('rv-latestprice-s', firstValidAvg>0 ? '▲ from '+fN(firstValidAvg)+' in '+firstValidYr : 'Latest year avg unit price');
   setText('rv-cagr', d.cagr||'—');
   setText('rv-psqm', d.avgPricePerSqM>0 ? fN(d.avgPricePerSqM) : '—');
 
+  // Portfolio
   setText('pf-props', d.propRevenue.length);
   setText('pf-comms', d.communities.length);
   setText('pf-largest', d.largestProp?.[1]?.length||'—');
@@ -1197,6 +1282,7 @@ function renderKPIs(d) {
   setText('pf-sold-pct', pct(d.soldCount,d.totalRows)+' completed');
   setText('pf-ftypes', d.ftypeCount);
 
+  // Collections
   setText('cl-collected', fB(d.totalPaid));
   setText('cl-outstanding', fB(d.totalOut));
   setText('cl-avgrate', d.avgPctPaid.toFixed(0)+'%');
@@ -1205,6 +1291,7 @@ function renderKPIs(d) {
   setText('cl-fullypaid-s', pct(d.fullyPaidCnt,d.totalRows)+' of all units');
   setText('cl-colbook', d.collectionsBook);
 
+  // Agents
   setText('ag-top-rev', fN(d.topAgentRev||0));
   setText('ag-top-name', d.topAgentName||'—');
   setText('ag-top-vol', d.topVolAgent?.cnt||'—');
@@ -1217,6 +1304,7 @@ function renderKPIs(d) {
   setText('ag-arm-rev', fN(d.armRev));
   setText('ag-arm-cnt', d.armCnt+' transactions');
 
+  // Buyers
   setText('by-top-state', d.topStateName||'—');
   setText('by-top-state-s', d.topStateCount+'+ buyers — top market');
   setText('by-crossstate', d.crossStateCount.toLocaleString());
@@ -1232,157 +1320,131 @@ function renderKPIs(d) {
    ===================================================== */
 function renderCharts(d) {
   const commColors = [C.red,C.blue,C.green,C.purple,C.orange,C.teal,C.amber,C.slate];
-  const commRevSorted = d.communities?.map((c,i)=>({c,r:d.commRevenue[i]})).sort((a,b)=>b.r-a.r) || [];
+  const commRevSorted = d.communities.map((c,i)=>({c,r:d.commRevenue[i]})).sort((a,b)=>b.r-a.r);
   const topComms = commRevSorted.slice(0,Math.min(5,commRevSorted.length)).map(x=>x.c);
 
-  // ── OVERVIEW ──
+ // ── OVERVIEW ──
+  // DYNAMIC CHART: Line for 'All Years', Bar for specific year
   if (d.currentYearFilter === 'all') {
-    mkChart('c-revyear',{type:'line',data:{labels:d.years,datasets:[{label:'Revenue ₦B',data:d.revByYear?.map(v=>+(v/1e9).toFixed(2))||[],borderColor:C.red,backgroundColor:'rgba(192,57,43,0.07)',fill:true,tension:0.4,borderWidth:2.5,pointBackgroundColor:C.red,pointRadius:4,pointHoverRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
-    const labelParent = document.querySelector('#c-revyear')?.parentElement?.previousElementSibling?.querySelector('.cs');
-    if(labelParent) labelParent.textContent = 'Annual total selling price · ₦ Billions';
+    mkChart('c-revyear',{type:'line',data:{labels:d.years,datasets:[{label:'Revenue ₦B',data:d.revByYear.map(v=>+(v/1e9).toFixed(2)),borderColor:C.red,backgroundColor:'rgba(192,57,43,0.07)',fill:true,tension:0.4,borderWidth:2.5,pointBackgroundColor:C.red,pointRadius:4,pointHoverRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
+    document.querySelector('#c-revyear').parentElement.previousElementSibling.querySelector('.cs').textContent = 'Annual total selling price · ₦ Billions';
   } else {
     const qLabels = ['Q1', 'Q2', 'Q3', 'Q4'];
-    const activeQ = d.currentQtrFilter || 'all';
+    const activeQ = d.currentQtrFilter;
+    // Highlight logic: Red if 'all' or if it matches the specific quarter. Gray otherwise.
     const bgColors = qLabels.map(q => (activeQ === 'all' || activeQ === q) ? C.red : '#E0E0E8');
     
-    mkChart('c-revyear',{type:'bar',data:{labels:qLabels,datasets:[{label:'Revenue ₦B',data:d.quarterlyRev?.map(v=>+(v/1e9).toFixed(2))||[0,0,0,0],backgroundColor:bgColors,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
-    const labelParent = document.querySelector('#c-revyear')?.parentElement?.previousElementSibling?.querySelector('.cs');
-    if(labelParent) labelParent.textContent = `Quarterly breakdown for ${d.currentYearFilter} · ₦ Billions`;
+    mkChart('c-revyear',{type:'bar',data:{labels:qLabels,datasets:[{label:'Revenue ₦B',data:d.quarterlyRev.map(v=>+(v/1e9).toFixed(2)),backgroundColor:bgColors,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
+    document.querySelector('#c-revyear').parentElement.previousElementSibling.querySelector('.cs').textContent = `Quarterly breakdown for ${d.currentYearFilter} · ₦ Billions`;
   }
 
   mkChart('c-commdonut',{type:'doughnut',data:{labels:commRevSorted.map(x=>x.c),datasets:[{data:commRevSorted.map(x=>+(x.r/1e9).toFixed(2)),backgroundColor:commColors.slice(0,commRevSorted.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'64%',plugins:{tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B'}}}}});
-  const legComm=document.getElementById('leg-comm'); if(legComm) { legComm.innerHTML=''; commRevSorted.forEach((x,i)=>{legComm.innerHTML+=`<div class="li"><div class="ld" style="background:${commColors[i]}"></div>${x.c}: ₦${(x.r/1e9).toFixed(1)}B</div>`;}); }
+  const legComm=document.getElementById('leg-comm'); legComm.innerHTML='';
+  commRevSorted.forEach((x,i)=>{legComm.innerHTML+=`<div class="li"><div class="ld" style="background:${commColors[i]}"></div>${x.c}: ₦${(x.r/1e9).toFixed(1)}B</div>`;});
 
-  mkChart('c-agentgrp',{type:'bar',data:{labels:d.agentGroups,datasets:[{label:'Revenue ₦B',data:d.agentGrpRev?.map(v=>+(v/1e9).toFixed(2))||[],backgroundColor:d.agentGroups?.map((_,i)=>i===0?C.red:C.red3)||[],borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.x.toFixed(1)+'B ('+d.agentGrpCnt[c.dataIndex]+' units)'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}},y:{grid:{display:false}}}}});
+  mkChart('c-agentgrp',{type:'bar',data:{labels:d.agentGroups,datasets:[{label:'Revenue ₦B',data:d.agentGrpRev.map(v=>+(v/1e9).toFixed(2)),backgroundColor:d.agentGroups.map((_,i)=>i===0?C.red:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.x.toFixed(1)+'B ('+d.agentGrpCnt[c.dataIndex]+' units)'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}},y:{grid:{display:false}}}}});
 
-  mkChart('c-finish',{type:'bar',data:{labels:d.finishTypes,datasets:[{label:'Avg Price',data:d.finishAvg?.map(v=>+(v/1e6).toFixed(0))||[],backgroundColor:d.finishTypes?.map((_,i)=>i===0?C.red:i===1?C.red2:C.red3)||[],borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(0)+'M avg ('+d.finishUnits[c.dataIndex]+' units)'}}},scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'M'}}}}});
+  mkChart('c-finish',{type:'bar',data:{labels:d.finishTypes,datasets:[{label:'Avg Price',data:d.finishAvg.map(v=>+(v/1e6).toFixed(0)),backgroundColor:d.finishTypes.map((_,i)=>i===0?C.red:i===1?C.red2:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(0)+'M avg ('+d.finishUnits[c.dataIndex]+' units)'}}},scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'M'}}}}});
 
-  const tpEl=document.getElementById('top-props-bars'); 
-  if(tpEl) {
-      tpEl.innerHTML='';
-      const maxR=d.propRevenue?.[0]?.v||1;
-      d.propRevenue?.slice(0,12).forEach((p,i)=>{tpEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl"><span class="rn">${i+1}</span>&nbsp;${p.k}</div><div class="sl-bw"><div class="sl-bf" style="width:${(p.v/maxR*100).toFixed(0)}%"></div></div><div class="sl-val">${fB(p.v)}<span style="color:var(--text3)"> (${d.propUnits[p.k]||0})</span></div></div>`;});
-  }
+  const tpEl=document.getElementById('top-props-bars'); tpEl.innerHTML='';
+  const maxR=d.propRevenue[0]?.v||1;
+  d.propRevenue.slice(0,12).forEach((p,i)=>{tpEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl"><span class="rn">${i+1}</span>&nbsp;${p.k}</div><div class="sl-bw"><div class="sl-bf" style="width:${(p.v/maxR*100).toFixed(0)}%"></div></div><div class="sl-val">${fB(p.v)}<span style="color:var(--text3)"> (${d.propUnits[p.k]||0})</span></div></div>`;});
 
   // ── REVENUE ──
-  mkChart('c-stacked',{type:'bar',data:{labels:d.years,datasets:topComms.map((comm,i)=>({label:comm,data:d.years?.map(y=>+((d.commYearMatrix[comm]?.[y]||0)/1e9).toFixed(2))||[],backgroundColor:[C.red,C.blue,C.green,C.purple,C.orange][i],borderRadius:3,borderSkipped:false}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
+  mkChart('c-stacked',{type:'bar',data:{labels:d.years,datasets:topComms.map((comm,i)=>({label:comm,data:d.years.map(y=>+((d.commYearMatrix[comm]?.[y]||0)/1e9).toFixed(2)),backgroundColor:[C.red,C.blue,C.green,C.purple,C.orange][i],borderRadius:3,borderSkipped:false}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
 
-  mkChart('c-volprice',{type:'bar',data:{labels:d.years,datasets:[{label:'Units',data:d.unitsByYear,backgroundColor:C.red3,borderRadius:4,borderSkipped:false,yAxisID:'y'},{label:'Avg Price ₦M',data:d.avgPriceByYear?.map(v=>+(v/1e6).toFixed(1))||[],type:'line',borderColor:C.red,backgroundColor:'transparent',borderWidth:2,tension:0.4,pointRadius:3,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}}},scales:{x:{grid:{display:false}},y:{position:'left',grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' u'}},y1:{position:'right',grid:{display:false},ticks:{callback:v=>'₦'+v+'M'}}}}});
+  mkChart('c-volprice',{type:'bar',data:{labels:d.years,datasets:[{label:'Units',data:d.unitsByYear,backgroundColor:C.red3,borderRadius:4,borderSkipped:false,yAxisID:'y'},{label:'Avg Price ₦M',data:d.avgPriceByYear.map(v=>+(v/1e6).toFixed(1)),type:'line',borderColor:C.red,backgroundColor:'transparent',borderWidth:2,tension:0.4,pointRadius:3,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}}},scales:{x:{grid:{display:false}},y:{position:'left',grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' u'}},y1:{position:'right',grid:{display:false},ticks:{callback:v=>'₦'+v+'M'}}}}});
 
-  mkChart('c-unittype',{type:'bar',data:{labels:d.unitTypes,datasets:[{label:'Revenue',data:d.unitTypeRevs?.map(v=>+(v/1e9).toFixed(2))||[],backgroundColor:d.unitTypes?.map((_,i)=>i===0?C.red:i===1?C.red2:C.red3)||[],borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.x.toFixed(1)+'B'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}},y:{grid:{display:false},ticks:{font:{size:9.5}}}}});
+  mkChart('c-unittype',{type:'bar',data:{labels:d.unitTypes,datasets:[{label:'Revenue',data:d.unitTypeRevs.map(v=>+(v/1e9).toFixed(2)),backgroundColor:d.unitTypes.map((_,i)=>i===0?C.red:i===1?C.red2:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.x.toFixed(1)+'B'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}},y:{grid:{display:false},ticks:{font:{size:9.5}}}}}});
 
   const bdrColors=[C.red,C.red2,C.blue,C.green,C.purple,C.amber];
-  mkChart('c-bedroom',{type:'doughnut',data:{labels:d.bedroomLabels?.map(b=>b+'-bed')||[],datasets:[{data:d.bedroomRevs?.map(v=>+(v/1e9).toFixed(2))||[],backgroundColor:bdrColors.slice(0,d.bedroomLabels?.length||0),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B'}}}}});
-  const legBdr=document.getElementById('leg-bedroom'); if(legBdr) { legBdr.innerHTML=''; d.bedroomLabels?.forEach((b,i)=>{legBdr.innerHTML+=`<div class="li"><div class="ld" style="background:${bdrColors[i]}"></div>${b}-bed: ₦${(d.bedroomRevs[i]/1e9).toFixed(1)}B</div>`;}); }
+  mkChart('c-bedroom',{type:'doughnut',data:{labels:d.bedroomLabels.map(b=>b+'-bed'),datasets:[{data:d.bedroomRevs.map(v=>+(v/1e9).toFixed(2)),backgroundColor:bdrColors.slice(0,d.bedroomLabels.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B'}}}}});
+  const legBdr=document.getElementById('leg-bedroom'); legBdr.innerHTML='';
+  d.bedroomLabels.forEach((b,i)=>{legBdr.innerHTML+=`<div class="li"><div class="ld" style="background:${bdrColors[i]}"></div>${b}-bed: ₦${(d.bedroomRevs[i]/1e9).toFixed(1)}B</div>`;});
 
-  mkChart('c-payplan',{type:'bar',data:{labels:d.ppLabels,datasets:[{label:'Units',data:d.ppCounts,backgroundColor:d.ppLabels?.map((_,i)=>i===0?C.red:C.red3)||[],borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>c.parsed.y+' units'}}},scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:30}},y:{grid:{color:'rgba(0,0,0,0.04)'}}}}});
+  mkChart('c-payplan',{type:'bar',data:{labels:d.ppLabels,datasets:[{label:'Units',data:d.ppCounts,backgroundColor:d.ppLabels.map((_,i)=>i===0?C.red:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>c.parsed.y+' units'}}},scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:30}},y:{grid:{color:'rgba(0,0,0,0.04)'}}}}});
 
   // ── PORTFOLIO ──
-  const prTop=d.propRevenue?.slice(0,20)||[];
-  mkChart('c-proprank',{type:'bar',data:{labels:prTop.map(x=>x.k),datasets:[{label:'Revenue',data:prTop.map(x=>+(x.v/1e9).toFixed(2)),backgroundColor:prTop.map((_,i)=>i===0?C.red:i<3?C.red2:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.x.toFixed(1)+'B ('+(d.propUnits[prTop[c.dataIndex]?.k]||0)+' units)'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}},y:{grid:{display:false},ticks:{font:{size:9.5}}}}});
+  const prTop=d.propRevenue.slice(0,20);
+  mkChart('c-proprank',{type:'bar',data:{labels:prTop.map(x=>x.k),datasets:[{label:'Revenue',data:prTop.map(x=>+(x.v/1e9).toFixed(2)),backgroundColor:prTop.map((_,i)=>i===0?C.red:i<3?C.red2:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.x.toFixed(1)+'B ('+(d.propUnits[prTop[c.dataIndex]?.k]||0)+' units)'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}},y:{grid:{display:false},ticks:{font:{size:9.5}}}}}});
 
-  mkChart('c-status',{type:'doughnut',data:{labels:d.statusLabels,datasets:[{data:d.statusCounts,backgroundColor:d.statusLabels?.map(s=>s==='Sold'?C.green:s==='Reserved'?C.red:C.blue)||[],borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10},boxWidth:9,boxHeight:9}}}}});
+  mkChart('c-status',{type:'doughnut',data:{labels:d.statusLabels,datasets:[{data:d.statusCounts,backgroundColor:d.statusLabels.map(s=>s==='Sold'?C.green:s==='Reserved'?C.red:C.blue),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10},boxWidth:9,boxHeight:9}}}}});
 
-  const csEl=document.getElementById('comm-simple-bars'); 
-  if(csEl) {
-      csEl.innerHTML='';
-      const maxU=Math.max(...(d.commUnits||[0]));
-      commRevSorted.slice(0,6).forEach((x,i)=>{const u=d.commUnits[d.communities.indexOf(x.c)]; csEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl" style="width:120px">${x.c}</div><div class="sl-bw"><div class="sl-bf" style="width:${(u/maxU*100).toFixed(0)}%"></div></div><div class="sl-val" style="width:80px">${u} units</div></div>`;});
-  }
+  const csEl=document.getElementById('comm-simple-bars'); csEl.innerHTML='';
+  const maxU=Math.max(...d.commUnits);
+  commRevSorted.slice(0,6).forEach((x,i)=>{const u=d.commUnits[d.communities.indexOf(x.c)]; csEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl" style="width:120px">${x.c}</div><div class="sl-bw"><div class="sl-bf" style="width:${(u/maxU*100).toFixed(0)}%"></div></div><div class="sl-val" style="width:80px">${u} units</div></div>`;});
 
-  mkChart('c-finishmix',{type:'bar',data:{labels:d.finishTypes,datasets:[{label:'Units',data:d.finishUnits,backgroundColor:C.red3,borderRadius:4,borderSkipped:false,yAxisID:'y'},{label:'Revenue ₦B',data:d.finishRev?.map(v=>+(v/1e9).toFixed(2))||[],type:'line',borderColor:C.red,backgroundColor:'transparent',borderWidth:2,tension:0.3,pointRadius:4,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}}},scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{position:'left',grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' u'}},y1:{position:'right',grid:{display:false},ticks:{callback:v=>'₦'+v+'B'}}}}});
+  mkChart('c-finishmix',{type:'bar',data:{labels:d.finishTypes,datasets:[{label:'Units',data:d.finishUnits,backgroundColor:C.red3,borderRadius:4,borderSkipped:false,yAxisID:'y'},{label:'Revenue ₦B',data:d.finishRev.map(v=>+(v/1e9).toFixed(2)),type:'line',borderColor:C.red,backgroundColor:'transparent',borderWidth:2,tension:0.3,pointRadius:4,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}}},scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{position:'left',grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' u'}},y1:{position:'right',grid:{display:false},ticks:{callback:v=>'₦'+v+'B'}}}}});
 
   // Heatmap
-  const hmEl=document.getElementById('heatmap-wrap'); 
-  if(hmEl) {
-      hmEl.innerHTML='';
-      const allVals=topComms.flatMap(c=>d.years?.map(y=>d.commYearMatrix[c]?.[y]||0)||[]).filter(v=>v>0);
-      const maxHM=Math.max(...allVals)||1;
-      const getHMColor=v=>{if(!v)return '#F0F0F4';const r=v/maxHM;const R=Math.round(192+(255-192)*(1-r)),G=Math.round(57*(1-r)),B=Math.round(43*(1-r));return `rgb(${R},${G},${B})`;};
-      let htm=`<table style="border-collapse:separate;border-spacing:4px;font-family:var(--mono);font-size:10px;min-width:500px"><tr><td style="padding:4px 8px;color:var(--text3);font-size:9px;font-weight:600"> </td>`;
-      d.years?.forEach(y=>{htm+=`<td style="padding:4px 5px;text-align:center;color:var(--text3);font-weight:600;font-size:9px">${y}</td>`;});
-      htm+='</tr>';
-      topComms.forEach(comm=>{htm+=`<tr><td style="padding:4px 10px 4px 0;white-space:nowrap;color:var(--text2);font-size:10px;font-weight:500">${comm}</td>`;d.years?.forEach(y=>{const v=(d.commYearMatrix[comm]?.[y]||0)/1e9;const bg=getHMColor(d.commYearMatrix[comm]?.[y]||0);const tc=v>maxHM/1e9*0.4?'white':'#5A5A72';htm+=`<td><div class="hm-cell" style="background:${bg};color:${tc}" title="${comm} ${y}: ₦${v.toFixed(1)}B">${v>0?v.toFixed(0):'—'}</div></td>`;});htm+='</tr>';});
-      htm+='</table>';
-      hmEl.innerHTML=htm;
+  const hmEl=document.getElementById('heatmap-wrap'); hmEl.innerHTML='';
+  const allVals=topComms.flatMap(c=>d.years.map(y=>d.commYearMatrix[c]?.[y]||0)).filter(v=>v>0);
+  const maxHM=Math.max(...allVals)||1;
+  const getHMColor=v=>{if(!v)return '#F0F0F4';const r=v/maxHM;const R=Math.round(192+(255-192)*(1-r)),G=Math.round(57*(1-r)),B=Math.round(43*(1-r));return `rgb(${R},${G},${B})`;};
+  let htm=`<table style="border-collapse:separate;border-spacing:4px;font-family:var(--mono);font-size:10px;min-width:500px"><tr><td style="padding:4px 8px;color:var(--text3);font-size:9px;font-weight:600"> </td>`;
+  d.years.forEach(y=>{htm+=`<td style="padding:4px 5px;text-align:center;color:var(--text3);font-weight:600;font-size:9px">${y}</td>`;});
+  htm+='</tr>';
+  topComms.forEach(comm=>{htm+=`<tr><td style="padding:4px 10px 4px 0;white-space:nowrap;color:var(--text2);font-size:10px;font-weight:500">${comm}</td>`;d.years.forEach(y=>{const v=(d.commYearMatrix[comm]?.[y]||0)/1e9;const bg=getHMColor(d.commYearMatrix[comm]?.[y]||0);const tc=v>maxHM/1e9*0.4?'white':'#5A5A72';htm+=`<td><div class="hm-cell" style="background:${bg};color:${tc}" title="${comm} ${y}: ₦${v.toFixed(1)}B">${v>0?v.toFixed(0):'—'}</div></td>`;});htm+='</tr>';});
+  htm+='</table>';
+  hmEl.innerHTML=htm;
+
+  // ── NEW: Phase chart ──
+  if(d.phaseLabels.length) {
+    mkChart('c-phase',{type:'bar',data:{labels:d.phaseLabels,datasets:[{label:'Revenue ₦B',data:d.phaseRevs.map(v=>+(v/1e9).toFixed(2)),backgroundColor:d.phaseLabels.map((_,i)=>i===0?C.red:i===1?C.red2:C.red3),borderRadius:5,borderSkipped:false,yAxisID:'y'},{label:'Units',data:d.phaseUnits,type:'line',borderColor:C.blue,backgroundColor:'transparent',borderWidth:2,tension:0.3,pointRadius:4,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label==='Units'?c.parsed.y+' units':'₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{display:false}},y:{position:'left',grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}},y1:{position:'right',grid:{display:false},ticks:{callback:v=>v+' u'}}}}});
   }
 
-  // ── Phase chart ──
-  if(d.phaseLabels?.length) {
-    mkChart('c-phase',{type:'bar',data:{labels:d.phaseLabels,datasets:[{label:'Revenue ₦B',data:d.phaseRevs?.map(v=>+(v/1e9).toFixed(2))||[],backgroundColor:d.phaseLabels.map((_,i)=>i===0?C.red:i===1?C.red2:C.red3),borderRadius:5,borderSkipped:false,yAxisID:'y'},{label:'Units',data:d.phaseUnits,type:'line',borderColor:C.blue,backgroundColor:'transparent',borderWidth:2,tension:0.3,pointRadius:4,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label==='Units'?c.parsed.y+' units':'₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{display:false}},y:{position:'left',grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}},y1:{position:'right',grid:{display:false},ticks:{callback:v=>v+' u'}}}}});
-  }
-
-  // ── Collection Risk Breakdown ──
-  const riskEl=document.getElementById('risk-breakdown'); 
-  if(riskEl) {
-      riskEl.innerHTML='';
-      const riskCls = {'Collected':'risk-collected','Near Completion':'risk-near','Low Risk':'risk-low','Medium Risk':'risk-medium','High Risk':'risk-high'};
-      if(d.riskLabels?.length) {
-        let rhtml='<div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">';
-        const maxRiskU = Math.max(...(d.riskCounts||[0]))||1;
-        d.riskLabels.forEach((r,i)=>{
-          const cls = riskCls[r]||'';
-          rhtml+=`<div class="sl-row"><div class="sl-lbl" style="width:140px"><span class="risk-pill ${cls}">${r}</span></div><div class="sl-bw"><div class="sl-bf" style="width:${(d.riskCounts[i]/maxRiskU*100).toFixed(0)}%"></div></div><div class="sl-val" style="width:130px">${d.riskCounts[i]} units · ${fM(d.riskRevs[i])}</div></div>`;
-        });
-        rhtml+='</div>';
-        riskEl.innerHTML=rhtml;
-      } else {
-        riskEl.innerHTML='<p style="color:var(--text3);font-size:11px;margin-top:8px">Collection Risk column not found in published CSV. Add a "Collection_Risk" column to your sheet and republish.</p>';
-      }
+  // ── NEW: Collection Risk Breakdown (HTML table) ──
+  const riskEl=document.getElementById('risk-breakdown'); riskEl.innerHTML='';
+  const riskCls = {'Collected':'risk-collected','Near Completion':'risk-near','Low Risk':'risk-low','Medium Risk':'risk-medium','High Risk':'risk-high'};
+  if(d.riskLabels.length) {
+    let rhtml='<div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">';
+    const maxRiskU = Math.max(...d.riskCounts)||1;
+    d.riskLabels.forEach((r,i)=>{
+      const cls = riskCls[r]||'';
+      rhtml+=`<div class="sl-row"><div class="sl-lbl" style="width:140px"><span class="risk-pill ${cls}">${r}</span></div><div class="sl-bw"><div class="sl-bf" style="width:${(d.riskCounts[i]/maxRiskU*100).toFixed(0)}%"></div></div><div class="sl-val" style="width:130px">${d.riskCounts[i]} units · ${fM(d.riskRevs[i])}</div></div>`;
+    });
+    rhtml+='</div>';
+    riskEl.innerHTML=rhtml;
+  } else {
+    riskEl.innerHTML='<p style="color:var(--text3);font-size:11px;margin-top:8px">Collection Risk column not found in published CSV. Add a "Collection_Risk" column to your sheet and republish.</p>';
   }
 
   // ── COLLECTIONS ──
-  mkChart('c-collstack',{type:'bar',data:{labels:d.years,datasets:[{label:'Collected ₦B',data:d.paidByYear?.map(v=>+(v/1e9).toFixed(2))||[],backgroundColor:C.green,borderRadius:4,borderSkipped:false},{label:'Outstanding ₦B',data:d.outByYear?.map(v=>+(v/1e9).toFixed(2))||[],backgroundColor:C.red3,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
+  mkChart('c-collstack',{type:'bar',data:{labels:d.years,datasets:[{label:'Collected ₦B',data:d.paidByYear.map(v=>+(v/1e9).toFixed(2)),backgroundColor:C.green,borderRadius:4,borderSkipped:false},{label:'Outstanding ₦B',data:d.outByYear.map(v=>+(v/1e9).toFixed(2)),backgroundColor:C.red3,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
 
-  const crColors = [C.red,C.red2,'#F39C12','#E67E22',C.green,C.blue,'#1ABC9C'];
-  mkChart('c-collrate',{type:'bar',data:{labels:d.collBrackets,datasets:[{label:'Units',data:d.collBracketCounts,backgroundColor:crColors,borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>c.parsed.y+' units'}}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'}}}}});
-  const legCR=document.getElementById('leg-collrate'); 
-  if(legCR) { 
-      legCR.innerHTML=''; 
-      d.collBrackets?.forEach((b,i)=>{legCR.innerHTML+=`<div class="li"><div class="ld" style="background:${crColors[i]}"></div>${b}</div>`;}); 
-  }
+  mkChart('c-collrate',{type:'bar',data:{labels:d.collBrackets,datasets:[{label:'Units',data:d.collBracketCounts,backgroundColor:[C.red,C.red2,'#F39C12','#E67E22',C.green,C.blue,'#1ABC9C'],borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>c.parsed.y+' units'}}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'}}}}});
 
   mkChart('c-mortgage',{type:'bar',data:{labels:d.years,datasets:[{label:'Cash/Plan',data:d.cashByYear,backgroundColor:C.red3,borderRadius:4,borderSkipped:false},{label:'Mortgage',data:d.mortgageByYear,backgroundColor:C.red,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'}}}}});
 
-  mkChart('c-outstandcomm',{type:'doughnut',data:{labels:d.communities,datasets:[{data:d.commOutstanding?.map(v=>+(v/1e9).toFixed(2))||[],backgroundColor:commColors.slice(0,d.communities?.length||0),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:true,position:'right',labels:{font:{size:9},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B outstanding'}}}}});
+  mkChart('c-outstandcomm',{type:'doughnut',data:{labels:d.communities,datasets:[{data:d.commOutstanding.map(v=>+(v/1e9).toFixed(2)),backgroundColor:commColors.slice(0,d.communities.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:true,position:'right',labels:{font:{size:9},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B outstanding'}}}}});
 
   // ── AGENTS ──
-  const agEl=document.getElementById('agent-bars'); 
-  if(agEl) {
-      agEl.innerHTML='';
-      const maxAR=d.dealingAgentRev?.[0]||1;
-      d.dealingAgents?.forEach((n,i)=>{agEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl"><span class="rn">${i+1}</span>&nbsp;${n}</div><div class="sl-bw"><div class="sl-bf" style="width:${(d.dealingAgentRev[i]/maxAR*100).toFixed(0)}%"></div></div><div class="sl-val">${fB(d.dealingAgentRev[i])}<span style="color:var(--text3)"> (${d.dealingAgentCnt[i]})</span></div></div>`;});
-  }
+  const agEl=document.getElementById('agent-bars'); agEl.innerHTML='';
+  const maxAR=d.dealingAgentRev[0]||1;
+  d.dealingAgents.forEach((n,i)=>{agEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl"><span class="rn">${i+1}</span>&nbsp;${n}</div><div class="sl-bw"><div class="sl-bf" style="width:${(d.dealingAgentRev[i]/maxAR*100).toFixed(0)}%"></div></div><div class="sl-val">${fB(d.dealingAgentRev[i])}<span style="color:var(--text3)"> (${d.dealingAgentCnt[i]})</span></div></div>`;});
 
   const chanColors=[C.red,C.blue,C.green,C.purple,C.orange,C.teal,C.amber];
-  mkChart('c-channel',{type:'doughnut',data:{labels:d.agentGroups,datasets:[{data:d.agentGrpRev?.map(v=>+(v/1e9).toFixed(2))||[],backgroundColor:chanColors.slice(0,d.agentGroups?.length||0),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B'}}}}});
-  const legCh=document.getElementById('leg-channel'); 
-  if(legCh) { legCh.innerHTML=''; d.agentGroups?.forEach((g,i)=>{legCh.innerHTML+=`<div class="li"><div class="ld" style="background:${chanColors[i]}"></div>${g}</div>`;}); }
+  mkChart('c-channel',{type:'doughnut',data:{labels:d.agentGroups,datasets:[{data:d.agentGrpRev.map(v=>+(v/1e9).toFixed(2)),backgroundColor:chanColors.slice(0,d.agentGroups.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B'}}}}});
+  const legCh=document.getElementById('leg-channel'); legCh.innerHTML='';
+  d.agentGroups.forEach((g,i)=>{legCh.innerHTML+=`<div class="li"><div class="ld" style="background:${chanColors[i]}"></div>${g}</div>`;});
 
-  mkChart('c-agtrend',{type:'line',data:{labels:d.years,datasets:d.agGroupTrend?.map((t,i)=>({label:t.label,data:t.data,borderColor:[C.red,C.blue,C.green][i],backgroundColor:'transparent',borderWidth:2,tension:0.4,pointRadius:3,borderDash:i>0?[i*3,3]:[] }))||[]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y+' units'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' units'}}}}});
+  mkChart('c-agtrend',{type:'line',data:{labels:d.years,datasets:d.agGroupTrend.map((t,i)=>({label:t.label,data:t.data,borderColor:[C.red,C.blue,C.green][i],backgroundColor:'transparent',borderWidth:2,tension:0.4,pointRadius:3,borderDash:i>0?[i*3,3]:[] }))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y+' units'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' units'}}}}});
 
   // ── BUYERS ──
-  if(d.buyerTypeLabels && d.buyerTypeLabels.length > 0) {
+  // NEW: Buyer Type donut
+  if(d.buyerTypeLabels.length) {
     const btColors=[C.red,C.blue,C.green,C.purple,C.orange,C.teal];
     mkChart('c-buyertype',{type:'doughnut',data:{labels:d.buyerTypeLabels,datasets:[{data:d.buyerTypeCounts,backgroundColor:btColors.slice(0,d.buyerTypeLabels.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:true,position:'right',labels:{font:{size:10},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed+' units'}}}}});
-  } else {
-    const btContainer = document.getElementById('c-buyertype');
-    if (btContainer) {
-       btContainer.parentElement.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:11px;text-align:center;padding:20px;">Buyer Type data not found.<br>Ensure "Buyer_Type" column exists in sheet.</div>';
-    }
   }
 
-  mkChart('c-buyerstate',{type:'bar',data:{labels:d.stateLabels,datasets:[{label:'Buyers',data:d.stateCounts,backgroundColor:d.stateLabels?.map((_,i)=>i===0?C.red:C.red3)||[],borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{tooltip:{callbacks:{label:c=>c.parsed.x+' buyers'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
+  mkChart('c-buyerstate',{type:'bar',data:{labels:d.stateLabels,datasets:[{label:'Buyers',data:d.stateCounts,backgroundColor:d.stateLabels.map((_,i)=>i===0?C.red:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{tooltip:{callbacks:{label:c=>c.parsed.x+' buyers'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
 
   const salColors=[C.red,C.blue,C.green,C.purple,C.orange,C.teal,C.amber,C.slate];
-  mkChart('c-salutation',{type:'doughnut',data:{labels:d.salLabels,datasets:[{data:d.salCounts,backgroundColor:salColors.slice(0,d.salLabels?.length||0),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{display:true,position:'right',labels:{font:{size:9.5},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed}}}}});
+  mkChart('c-salutation',{type:'doughnut',data:{labels:d.salLabels,datasets:[{data:d.salCounts,backgroundColor:salColors.slice(0,d.salLabels.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{display:true,position:'right',labels:{font:{size:9.5},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed}}}}});
 
-  const bsEl=document.getElementById('buyer-state-bars'); 
-  if(bsEl) {
-      bsEl.innerHTML='';
-      const maxSC=Math.max(...(d.stateCounts||[0]))||1;
-      d.stateLabels?.forEach((s,i)=>{bsEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl" style="width:180px">${s}</div><div class="sl-bw"><div class="sl-bf" style="width:${(d.stateCounts[i]/maxSC*100).toFixed(0)}%;background:${i===0?'linear-gradient(90deg,var(--red5),var(--red2))':'linear-gradient(90deg,var(--red3),var(--red2))'}"></div></div><div class="sl-val">${d.stateCounts[i]} buyers</div></div>`;});
-  }
+  const bsEl=document.getElementById('buyer-state-bars'); bsEl.innerHTML='';
+  const maxSC=Math.max(...d.stateCounts)||1;
+  d.stateLabels.forEach((s,i)=>{bsEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl" style="width:180px">${s}</div><div class="sl-bw"><div class="sl-bf" style="width:${(d.stateCounts[i]/maxSC*100).toFixed(0)}%;background:${i===0?'linear-gradient(90deg,var(--red5),var(--red2))':'linear-gradient(90deg,var(--red3),var(--red2))'}"></div></div><div class="sl-val">${d.stateCounts[i]} buyers</div></div>`;});
 }
 
 /* =====================================================
@@ -1396,54 +1458,42 @@ function updateFreshness(fromCache) {
   el.textContent = mins < 2 ? 'Live · just now' : `Cached · ${mins}m ago`;
 }
 
-let _loaderStep = 0;
-const LOADER_STEPS = ['Fetching data','Enriching records','Building filters',
-  'Computing analytics','Rendering KPIs','Drawing charts','Running models'];
-
-function setLoaderSub(msg) {
-  const el = document.getElementById('loader-sub'); if(el) el.textContent = msg;
-  // Find matching step index for progress bar
-  const idx = LOADER_STEPS.findIndex(s => msg.toLowerCase().includes(s.toLowerCase().split(' ')[0]));
-  const step = idx >= 0 ? idx : _loaderStep++;
-  const pct  = Math.min(95, Math.round((step / LOADER_STEPS.length) * 100));
-  const pb   = document.getElementById('loader-progress'); if(pb) pb.style.width = pct + '%';
-  const st   = document.getElementById('loader-step'); if(st) st.textContent = 'step ' + (step+1) + '/' + LOADER_STEPS.length;
-}
-function setLoaderText(msg){ const el=document.getElementById('loader-text'); if(el) el.textContent=msg; _loaderStep=0; }
+function setLoaderSub(msg) { const el=document.getElementById('loader-sub'); if(el) el.textContent=msg; }
+function setLoaderText(msg){ const el=document.getElementById('loader-text'); if(el) el.textContent=msg; }
 
 /* =====================================================
-   FILTER ENGINE
-   ===================================================== */
+   FILTER ENGINE
+   ===================================================== */
 let _allRows = null;
 
 function populateFilters(rows) {
-  if (!rows || !Array.isArray(rows)) return;
-  const years = [...new Set(rows.map(r=>r._year).filter(Boolean))].sort();
-  const ySel  = document.getElementById('filterYear');
-  ySel.innerHTML = '<option value="all">All Years</option>';
-  years.forEach(y=>{ const o=document.createElement('option'); o.value=y; o.textContent=y; ySel.appendChild(o); });
+  const years = [...new Set(rows.map(r=>r._year).filter(Boolean))].sort();
+  const ySel  = document.getElementById('filterYear');
+  ySel.innerHTML = '<option value="all">All Years</option>';
+  years.forEach(y=>{ const o=document.createElement('option'); o.value=y; o.textContent=y; ySel.appendChild(o); });
 
-  const comms = [...new Set(rows.map(r=>r.community).filter(c=>c&&c!=='Unknown'))].sort();
-  const cSel  = document.getElementById('filterCommunity');
-  cSel.innerHTML = '<option value="all">All Communities</option>';
-  comms.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; cSel.appendChild(o); });
+  const comms = [...new Set(rows.map(r=>r.community).filter(c=>c&&c!=='Unknown'))].sort();
+  const cSel  = document.getElementById('filterCommunity');
+  cSel.innerHTML = '<option value="all">All Communities</option>';
+  comms.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; cSel.appendChild(o); });
 
-  const ags  = [...new Set(rows.map(r=>r.agentGroup).filter(a=>a&&a!=='Unknown'))].sort();
-  const aSel = document.getElementById('filterAgent');
-  aSel.innerHTML = '<option value="all">All Channels</option>';
-  ags.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; aSel.appendChild(o); });
+  const ags  = [...new Set(rows.map(r=>r.agentGroup).filter(a=>a&&a!=='Unknown'))].sort();
+  const aSel = document.getElementById('filterAgent');
+  aSel.innerHTML = '<option value="all">All Channels</option>';
+  ags.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; aSel.appendChild(o); });
 
-  const risks = ['Collected','Near Completion','Low Risk','Medium Risk','High Risk'].filter(r=>rows.some(row=>row.collectionRisk===r));
-  const rSel  = document.getElementById('filterRisk');
-  rSel.innerHTML = '<option value="all">All Risk Tiers</option>';
-  risks.forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; rSel.appendChild(o); });
+  const risks = ['Collected','Near Completion','Low Risk','Medium Risk','High Risk'].filter(r=>rows.some(row=>row.collectionRisk===r));
+  const rSel  = document.getElementById('filterRisk');
+  rSel.innerHTML = '<option value="all">All Risk Tiers</option>';
+  risks.forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; rSel.appendChild(o); });
 
-  const phases = [...new Set(rows.map(r=>r.phase).filter(p=>p&&p!=='nan'&&p!==''))].sort();
-  const pSel   = document.getElementById('filterPhase');
-  pSel.innerHTML = '<option value="all">All Phases</option>';
-  phases.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; pSel.appendChild(o); });
+  const phases = [...new Set(rows.map(r=>r.phase).filter(p=>p&&p!=='nan'&&p!==''))].sort();
+  const pSel   = document.getElementById('filterPhase');
+  pSel.innerHTML = '<option value="all">All Phases</option>';
+  phases.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; pSel.appendChild(o); });
 }
 
+// NEW: Handles Quarter logic based on Year selection
 function updateQuarterDropdown() {
   const yr = document.getElementById('filterYear').value;
   const qSel = document.getElementById('filterQuarter');
@@ -1464,36 +1514,38 @@ function updateQuarterDropdown() {
 }
 
 function applyFilters() {
-  if(!_allRows) return;
-  const yr   = document.getElementById('filterYear').value;
-  const qtr  = document.getElementById('filterQuarter').value; 
-  const com  = document.getElementById('filterCommunity').value;
-  const ag   = document.getElementById('filterAgent').value;
-  const risk = document.getElementById('filterRisk').value;
-  const ph   = document.getElementById('filterPhase').value;
+  if(!_allRows) return;
+  const yr   = document.getElementById('filterYear').value;
+  const qtr  = document.getElementById('filterQuarter').value; 
+  const com  = document.getElementById('filterCommunity').value;
+  const ag   = document.getElementById('filterAgent').value;
+  const risk = document.getElementById('filterRisk').value;
+  const ph   = document.getElementById('filterPhase').value;
 
-  let filtered = _allRows;
-  if(yr   !== 'all') filtered = filtered.filter(r=>r._year === yr);
-  if(qtr  !== 'all') filtered = filtered.filter(r=>r._quarter === qtr); 
-  if(com  !== 'all') filtered = filtered.filter(r=>r.community === com);
-  if(ag   !== 'all') filtered = filtered.filter(r=>r.agentGroup === ag);
-  if(risk !== 'all') filtered = filtered.filter(r=>r.collectionRisk === risk);
-  if(ph   !== 'all') filtered = filtered.filter(r=>r.phase === ph);
+  let filtered = _allRows;
+  if(yr   !== 'all') filtered = filtered.filter(r=>r._year === yr);
+  if(qtr  !== 'all') filtered = filtered.filter(r=>r._quarter === qtr); 
+  if(com  !== 'all') filtered = filtered.filter(r=>r.community === com);
+  if(ag   !== 'all') filtered = filtered.filter(r=>r.agentGroup === ag);
+  if(risk !== 'all') filtered = filtered.filter(r=>r.collectionRisk === risk);
+  if(ph   !== 'all') filtered = filtered.filter(r=>r.phase === ph);
 
-  const isFiltered = (yr!=='all'||qtr!=='all'||com!=='all'||ag!=='all'||risk!=='all'||ph!=='all');
-  document.getElementById('resetBtn').style.display = isFiltered ? '' : 'none';
+  const isFiltered = (yr!=='all'||qtr!=='all'||com!=='all'||ag!=='all'||risk!=='all'||ph!=='all');
+  document.getElementById('resetBtn').style.display = isFiltered ? '' : 'none';
 
-  const total=_allRows.length, shown=filtered.length;
-  document.getElementById('filterCount').textContent = isFiltered
-    ? `Showing ${shown.toLocaleString()} of ${total.toLocaleString()} records`
-    : `${total.toLocaleString()} records`;
+  const total=_allRows.length, shown=filtered.length;
+  document.getElementById('filterCount').textContent = isFiltered
+    ? `Showing ${shown.toLocaleString()} of ${total.toLocaleString()} records`
+    : `${total.toLocaleString()} records`;
 
-  const analytics = computeAnalytics(filtered);
+  const analytics = computeAnalytics(filtered);
 
+  // NEW: Inject Quarterly Data for the Chart (retains all 4 quarters for visual context)
   analytics.currentYearFilter = yr;
   analytics.currentQtrFilter = qtr;
   
   if (yr !== 'all') {
+      // Re-filter but IGNORE the quarter filter so we can draw all 4 bars
       let yearBase = _allRows.filter(r => r._year === yr);
       if(com !== 'all') yearBase = yearBase.filter(r=>r.community === com);
       if(ag  !== 'all') yearBase = yearBase.filter(r=>r.agentGroup === ag);
@@ -1509,99 +1561,38 @@ function applyFilters() {
       analytics.quarterlyRev = [qRev['Q1'], qRev['Q2'], qRev['Q3'], qRev['Q4']];
   }
 
-  renderKPIs(analytics);
-  renderCharts(analytics);
-
-  // Predictive always uses the full unfiltered dataset for statistical validity
-  // Run async so it doesn't block the filter UI update
-  if(_lastAllRows) {
-    (async () => {
-      try {
-        const fa = computeAnalytics(_lastAllRows);
-        fa.currentYearFilter='all'; fa.currentQtrFilter='all';
-        const P = await computePredictiveAsync(fa, _lastAllRows);
-        renderPredictive(fa, P);
-      } catch(e) { telemetryError('Predictive (filter)', e); }
-    })();
-  }
+  renderKPIs(analytics);
+  renderCharts(analytics);
 }
-
 function resetFilters() {
-  ['filterYear','filterCommunity','filterAgent','filterRisk','filterPhase']
-    .forEach(id=>{ document.getElementById(id).value='all'; });
-  applyFilters();
+  ['filterYear','filterCommunity','filterAgent','filterRisk','filterPhase']
+    .forEach(id=>{ document.getElementById(id).value='all'; });
+  applyFilters();
 }
 
 /* =====================================================
    RENDER HELPERS — called with any row set
    ===================================================== */
-async function renderFromRows(rows, fromCache) {
-  _lastAllRows = rows;
+function renderFromRows(rows, fromCache) {
+  enrichData(rows); // Calculates Year/Quarter FIRST
+  populateFilters(rows); // Now filters will successfully see the years!
+  
+  const analytics = computeAnalytics(rows);
 
-  // ── Step 1: Enrich (date parsing) ─────────────────────
-  setLoaderSub('Enriching ' + rows.length.toLocaleString() + ' records…');
-  await yieldThread();
-  try { enrichData(rows); } catch(e) { telemetryError('enrichData', e); }
+  // BUG FIX: Explicitly tell the charts we are starting on 'All Years'
+  // so they draw the line chart correctly on the initial load without crashing!
+  analytics.currentYearFilter = 'all';
+  analytics.currentQtrFilter = 'all';
 
-  // ── Step 2: Build filter dropdowns ────────────────────
-  setLoaderSub('Building filters…');
-  await yieldThread();
-  try { populateFilters(rows); } catch(e) { telemetryError('populateFilters', e); }
-
-  // ── Step 3: Core analytics ────────────────────────────
-  setLoaderSub('Computing portfolio analytics…');
-  await yieldThread();
-  let analytics;
-  try {
-    analytics = computeAnalytics(rows);
-    analytics.currentYearFilter = 'all';
-    analytics.currentQtrFilter  = 'all';
-    window._lastAnalytics = analytics;
-  } catch(e) {
-    telemetryError('computeAnalytics', e);
-    analytics = { years:[], revByYear:[], unitsByYear:[], communities:[], commRevenue:[],
-      commUnits:[], commOutstanding:[], commYearMatrix:{}, propRevenue:[], propUnits:{},
-      agentGroups:[], agentGrpRev:[], agentGrpCnt:[], finishTypes:[], finishRev:[],
-      finishUnits:[], finishAvg:[], statusLabels:[], statusCounts:[], unitTypes:[],
-      unitTypeRevs:[], bedroomLabels:[], bedroomRevs:[], ppLabels:[], ppCounts:[],
-      totalRows:0, totalRev:0, totalPaid:0, totalOut:0, mortgageCount:0,
-      avgPctPaid:0, fullyPaidCnt:0, highRiskCnt:0, collBrackets:[], collBracketCounts:[],
-      mortgageByYear:[], cashByYear:[], paidByYear:[], outByYear:[], riskLabels:[],
-      riskCounts:[], riskRevs:[], riskOuts:[], buyerTypeLabels:[], buyerTypeCounts:[],
-      stateLabels:[], stateCounts:[], salLabels:[], salCounts:[], countries:0,
-      diaspora:0, crossStateCount:0, topStateName:'—', topStateCount:0, topNat:'—',
-      topNatCnt:0, phaseLabels:[], phaseRevs:[], phaseUnits:[], collectionsBook:0,
-      cagr:'—', latestAvgPrice:0, avgPricePerSqM:0, currentYearFilter:'all', currentQtrFilter:'all' };
-  }
-
-  // ── Step 4: Render KPIs (instant DOM writes) ──────────
-  setLoaderSub('Rendering KPIs…');
-  await yieldThread();
-  try { renderKPIs(analytics); } catch(e) { telemetryError('renderKPIs', e); }
-
-  // ── Step 5: Render charts (heaviest DOM work) ─────────
-  setLoaderSub('Drawing charts…');
-  await yieldThread();
-  try { renderCharts(analytics); } catch(e) { telemetryError('renderCharts', e); }
-
-  // ── Step 6: Predictive engine (most CPU-intensive) ────
-  // This step is deliberately deferred AFTER the dashboard is already visible.
-  // Users see the main data immediately; predictions load ~500ms later.
-  setLoaderSub('Running predictive models…');
-  await yieldThread();
-  try {
-    const P = await computePredictiveAsync(analytics, rows);
-    renderPredictive(analytics, P);
-  } catch(e) {
-    telemetryError('computePredictive', e);
-    // Show degraded state in predictive section rather than crashing
-    const warnEl = document.getElementById('pr-nextyear');
-    if(warnEl) warnEl.textContent = 'Model error';
-    showPredictiveError(e.message);
-  }
-
+  renderKPIs(analytics);
+  renderCharts(analytics);
+  // Predictive forecast runs ONCE on the full unfiltered dataset.
+  // Filtering by community/agent/risk for a revenue forecast is statistically
+  // meaningless, so we deliberately do NOT call this from applyFilters().
+  try { renderPredict(analytics, rows); } catch(e) { console.warn('[predict] render failed:', e); }
   updateFreshness(fromCache);
-  document.getElementById('filterCount').textContent = rows.length.toLocaleString() + ' records';
+  
+  document.getElementById('filterCount').textContent = rows.length.toLocaleString()+' records';
   document.getElementById('errorBar').classList.remove('show');
 }
 
@@ -1649,60 +1640,22 @@ async function loadData(forceRefresh=false) {
     showSyncStatus('Syncing…');
   }
 
-  // Serve localStorage cache immediately if available (stale-while-revalidate)
-  if (!forceRefresh && !_allRows) {
-    try {
-      const cached = localStorage.getItem(LS_CACHE_KEY);
-      const ts     = parseInt(localStorage.getItem(LS_TS_KEY) || '0');
-      if (cached && (Date.now() - ts) < 60 * 60 * 1000) { // 1hr cache
-        const rows = JSON.parse(cached);
-        if (rows && rows.length) {
-          _allRows = rows;
-          await renderFromRows(rows, true);
-          if (typeof window.onPostSync === 'function') window.onPostSync(rows);
-        }
-      }
-    } catch(ce) { /* cache miss — continue to live fetch */ }
-  }
-
   try {
+    // Fetch and combine all tabs using our new function
     const rows = await getLiveSheetData();
+    
     _allRows = rows;
+    renderFromRows(rows, false);
 
-    // Save to localStorage for offline/fast-reload fallback
-    try {
-      const s = JSON.stringify(rows);
-      if (s.length < LS_MAX_BYTES) {
-        localStorage.setItem(LS_CACHE_KEY, s);
-        localStorage.setItem(LS_TS_KEY, String(Date.now()));
-      }
-    } catch(se) { /* storage full — skip */ }
-
-    await renderFromRows(rows, false);
-    if (typeof window.onPostSync === 'function') window.onPostSync(rows);
-
+    // Flash the freshness label green briefly
     const fl = document.getElementById('freshness-label');
     if(fl) { fl.style.color='#27AE60'; setTimeout(()=>fl.style.color='',2000); }
 
   } catch(err) {
     console.error('[loadData]', err);
     const eb = document.getElementById('errorBar');
-    document.getElementById('errorMsg').textContent =
-      'Could not load data: ' + err.message + ' — check your connection or try Sync.';
+    document.getElementById('errorMsg').textContent = 'Could not load sheets: ' + err.message;
     eb.classList.add('show');
-
-    // Emergency fallback: render from cache even if fetch failed
-    if (!_allRows) {
-      try {
-        const cached = localStorage.getItem(LS_CACHE_KEY);
-        if (cached) {
-          const rows = JSON.parse(cached);
-          _allRows = rows;
-          await renderFromRows(rows, true);
-          if (typeof window.onPostSync === 'function') window.onPostSync(rows);
-        }
-      } catch(fe) { /* no cache available */ }
-    }
   } finally {
     loader.classList.add('hidden');
     syncBtn.classList.remove('spinning');
@@ -1724,18 +1677,6 @@ function showSection(name, btn) {
   const el = document.getElementById('section-'+name);
   if(el) el.classList.add('active');
   if(btn) btn.classList.add('active');
-}
-
-// signOut — delegates to dashboard-auth-28.js public API.
-// Called by the header user strip onclick and any inline onclick="signOut()".
-function signOut() {
-  if (window._authGate28 && window._authGate28.signOut) {
-    window._authGate28.signOut();
-  } else if (window._authGate && window._authGate.signOut) {
-    window._authGate.signOut();
-  } else {
-    location.reload();
-  }
 }
 
 /* =====================================================
@@ -1767,10 +1708,7 @@ async function downloadAIReport() {
         if (groqKey && groqKey.trim() !== "") {
             localStorage.setItem('GROQ_API_KEY', groqKey.trim());
         } else {
-            alert("Report generation cancelled. A Groq API Key is required.");
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-            return;
+            throw new Error("Report generation cancelled. A Groq API Key is required.");
         }
     }
 
@@ -1803,8 +1741,7 @@ Please write a structured, executive-level Performance Report tailored exactly t
            localStorage.removeItem('GROQ_API_KEY'); 
            throw new Error('Invalid API Key. The bad key has been deleted. Please click Download Report again to enter a valid Groq API Key.');
        }
-       const errText = await res.text();
-       throw new Error(`API Error ${res.status}: ${errText}`);
+       throw new Error('API Error - Status: ' + res.status);
     }
     
     const data = await res.json();
@@ -1842,636 +1779,508 @@ Please write a structured, executive-level Performance Report tailored exactly t
   }
 }
 
-
 /* =====================================================
-   PREDICTIVE ANALYTICS ENGINE
-   Models: OLS Regression, Confidence Bands, Collection
-   Recovery Scoring, Moving Average, Agent Composite Index,
-   Price Elasticity. Zero external APIs — pure mathematics.
+   PREDICTIVE INTELLIGENCE — Stage 1
+   OLS revenue forecast + ±1σ confidence band + insights.
+   Designed as a standalone module: takes the analytics
+   object from computeAnalytics() and writes to its own
+   DOM elements only. Safe to remove without touching the
+   rest of the dashboard.
    ===================================================== */
 
-/* ─── MATH PRIMITIVES ───────────────────────────────── */
-function olsRegression(xArr, yArr) {
-  // Ordinary Least Squares: y = a + b*x
-  // Returns {a, b, r2, sigma, predict(x)}
-  const n = xArr.length;
-  if (n < 2) return { a:0, b:0, r2:0, sigma:0, predict: x => 0 };
-  const xMean = xArr.reduce((s,v)=>s+v,0)/n;
-  const yMean = yArr.reduce((s,v)=>s+v,0)/n;
-  let ssXY=0, ssXX=0, ssTot=0;
-  for(let i=0;i<n;i++){
-    ssXY += (xArr[i]-xMean)*(yArr[i]-yMean);
-    ssXX += (xArr[i]-xMean)**2;
-    ssTot+= (yArr[i]-yMean)**2;
+// Ordinary Least Squares: y = a + b*x
+// Returns { a, b, r2, sigma, predict(x) }
+function olsRegression(xs, ys) {
+  const n = xs.length;
+  if (n < 2) return { a:0, b:0, r2:0, sigma:0, predict: () => 0 };
+  const xMean = xs.reduce((s,v) => s+v, 0) / n;
+  const yMean = ys.reduce((s,v) => s+v, 0) / n;
+  let sxy = 0, sxx = 0, sst = 0;
+  for (let i = 0; i < n; i++) {
+    sxy += (xs[i] - xMean) * (ys[i] - yMean);
+    sxx += (xs[i] - xMean) ** 2;
+    sst += (ys[i] - yMean) ** 2;
   }
-  const b = ssXX ? ssXY/ssXX : 0;
-  const a = yMean - b*xMean;
-  // Residuals & std error
-  const residuals = xArr.map((x,i)=>yArr[i]-(a+b*x));
-  const sse = residuals.reduce((s,r)=>s+r*r,0);
-  const sigma = Math.sqrt(sse/Math.max(n-2,1));
-  const r2 = ssTot ? Math.max(0, 1 - sse/ssTot) : 0;
+  const b = sxx ? sxy / sxx : 0;
+  const a = yMean - b * xMean;
+  const sse = xs.reduce((s, x, i) => s + (ys[i] - (a + b*x)) ** 2, 0);
+  const sigma = Math.sqrt(sse / Math.max(n - 2, 1));
+  const r2 = sst ? Math.max(0, 1 - sse / sst) : 0;
   return { a, b, r2, sigma, predict: x => a + b*x };
 }
 
-function movingAverage(arr, window) {
-  return arr.map((_,i) => {
-    const slice = arr.slice(Math.max(0,i-window+1), i+1);
-    return slice.reduce((s,v)=>s+v,0)/slice.length;
-  });
+function renderPredict(d, rows) {
+  // Forecast (uses analytics object only)
+  renderForecast(d);
+  // Velocity (uses analytics object only)
+  try { renderVelocity(d); } catch(e) { console.warn('[predict] velocity failed:', e); }
+  // Recovery (needs raw rows for per-row _out and _ppct)
+  try { renderRecovery(rows || []); } catch(e) { console.warn('[predict] recovery failed:', e); }
 }
 
-function pearsonCorr(xArr, yArr) {
-  const n = xArr.length;
-  if(n<2) return 0;
-  const xM = xArr.reduce((s,v)=>s+v,0)/n;
-  const yM = yArr.reduce((s,v)=>s+v,0)/n;
-  let num=0, dx=0, dy=0;
-  for(let i=0;i<n;i++){
-    num += (xArr[i]-xM)*(yArr[i]-yM);
-    dx  += (xArr[i]-xM)**2;
-    dy  += (yArr[i]-yM)**2;
+function renderForecast(d) {
+  if (!d || !d.years || d.years.length < 2) {
+    setText('pr-nextyear', '—');
+    setText('pr-nextyear-s', 'Need at least 2 years of data');
+    const n = document.getElementById('forecast-note');
+    if (n) n.textContent = 'Not enough historical data to fit a regression.';
+    return;
   }
-  return (dx&&dy) ? num/Math.sqrt(dx*dy) : 0;
-}
 
-function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-function linearInterp(x, x0, x1, y0, y1) {
-  if(x1===x0) return y0;
-  return y0 + (y1-y0)*(x-x0)/(x1-x0);
-}
+  // Use only years with positive revenue (drops empty year buckets)
+  const idx       = d.revByYear.map((v,i) => v > 0 ? i : -1).filter(i => i >= 0);
+  const histYears = idx.map(i => parseInt(d.years[i]));
+  const histRev   = idx.map(i => d.revByYear[i]);
 
-/* ─── PREDICTIVE MODELS ─────────────────────────────── */
-async function computePredictiveAsync(d, allRows) {
-  const P = {};
+  if (histYears.length < 2) {
+    setText('pr-nextyear', '—');
+    setText('pr-nextyear-s', 'Need at least 2 years with revenue');
+    return;
+  }
 
-  // ── 1. REVENUE FORECAST (OLS on annual series) ──────
-  const validYears = d.years.filter((y,i) => d.revByYear[i] > 0);
-  const validRevs  = validYears.map(y => d.revByYear[d.years.indexOf(y)]);
-  const xNorm = validYears.map(y => parseInt(y));   // raw year as x
-  const ols   = olsRegression(xNorm, validRevs);
-  P.ols       = ols;
-  const lastYr = parseInt(validYears[validYears.length-1] || new Date().getFullYear());
+  const model   = olsRegression(histYears, histRev);
+  const lastYr  = histYears[histYears.length - 1];
+  const lastRev = histRev[histRev.length - 1];
 
-  // Project +1, +2, +3
-  const proj = [1,2,3].map(k => ({
+  const projections = [1, 2, 3].map(k => ({
     year: lastYr + k,
-    base: Math.max(0, ols.predict(lastYr + k)),
-    bull: Math.max(0, ols.predict(lastYr + k) + ols.sigma),
-    bear: Math.max(0, ols.predict(lastYr + k) - ols.sigma),
+    base: Math.max(0, model.predict(lastYr + k)),
+    bull: Math.max(0, model.predict(lastYr + k) + model.sigma),
+    bear: Math.max(0, model.predict(lastYr + k) - model.sigma),
   }));
-  P.projections = proj;
-  P.r2 = ols.r2;
 
-  // Forecast chart data: historical + projection with confidence band
-  const forecastLabels = [...validYears, ...proj.map(p=>String(p.year))];
-  const forecastActual = [...validRevs,  ...proj.map(()=>null)];
-  const forecastBase   = [
-    ...validYears.map(y => ols.predict(parseInt(y))),
-    ...proj.map(p=>p.base)
-  ];
-  const forecastUpper  = [
-    ...validYears.map(y => ols.predict(parseInt(y)) + ols.sigma),
-    ...proj.map(p=>p.bull)
-  ];
-  const forecastLower  = [
-    ...validYears.map(y => Math.max(0,ols.predict(parseInt(y)) - ols.sigma)),
-    ...proj.map(p=>p.bear)
-  ];
-  P.forecastLabels  = forecastLabels;
-  P.forecastActual  = forecastActual;
-  P.forecastBase    = forecastBase;
-  P.forecastUpper   = forecastUpper;
-  P.forecastLower   = forecastLower;
+  // ── KPI cards ──────────────────────────────────────────────────────────
+  setText('pr-nextyear', fB(projections[0].base));
+  setText('pr-nextyear-s',
+    'Bull ' + fB(projections[0].bull) + ' · Bear ' + fB(projections[0].bear));
+  setText('pr-r2', (model.r2 * 100).toFixed(0) + '%');
+  setText('pr-cagr2', d.cagr || '—');
 
-  // ── 2. PRICE APPRECIATION per community ─────────────
-  await yieldThread();
-  P.priceForecasts = {};
-  const projYrLabels = [...d.years, ...proj.map(p=>String(p.year))];
-  // PRE-INDEX: build comm+year lookup once (O(n) instead of O(n×comms×years))
-  const commYearCount = {};
-  allRows.forEach(r => {
-    if(!r.community||!r._year) return;
-    const key = r.community + '|' + r._year;
-    commYearCount[key] = (commYearCount[key]||0) + 1;
-  });
-
-  d.communities.forEach(comm => {
-    const cYears = d.years.filter(y => (d.commYearMatrix[comm]?.[y]||0) > 0);
-    if(cYears.length < 2) return;
-    const cUnitsByYear = cYears.map(y => commYearCount[comm+'|'+y]||0);
-    const cAvgPrice = cYears.map((y,i) => {
-      const rev = d.commYearMatrix[comm][y] || 0;
-      const u   = cUnitsByYear[i] || 1;
-      return rev / u;
-    });
-    const cOls = olsRegression(cYears.map(y=>parseInt(y)), cAvgPrice);
-    P.priceForecasts[comm] = projYrLabels.map(y => Math.max(0, cOls.predict(parseInt(y))));
-  });
-  P.priceProjectionLabels = projYrLabels;
-
-  // ── 3. COLLECTION RECOVERY MODEL ────────────────────
-  await yieldThread();
-  // Assign recovery probability per risk tier based on empirical % paid distributions
-  // p(recovery) = f(currentPctPaid, tier)
-  // We model each tier's likely recovery path as a probability-weighted expected value
-  const RECOVERY_PROB = {
-    'Collected':       { prob: 0.99, monthsToClose: 0  },
-    'Near Completion': { prob: 0.92, monthsToClose: 3  },
-    'Low Risk':        { prob: 0.78, monthsToClose: 6  },
-    'Medium Risk':     { prob: 0.52, monthsToClose: 12 },
-    'High Risk':       { prob: 0.22, monthsToClose: 20 },
-  };
-  // Default for unmapped rows: score from pctPaid linearly
-  function recProb(row) {
-    const tier = row.collectionRisk;
-    if(RECOVERY_PROB[tier]) return RECOVERY_PROB[tier].prob;
-    const p = row._ppct / 100;
-    // Logistic-style scoring: high % paid = high prob
-    return clamp(1 / (1 + Math.exp(-8*(p-0.5))), 0.05, 0.99);
+  const r2Badge = document.getElementById('pr-r2-badge');
+  if (r2Badge) {
+    r2Badge.textContent = 'R²=' + (model.r2 * 100).toFixed(0) + '%';
+    r2Badge.className   = 'badge ' + (model.r2 > 0.7 ? 'bgrn' : model.r2 > 0.4 ? 'bg_' : 'br');
   }
 
-  // Per-tier outstanding and expected recovery
-  const tierData = {};
-  const riskTiers = ['Collected','Near Completion','Low Risk','Medium Risk','High Risk'];
-  riskTiers.forEach(t => {
-    const tRows = allRows.filter(r => r.collectionRisk === t && r._out > 0);
-    const outstanding = tRows.reduce((s,r)=>s+r._out,0);
-    const expected    = tRows.reduce((s,r)=>s+r._out*recProb(r),0);
-    tierData[t] = { outstanding, expected, count: tRows.length };
-  });
-  // For rows with no risk tier, use pctPaid model
-  const unmapped = allRows.filter(r => (!r.collectionRisk||r.collectionRisk==='') && r._out > 0);
-  const unmappedOut = unmapped.reduce((s,r)=>s+r._out,0);
-  const unmappedExp = unmapped.reduce((s,r)=>s+r._out*recProb(r),0);
+  // ── Forecast chart ─────────────────────────────────────────────────────
+  const allLabels = [...histYears.map(String), ...projections.map(p => String(p.year))];
+  const actuals   = [...histRev, null, null, null];
+  const trendLine = [
+    ...histYears.map(y => model.predict(y)),
+    ...projections.map(p => p.base),
+  ];
+  const upperBand = [
+    ...histYears.map(y => model.predict(y) + model.sigma),
+    ...projections.map(p => p.bull),
+  ];
+  const lowerBand = [
+    ...histYears.map(y => Math.max(0, model.predict(y) - model.sigma)),
+    ...projections.map(p => p.bear),
+  ];
 
-  P.tierData = tierData;
-  P.totalRecoverable = Object.values(tierData).reduce((s,t)=>s+t.expected,0) + unmappedExp;
-  P.totalAtRisk      = (tierData['High Risk']?.outstanding||0) + (tierData['Medium Risk']?.outstanding||0)*0.5;
-  P.recoveryLabels   = riskTiers.filter(t=>tierData[t]?.outstanding>0);
-  P.recoveryOut      = P.recoveryLabels.map(t=>tierData[t].outstanding);
-  P.recoveryExp      = P.recoveryLabels.map(t=>tierData[t].expected);
-  P.recoveryLoss     = P.recoveryLabels.map((t,i)=>P.recoveryOut[i]-P.recoveryExp[i]);
-
-  // 24-month recovery timeline: weighted by months-to-close
-  const months = Array.from({length:24},(_,i)=>i+1);
-  let cumulativeRecovered = 0;
-  P.resolutionData = months.map(m => {
-    // Each tier contributes proportionally as its months-to-close passes
-    let addedThisMonth = 0;
-    riskTiers.forEach(t => {
-      const cfg = RECOVERY_PROB[t];
-      if(!cfg || !tierData[t]) return;
-      const mtc = cfg.monthsToClose || 1;
-      if(m === mtc) addedThisMonth += tierData[t].expected;
-      else if(mtc===0 && m===1) addedThisMonth += tierData[t].expected;
-    });
-    cumulativeRecovered += addedThisMonth;
-    return cumulativeRecovered;
-  });
-
-  // ── 4. MOVING AVERAGE & DEMAND VELOCITY ─────────────
-  await yieldThread();
-  P.mavgLabels = d.years;
-  P.mavg3yr    = movingAverage(d.unitsByYear, 3);
-  P.mavg2yr    = movingAverage(d.unitsByYear, 2);
-  P.unitsByYear= d.unitsByYear;
-
-  // Velocity score: compare last 2 years vs prior 2 years per community
-  // Score = (recent avg / prior avg) * 100. 100 = flat, >100 = accelerating
-  // Use the pre-built commYearCount index (built above in model 2)
-  P.velocityScores = {};
-  d.communities.forEach(comm => {
-    const n = d.years.length;
-    if(n < 4) { P.velocityScores[comm] = 100; return; }
-    const recentYrs = d.years.slice(-2);
-    const priorYrs  = d.years.slice(-4,-2);
-    const recentAvg = recentYrs.reduce((s,y)=>s+(commYearCount[comm+'|'+y]||0),0) / 2;
-    const priorAvg  = priorYrs.reduce((s,y)=>s+(commYearCount[comm+'|'+y]||0),0) / 2;
-    P.velocityScores[comm] = priorAvg > 0 ? Math.round((recentAvg/priorAvg)*100) : 100;
-  });
-
-  // Demand trend signal: slope of 3yr MA
-  const maSlope = P.mavg3yr.length > 1
-    ? P.mavg3yr[P.mavg3yr.length-1] - P.mavg3yr[Math.max(0,P.mavg3yr.length-3)]
-    : 0;
-  P.demandTrend = maSlope > 2 ? 'Accelerating ▲' : maSlope < -2 ? 'Decelerating ▼' : 'Stable →';
-  P.demandTrendDir = maSlope > 2 ? 'up' : maSlope < -2 ? 'dn' : 'flat';
-
-  // ── 5. AGENT COMPOSITE SCORE ─────────────────────────
-  await yieldThread();
-  // Score = 0.40 × Revenue_efficiency + 0.35 × Collection_health + 0.25 × Trend_momentum
-  // All sub-scores normalised 0–100
-  // PRE-INDEX: group rows by agent once instead of re-filtering per agent
-  const agentRowMap = {};
-  allRows.forEach(r => {
-    if(!r.dealingAgent||r.dealingAgent==='') return;
-    (agentRowMap[r.dealingAgent] = agentRowMap[r.dealingAgent]||[]).push(r);
-  });
-  const agentGroups_ = Object.keys(agentRowMap);
-  const agentScores  = [];
-  const avgRevPerUnit = d.totalRev / Math.max(d.totalRows,1);
-  const avgCollRate   = d.avgPctPaid / 100;
-
-  agentGroups_.forEach(ag => {
-    const agRows = agentRowMap[ag];
-    if(agRows.length < 2) return; // too small a sample
-    const rev   = agRows.reduce((s,r)=>s+r._sp,0);
-    const revPerUnit = rev / agRows.length;
-    const collRate   = agRows.filter(r=>r._ppct>0).reduce((s,r,_,a)=>s+r._ppct/a.length,0)/100;
-    // Trend: compare last half of years vs first half
-    const agYears = [...new Set(agRows.map(r=>r._year).filter(Boolean))].sort();
-    let trendScore = 50;
-    if(agYears.length >= 4) {
-      const half = Math.floor(agYears.length/2);
-      const early = agYears.slice(0,half).reduce((s,y)=>s+agRows.filter(r=>r._year===y).length,0)/half;
-      const late  = agYears.slice(-half).reduce((s,y)=>s+agRows.filter(r=>r._year===y).length,0)/half;
-      trendScore  = early>0 ? clamp((late/early)*50, 0, 100) : 50;
+  mkChart('c-forecast', {
+    type: 'line',
+    data: {
+      labels: allLabels,
+      datasets: [
+        // Upper bound (transparent line, fills DOWN to next dataset → tinted band)
+        { label: 'Upper bound', data: upperBand.map(v => +(v/1e9).toFixed(2)),
+          borderColor: 'transparent', backgroundColor: 'rgba(192,57,43,0.10)',
+          fill: '+1', tension: 0.4, pointRadius: 0 },
+        // Trend line (dashed)
+        { label: 'OLS Trend', data: trendLine.map(v => +(v/1e9).toFixed(2)),
+          borderColor: 'rgba(192,57,43,0.55)', borderWidth: 2, borderDash: [6,3],
+          tension: 0.4, pointRadius: 0, fill: false },
+        // Lower bound (transparent line, completes the band)
+        { label: 'Lower bound', data: lowerBand.map(v => +(v/1e9).toFixed(2)),
+          borderColor: 'transparent', backgroundColor: 'rgba(192,57,43,0.10)',
+          fill: false, tension: 0.4, pointRadius: 0 },
+        // Actual revenue points
+        { label: 'Actual Revenue', data: actuals.map(v => v !== null ? +(v/1e9).toFixed(2) : null),
+          borderColor: C.red, backgroundColor: 'rgba(192,57,43,0.06)',
+          fill: false, tension: 0.4, borderWidth: 2.5,
+          pointBackgroundColor: C.red, pointRadius: 4, pointHoverRadius: 6 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'top',
+          labels: { font: { size: 10 }, boxWidth: 9, boxHeight: 9,
+            filter: item => item.text !== 'Upper bound' && item.text !== 'Lower bound' } },
+        tooltip: { callbacks: { label: c => c.dataset.label + ': ₦' + c.parsed.y.toFixed(1) + 'B' } }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(0,0,0,0.04)' } },
+        y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v => '₦' + v + 'B' } }
+      }
     }
-    const revScore  = clamp((revPerUnit/avgRevPerUnit)*50, 0, 100);
-    const collScore = clamp(collRate*100, 0, 100);
-    const composite = 0.40*revScore + 0.35*collScore + 0.25*trendScore;
-    agentScores.push({ name:ag, score:composite, rev, units:agRows.length, collRate:collRate*100 });
-  });
-  agentScores.sort((a,b)=>b.score-a.score);
-  P.agentScores = agentScores.slice(0,12);
-
-  // ── 6. PRICE ELASTICITY SIGNAL ───────────────────────
-  await yieldThread();
-  // Correlation between avg price changes and unit volume changes year-on-year
-  const priceDelta  = d.avgPriceByYear.slice(1).map((v,i) => v - d.avgPriceByYear[i]);
-  const volumeDelta = d.unitsByYear.slice(1).map((v,i) => v - d.unitsByYear[i]);
-  P.elasticityCorr = pearsonCorr(priceDelta, volumeDelta);
-
-  // Scatter data: price vs units per year
-  P.elasticityX = d.avgPriceByYear.map(v=>+(v/1e6).toFixed(1)); // ₦M
-  P.elasticityY = d.unitsByYear;
-  P.elasticityYears = d.years;
-
-  // Price bands per community: find ₦ range with highest absorption
-  P.priceBands = {};
-  d.communities.forEach(comm => {
-    const cRows = allRows.filter(r=>r.community===comm&&r._sp>0);
-    if(!cRows.length) return;
-    const prices = cRows.map(r=>r._sp).sort((a,b)=>a-b);
-    const q1 = prices[Math.floor(prices.length*0.25)];
-    const q3 = prices[Math.floor(prices.length*0.75)];
-    const median = prices[Math.floor(prices.length*0.5)];
-    P.priceBands[comm] = { q1, q3, median, count: cRows.length };
   });
 
-  // ── 7. STRATEGIC INSIGHTS (rule-based from model outputs) ──
+  const noteEl = document.getElementById('forecast-note');
+  if (noteEl) {
+    noteEl.textContent =
+      'OLS linear model fitted on ' + histYears.length + ' years of actuals. ' +
+      'R²=' + (model.r2 * 100).toFixed(0) + '% — model explains ' +
+      (model.r2 * 100).toFixed(0) + '% of revenue variance. ' +
+      'Shaded band = ±1 standard deviation. Projections assume no structural break.';
+  }
+
+  // ── Insights panel ─────────────────────────────────────────────────────
   const insights = [];
-  // Revenue forecast insight
-  const baseNext = proj[0]?.base||0;
-  const lastRev2 = validRevs[validRevs.length-1]||0;
-  const revGrowth = lastRev2>0 ? ((baseNext-lastRev2)/lastRev2*100).toFixed(0) : 0;
-  if(revGrowth > 15) insights.push({ico:'📈',title:'Strong revenue growth trajectory', sub:`OLS model projects ${revGrowth}% growth next year (₦${(baseNext/1e9).toFixed(1)}B). Capitalise by accelerating launch pipeline.`, type:'high'});
-  else if(revGrowth < 0) insights.push({ico:'⚠️',title:'Revenue deceleration signal', sub:`Model projects ${Math.abs(revGrowth)}% contraction. Consider re-pricing slower-moving stock or activating dormant agent channels.`, type:'low'});
-  else insights.push({ico:'📊',title:'Steady-state revenue outlook', sub:`Projected growth of ${revGrowth}% aligns with historical trend. Focus on margin optimisation rather than volume expansion.`, type:'med'});
+  const nextRev    = projections[0].base;
+  const growthPct  = lastRev > 0 ? ((nextRev - lastRev) / lastRev * 100) : 0;
+  const growthStr  = growthPct.toFixed(0);
 
-  // Collection risk insight
-  const hrOut = tierData['High Risk']?.outstanding||0;
-  const mrOut = tierData['Medium Risk']?.outstanding||0;
-  if(hrOut > 5e8) insights.push({ico:'🔴',title:`₦${(hrOut/1e9).toFixed(1)}B in high-risk receivables`, sub:`${tierData['High Risk']?.count||0} units below 25% paid. Recovery probability: ~22%. Recommend dedicated collections task force and legal escalation review.`, type:'low'});
-  if(P.totalRecoverable > d.totalOut*0.6) insights.push({ico:'💰',title:'Receivables largely recoverable', sub:`Model estimates ${((P.totalRecoverable/d.totalOut)*100).toFixed(0)}% of outstanding (₦${(P.totalRecoverable/1e9).toFixed(1)}B) is probability-weighted recoverable within 24 months.`, type:'high'});
+  if (growthPct > 15) {
+    insights.push({ ico: '📈', type: 'high',
+      title: 'Strong revenue growth projected',
+      sub: 'OLS model projects ' + growthStr + '% growth next year (' + fB(nextRev) +
+           '). Consider accelerating launch pipeline to capture momentum.' });
+  } else if (growthPct < -5) {
+    insights.push({ ico: '⚠️', type: 'low',
+      title: 'Revenue contraction signal',
+      sub: 'Model projects a ' + Math.abs(parseFloat(growthStr)) +
+           '% decline. Review pricing, channel mix, and product pipeline.' });
+  } else {
+    insights.push({ ico: '📊', type: 'med',
+      title: 'Steady-state revenue outlook',
+      sub: 'Projected growth of ' + growthStr + '% aligns with historical trend. ' +
+           'Focus on margin optimisation rather than volume expansion.' });
+  }
 
-  // Demand velocity insight
-  const topVel = Object.entries(P.velocityScores).sort((a,b)=>b[1]-a[1])[0];
-  const botVel = Object.entries(P.velocityScores).sort((a,b)=>a[1]-b[1])[0];
-  if(topVel) insights.push({ico:'🏘️',title:`${topVel[0]} is your fastest-growing community`, sub:`Velocity index: ${topVel[1]} (recent 2yr vs prior 2yr, base=100). Prioritise inventory allocation and pricing power here.`, type:'high'});
-  if(botVel && botVel[1] < 80) insights.push({ico:'📉',title:`${botVel[0]} showing demand softness`, sub:`Velocity index: ${botVel[1]}. Recent absorption is slowing. Review pricing, product mix, or channel activation in this community.`, type:'low'});
+  if (model.r2 > 0.7) {
+    insights.push({ ico: '🎯', type: 'high',
+      title: 'High-confidence forecast',
+      sub: 'R²=' + (model.r2 * 100).toFixed(0) +
+           '%. The linear trend explains most of the variance — projection is dependable for short-term planning.' });
+  } else if (model.r2 < 0.4) {
+    insights.push({ ico: '🌀', type: 'med',
+      title: 'Forecast confidence is limited',
+      sub: 'R²=' + (model.r2 * 100).toFixed(0) +
+           '%. Historical revenue is volatile relative to the trend — treat projections as one of several scenarios, not as a single point estimate.' });
+  }
 
-  // Elasticity insight
-  if(P.elasticityCorr < -0.5) insights.push({ico:'💹',title:'Price-sensitive demand detected', sub:`Pearson correlation = ${P.elasticityCorr.toFixed(2)}: volume falls when price rises. Aggressive pricing may suppress absorption. Recommend value-add over price increases.`, type:'med'});
-  else if(P.elasticityCorr > 0.3) insights.push({ico:'🎯',title:'Demand quality signal: buyers upgrade with price', sub:`Positive price-volume correlation (r=${P.elasticityCorr.toFixed(2)}) suggests aspirational buyer base. Premium positioning sustainable.`, type:'high'});
+  // Bull vs bear spread as an uncertainty signal
+  const spread    = projections[0].bull - projections[0].bear;
+  const spreadPct = nextRev > 0 ? (spread / nextRev * 100).toFixed(0) : 0;
+  if (spreadPct > 60) {
+    insights.push({ ico: '🌊', type: 'med',
+      title: 'Wide forecast band',
+      sub: 'Bull/bear spread is ' + spreadPct + '% of base projection. ' +
+           'Plan for scenarios rather than a single number — secure the bear-case downside before committing to bull-case spend.' });
+  }
 
-  P.insights = insights.slice(0,5);
-
-  return P;
+  const insEl = document.getElementById('strategy-insights');
+  if (!insEl) return;
+  insEl.innerHTML = '';
+  insights.forEach(ins => {
+    const bg  = ins.type === 'high' ? '#EAFAF1' : ins.type === 'low' ? '#FDECEA' : '#FEF9E7';
+    const bdr = ins.type === 'high' ? '#A9DFBF' : ins.type === 'low' ? '#F5B7B1' : '#FAD7A0';
+    insEl.innerHTML += `
+      <div style="background:${bg};border:1px solid ${bdr};border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start">
+        <div style="font-size:18px;flex-shrink:0;margin-top:1px">${ins.ico}</div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">${ins.title}</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.45">${ins.sub}</div>
+        </div>
+      </div>`;
+  });
 }
 
-/* ─── PREDICTIVE RENDERERS ──────────────────────────── */
-function renderPredictive(d, P) {
-  const C = {red:'#C0392B',red2:'#E74C3C',red3:'#F5B7B1',blue:'#2980B9',green:'#27AE60',
-             purple:'#8E44AD',orange:'#D35400',teal:'#16A085',amber:'#F39C12',gray:'#7F8C8D'};
+/* =====================================================
+   DEMAND VELOCITY — Moving averages + community scores
+   ===================================================== */
+function renderVelocity(d) {
+  if (!d || !d.years || d.years.length < 2) return;
 
-  // KPI updates
-  const proj = P.projections;
-  setText('pr-nextyear', proj[0] ? fB(proj[0].base) : '—');
-  setText('pr-nextyear-s', proj[0] ? `Bull: ${fB(proj[0].bull)} · Bear: ${fB(proj[0].bear)}` : 'Insufficient data');
-  setText('pr-r2', (P.r2*100).toFixed(0)+'%');
-  setText('pr-recovery', fB(P.totalRecoverable));
-  setText('pr-recovery-s', 'Probability-weighted, 24-month horizon');
-  const n_ = d.years.length;
-  const firstAvg = d.avgPriceByYear?.find(v=>v>0)||0;
-  const lastAvg  = d.avgPriceByYear?.[d.avgPriceByYear.length-1]||0;
-  const pcagr = n_>1&&firstAvg>0 ? ((Math.pow(lastAvg/firstAvg,1/(n_-1))-1)*100).toFixed(1)+'%' : '—';
-  setText('pr-pcagr', pcagr);
-  setText('pr-demtrend', P.demandTrend);
-  setText('pr-revatrisk', fB(P.totalAtRisk));
-  const r2Badge = document.getElementById('pr-r2-badge');
-  if(r2Badge) { r2Badge.textContent = `R²=${(P.r2*100).toFixed(0)}%`; r2Badge.className='pred-badge '+(P.r2>0.7?'pb-high':P.r2>0.4?'pb-med':'pb-low'); }
+  // ── 3-year moving average ──────────────────────────────────────────────
+  const movAvg = (arr, w) => arr.map((_, i) => {
+    const sl = arr.slice(Math.max(0, i - w + 1), i + 1);
+    return sl.reduce((s, v) => s + v, 0) / sl.length;
+  });
+  const ma3 = movAvg(d.unitsByYear, 3);
+  const ma2 = movAvg(d.unitsByYear, 2);
 
-  // Scenario cards
-  ['bull','base','bear'].forEach(s => {
-    proj.forEach((p,k)=>{
-      const el1 = document.getElementById(`sc-${s}-${k+1}`);
-      if(el1) el1.textContent = fB(p[s]);
-      const el1s = document.getElementById(`sc-${s}-${k+1}s`);
-      if(el1s) el1s.textContent = String(p.year);
+  // Demand trend signal: slope of the 3yr MA (last vs 3 periods back)
+  const slope = ma3.length >= 3
+    ? ma3[ma3.length - 1] - ma3[Math.max(0, ma3.length - 3)]
+    : 0;
+  const trendLabel = slope > 2 ? 'Accelerating ▲' : slope < -2 ? 'Decelerating ▼' : 'Stable →';
+  setText('vel-trend', trendLabel);
+  setText('vel-trend-s', '3-yr MA slope: ' + (slope > 0 ? '+' : '') + slope.toFixed(1) + ' units');
+
+  // Last year units & change
+  const lastIdx  = d.unitsByYear.length - 1;
+  const lastU    = d.unitsByYear[lastIdx] || 0;
+  const priorU   = d.unitsByYear[lastIdx - 1] || 0;
+  const pctChg   = priorU > 0 ? ((lastU - priorU) / priorU * 100) : 0;
+  setText('vel-lastyr', lastU.toLocaleString() + ' units');
+  setText('vel-lastyr-s', priorU > 0
+    ? (pctChg >= 0 ? '+' : '') + pctChg.toFixed(0) + '% vs ' + d.years[lastIdx - 1] + ' (' + priorU + ')'
+    : '—');
+
+  // ── Per-community velocity (recent 2yr / prior 2yr × 100) ──────────────
+  // Uses ACTUAL UNIT COUNTS from commYearUnits — not revenue — so price
+  // inflation doesn't mask unit-volume changes.
+  const velScores = [];
+  if (d.years.length >= 4 && d.commYearUnits) {
+    const recentYrs = d.years.slice(-2);
+    const priorYrs  = d.years.slice(-4, -2);
+    (d.communities || []).forEach(comm => {
+      const recent = recentYrs.reduce((s, y) => s + (d.commYearUnits[comm]?.[y] || 0), 0) / 2;
+      const prior  = priorYrs.reduce((s, y) => s + (d.commYearUnits[comm]?.[y] || 0), 0) / 2;
+      // Require at least some prior activity to compute a meaningful score
+      if (prior <= 0) return;
+      const score = Math.round((recent / prior) * 100);
+      velScores.push({ comm, score, recent, prior });
     });
-  });
+    velScores.sort((a, b) => b.score - a.score);
+  }
 
-  // ── Forecast chart ──
-  mkChart('c-forecast', {
-    type:'line',
-    data:{
-      labels: P.forecastLabels,
-      datasets:[
-        { label:'Upper bound', data: P.forecastUpper.map(v=>+(v/1e9).toFixed(2)),
-          borderColor:'transparent', backgroundColor:'rgba(192,57,43,0.12)',
-          fill:'+1', tension:0.4, pointRadius:0 },
-        { label:'OLS Trend', data: P.forecastBase.map(v=>+(v/1e9).toFixed(2)),
-          borderColor:'rgba(192,57,43,0.6)', borderWidth:2, borderDash:[6,3],
-          tension:0.4, pointRadius:0, fill:false },
-        { label:'Lower bound', data: P.forecastLower.map(v=>+(v/1e9).toFixed(2)),
-          borderColor:'transparent', backgroundColor:'rgba(192,57,43,0.12)',
-          fill:false, tension:0.4, pointRadius:0 },
-        { label:'Actual Revenue', data: P.forecastActual.map(v=>v!==null?+(v/1e9).toFixed(2):null),
-          borderColor:C.red, backgroundColor:'rgba(192,57,43,0.07)',
-          fill:false, tension:0.4, borderWidth:2.5,
-          pointBackgroundColor:C.red, pointRadius:4, pointHoverRadius:6 },
+  // Top community KPI
+  if (velScores.length) {
+    setText('vel-top', velScores[0].comm.length > 16
+      ? velScores[0].comm.slice(0, 15) + '…'
+      : velScores[0].comm);
+    setText('vel-top-s', 'Velocity ' + velScores[0].score + ' (base 100)');
+  } else {
+    setText('vel-top', '—');
+    setText('vel-top-s', 'Need 4+ years per community');
+  }
+
+  // ── Moving-average chart ───────────────────────────────────────────────
+  mkChart('c-mavg', {
+    type: 'bar',
+    data: {
+      labels: d.years,
+      datasets: [
+        { label: 'Annual Units', data: d.unitsByYear,
+          backgroundColor: 'rgba(192,57,43,0.15)', borderRadius: 4, borderSkipped: false },
+        { label: '3-yr MA', data: ma3.map(v => +v.toFixed(1)),
+          type: 'line', borderColor: C.red, backgroundColor: 'transparent',
+          borderWidth: 2.5, tension: 0.4, pointRadius: 3 },
+        { label: '2-yr MA', data: ma2.map(v => +v.toFixed(1)),
+          type: 'line', borderColor: C.blue, backgroundColor: 'transparent',
+          borderWidth: 1.5, borderDash: [4, 2], tension: 0.4, pointRadius: 0 },
       ]
     },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},
-        tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'top',
+          labels: { font: { size: 10 }, boxWidth: 9, boxHeight: 9 } },
+        tooltip: { callbacks: { label: c => c.dataset.label + ': ' + c.parsed.y.toFixed(1) + ' units' } }
       },
-      scales:{
-        x:{grid:{color:'rgba(0,0,0,0.04)'}},
-        y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}
+      scales: {
+        x: { grid: { display: false } },
+        y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v => v + ' u' } }
       }
     }
   });
 
-  const fnEl = document.getElementById('forecast-note');
-  if(fnEl) fnEl.textContent = `OLS linear model fitted on ${P.forecastActual.filter(v=>v!==null).length} years of actuals. R²=${(P.r2*100).toFixed(0)}% explains ${(P.r2*100).toFixed(0)}% of revenue variance. Shaded band = ±1 standard deviation. Projections assume no structural break.`;
+  // ── Velocity bars ──────────────────────────────────────────────────────
+  const velEl = document.getElementById('vel-bars');
+  if (!velEl) return;
+  velEl.innerHTML = '';
+  if (!velScores.length) {
+    velEl.innerHTML = '<p style="color:var(--text3);font-size:11px;margin-top:8px">Need at least 4 years of revenue per community to compute velocity. Add more historical data to see scores here.</p>';
+    return;
+  }
+  velScores.forEach(({ comm, score }) => {
+    const col   = score > 110 ? C.green : score > 90 ? C.amber : C.red;
+    const label = score > 110 ? 'Accelerating' : score > 90 ? 'Stable' : 'Slowing';
+    velEl.innerHTML += `
+      <div class="sl-row">
+        <div class="sl-lbl">${comm}</div>
+        <div class="sl-bw"><div class="sl-bf" style="width:${Math.min(100, score/150*100).toFixed(0)}%;background:${col}"></div></div>
+        <div class="sl-val">${score} <span style="color:${col};font-size:9px">${label}</span></div>
+      </div>`;
+  });
+}
 
-  // ── Price forecast chart ──
-  const topCommsP = d.communities
-    .map((c,i)=>({c,r:d.commRevenue[i]}))
-    .sort((a,b)=>b.r-a.r).slice(0,4).map(x=>x.c);
-  const commPColors = [C.red,C.blue,C.green,C.purple];
-  mkChart('c-priceforecast',{
-    type:'line',
-    data:{
-      labels: P.priceProjectionLabels,
-      datasets: topCommsP.map((comm,i)=>({
-        label: comm,
-        data: P.priceForecasts[comm]?.map(v=>+(v/1e6).toFixed(1))||[],
-        borderColor: commPColors[i],
-        backgroundColor:'transparent',
-        borderWidth: 2,
-        borderDash: P.priceProjectionLabels.map((y,_)=>
-          parseInt(y) > parseInt(d.years[d.years.length-1]) ? [5,3] : []
-        )[0] || [],
-        tension:0.4, pointRadius:3,
-        segment:{ borderDash: ctx => {
-          const lbl = P.priceProjectionLabels[ctx.p1DataIndex];
-          return parseInt(lbl)>parseInt(d.years[d.years.length-1]) ? [5,3] : undefined;
-        }}
-      }))
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},
-        tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'M/unit'}}
-      },
-      scales:{
-        x:{grid:{color:'rgba(0,0,0,0.04)'}},
-        y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'M'}}
-      }
-    }
+
+/* =====================================================
+   COLLECTION RECOVERY — Probability-weighted receivables
+   Tiers derived from % Paid when Collection_Risk column
+   is not available in the sheet.
+   ===================================================== */
+function renderRecovery(rows) {
+  if (!rows || !rows.length) return;
+
+  // ── Fallback tier derivation from % paid ───────────────────────────────
+  // If the sheet ever gains a Collection_Risk column, the inline value wins;
+  // otherwise we derive from r._ppct using the rules below.
+  function deriveTier(r) {
+    if (r.collectionRisk && String(r.collectionRisk).trim() !== '') return r.collectionRisk;
+    const p = r._ppct || 0;
+    if (p >= 100) return 'Collected';
+    if (p >= 75)  return 'Near Completion';
+    if (p >= 50)  return 'Low Risk';
+    if (p >= 25)  return 'Medium Risk';
+    return 'High Risk';
+  }
+
+  // Recovery probability per tier (empirically reasonable defaults)
+  const RPROB = {
+    'Collected':       0.99,
+    'Near Completion': 0.92,
+    'Low Risk':        0.78,
+    'Medium Risk':     0.52,
+    'High Risk':       0.22,
+  };
+  // Months-to-resolve (used for the timeline chart)
+  const RMTHS = {
+    'Collected':       0,
+    'Near Completion': 3,
+    'Low Risk':        6,
+    'Medium Risk':     12,
+    'High Risk':       20,
+  };
+
+  const tierOrder = ['Collected','Near Completion','Low Risk','Medium Risk','High Risk'];
+  const tierData  = Object.fromEntries(tierOrder.map(t => [t, { out:0, exp:0, cnt:0 }]));
+
+  // Track whether tiers actually came from a real Collection_Risk column
+  // (so we can update the badge to be accurate)
+  let realRiskCol = 0;
+  let derivedRiskCol = 0;
+
+  rows.forEach(r => {
+    if (!(r._out > 0)) return;
+    const t = deriveTier(r);
+    if (!tierData[t]) return;
+    tierData[t].out += r._out;
+    tierData[t].exp += r._out * RPROB[t];
+    tierData[t].cnt += 1;
+    if (r.collectionRisk && String(r.collectionRisk).trim() !== '') realRiskCol++;
+    else derivedRiskCol++;
   });
 
-  // ── Recovery chart ──
-  mkChart('c-recovery',{
-    type:'bar',
-    data:{
-      labels: P.recoveryLabels,
-      datasets:[
-        { label:'Expected Recovery', data:P.recoveryExp.map(v=>+(v/1e9).toFixed(2)),
-          backgroundColor:'#27AE60', borderRadius:4, borderSkipped:false },
-        { label:'At Risk (irrecoverable)', data:P.recoveryLoss.map(v=>+(v/1e9).toFixed(2)),
-          backgroundColor:'rgba(192,57,43,0.35)', borderRadius:4, borderSkipped:false },
+  // Update badge to reflect actual data source
+  const badge = document.getElementById('rec-tier-source');
+  if (badge) {
+    if (realRiskCol > derivedRiskCol) {
+      badge.textContent = 'Tiers from sheet';
+      badge.className   = 'badge bgrn';
+    } else {
+      badge.textContent = 'Tiers from % Paid';
+      badge.className   = 'badge bg_';
+    }
+  }
+
+  const totalOut = tierOrder.reduce((s, t) => s + tierData[t].out, 0);
+  const totalExp = tierOrder.reduce((s, t) => s + tierData[t].exp, 0);
+  const highRisk = tierData['High Risk'].out;
+
+  // ── KPI cards ──────────────────────────────────────────────────────────
+  setText('rec-total-out', fB(totalOut));
+  setText('rec-total-out-s', tierOrder.reduce((s, t) => s + tierData[t].cnt, 0).toLocaleString() + ' units');
+  setText('rec-recoverable', fB(totalExp));
+  setText('rec-recoverable-s', totalOut > 0
+    ? (totalExp / totalOut * 100).toFixed(0) + '% of outstanding'
+    : '—');
+  setText('rec-highrisk', fB(highRisk));
+  setText('rec-highrisk-s', tierData['High Risk'].cnt + ' units below 25% paid');
+
+  // ── Tier-by-tier stacked bar (expected vs at-risk) ─────────────────────
+  const presentTiers = tierOrder.filter(t => tierData[t].out > 0);
+  mkChart('c-recovery', {
+    type: 'bar',
+    data: {
+      labels: presentTiers,
+      datasets: [
+        { label: 'Expected Recovery',
+          data: presentTiers.map(t => +(tierData[t].exp / 1e9).toFixed(2)),
+          backgroundColor: C.green, borderRadius: 4, borderSkipped: false },
+        { label: 'At Risk',
+          data: presentTiers.map(t => +((tierData[t].out - tierData[t].exp) / 1e9).toFixed(2)),
+          backgroundColor: 'rgba(192,57,43,0.35)', borderRadius: 4, borderSkipped: false },
       ]
     },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},
-        tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'top',
+          labels: { font: { size: 10 }, boxWidth: 9, boxHeight: 9 } },
+        tooltip: { callbacks: { label: c => c.dataset.label + ': ₦' + c.parsed.y.toFixed(2) + 'B' } }
       },
-      scales:{
-        x:{stacked:true,grid:{display:false}},
-        y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v => '₦' + v + 'B' } }
       }
     }
   });
 
-  mkChart('c-resolution',{
-    type:'line',
-    data:{
-      labels: Array.from({length:24},(_,i)=>'M'+(i+1)),
-      datasets:[{
-        label:'Cumulative Recovery ₦B',
-        data: P.resolutionData.map(v=>+(v/1e9).toFixed(2)),
-        borderColor:C.green, backgroundColor:'rgba(39,174,96,0.08)',
-        fill:true, tension:0.4, borderWidth:2.5,
-        pointRadius:0, pointHoverRadius:5
+  // ── 24-month cumulative recovery timeline ──────────────────────────────
+  let cum = 0;
+  const timeline = Array.from({ length: 24 }, (_, i) => {
+    const m = i + 1;
+    tierOrder.forEach(t => {
+      const mtc = RMTHS[t];
+      if ((mtc === 0 && m === 1) || mtc === m) cum += tierData[t].exp;
+    });
+    return cum;
+  });
+
+  mkChart('c-resolution', {
+    type: 'line',
+    data: {
+      labels: Array.from({ length: 24 }, (_, i) => 'M' + (i + 1)),
+      datasets: [{
+        label: 'Cumulative Recovery',
+        data: timeline.map(v => +(v / 1e9).toFixed(2)),
+        borderColor: C.green, backgroundColor: 'rgba(39,174,96,0.10)',
+        fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 0,
       }]
     },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(1)+'B recovered'}}},
-      scales:{
-        x:{grid:{color:'rgba(0,0,0,0.04)'}},
-        y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { tooltip: { callbacks: { label: c => '₦' + c.parsed.y.toFixed(2) + 'B recovered' } } },
+      scales: {
+        x: { grid: { color: 'rgba(0,0,0,0.04)' } },
+        y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v => '₦' + v + 'B' } }
       }
     }
   });
 
-  // Recovery waterfall bars
-  const rwEl = document.getElementById('recovery-waterfall');
-  if(rwEl) {
-    rwEl.innerHTML='';
-    const maxRW = Math.max(...P.recoveryOut)||1;
-    const riskClsMap={'Collected':'pb-high','Near Completion':'pb-high','Low Risk':'pb-med','Medium Risk':'pb-med','High Risk':'pb-low'};
-    P.recoveryLabels.forEach((t,i)=>{
-      const pct_exp = P.recoveryOut[i]>0?(P.recoveryExp[i]/P.recoveryOut[i]*100).toFixed(0):0;
-      rwEl.innerHTML+=`<div class="score-bar-row">
-        <div class="score-bar-lbl"><span class="pred-badge ${riskClsMap[t]||'pb-neutral'}">${t}</span></div>
-        <div style="flex:1;position:relative;height:18px;background:#F0F0F4;border-radius:4px;overflow:hidden">
-          <div style="position:absolute;left:0;top:0;height:100%;width:${(P.recoveryExp[i]/maxRW*100).toFixed(0)}%;background:#27AE60;border-radius:4px;transition:width 0.6s"></div>
-          <div style="position:absolute;left:${(P.recoveryExp[i]/maxRW*100).toFixed(0)}%;top:0;height:100%;width:${(P.recoveryLoss[i]/maxRW*100).toFixed(0)}%;background:rgba(192,57,43,0.3);border-radius:0 4px 4px 0;transition:width 0.6s"></div>
+  // ── Recovery waterfall ─────────────────────────────────────────────────
+  const wEl = document.getElementById('rec-waterfall');
+  if (!wEl) return;
+  wEl.innerHTML = '';
+  const maxOut = Math.max(...presentTiers.map(t => tierData[t].out), 1);
+  const tierColours = {
+    'Collected':       '#1E8449',
+    'Near Completion': '#27AE60',
+    'Low Risk':        '#2980B9',
+    'Medium Risk':     '#E67E22',
+    'High Risk':       '#C0392B',
+  };
+  presentTiers.forEach(t => {
+    const td      = tierData[t];
+    const recPct  = td.out > 0 ? (td.exp / td.out * 100).toFixed(0) : 0;
+    const expW    = (td.exp / maxOut * 100).toFixed(0);
+    const lossW   = ((td.out - td.exp) / maxOut * 100).toFixed(0);
+    wEl.innerHTML += `
+      <div class="sl-row" style="margin-bottom:11px">
+        <div class="sl-lbl" style="width:140px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${tierColours[t]};margin-right:6px;vertical-align:middle"></span>${t}</div>
+        <div style="flex:1;position:relative;height:16px;background:#F0F0F4;border-radius:4px;overflow:hidden">
+          <div style="position:absolute;left:0;top:0;height:100%;width:${expW}%;background:#27AE60"></div>
+          <div style="position:absolute;left:${expW}%;top:0;height:100%;width:${lossW}%;background:rgba(192,57,43,0.30)"></div>
         </div>
-        <div class="score-bar-val" style="width:220px;text-align:right">${fB(P.recoveryExp[i])} recoverable (${pct_exp}%)</div>
+        <div class="sl-val" style="width:230px">${fB(td.exp)} of ${fB(td.out)} <span style="color:var(--text3)">(${recPct}% · ${td.cnt} units)</span></div>
       </div>`;
-    });
-  }
-
-  // ── Moving average chart ──
-  mkChart('c-mavg',{
-    type:'bar',
-    data:{
-      labels:P.mavgLabels,
-      datasets:[
-        { label:'Annual Units', data:P.unitsByYear, backgroundColor:'rgba(192,57,43,0.15)',
-          borderRadius:4, borderSkipped:false },
-        { label:'3yr Moving Avg', data:P.mavg3yr.map(v=>+v.toFixed(1)),
-          type:'line', borderColor:C.red, backgroundColor:'transparent',
-          borderWidth:2.5, tension:0.4, pointRadius:3 },
-        { label:'2yr Moving Avg', data:P.mavg2yr.map(v=>+v.toFixed(1)),
-          type:'line', borderColor:C.blue, backgroundColor:'transparent',
-          borderWidth:1.5, borderDash:[4,2], tension:0.4, pointRadius:0 },
-      ]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},
-        tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y.toFixed(1)+' units'}}
-      },
-      scales:{
-        x:{grid:{display:false}},
-        y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' u'}}
-      }
-    }
   });
 
-  // Velocity bars
-  const velEl = document.getElementById('velocity-bars');
-  if(velEl) {
-    const velSorted = Object.entries(P.velocityScores).sort((a,b)=>b[1]-a[1]);
-    velEl.innerHTML='';
-    velSorted.forEach(([comm,score])=>{
-      const color = score>110?C.green:score>90?C.amber:C.red;
-      const label = score>110?'Accelerating':score>90?'Stable':'Slowing';
-      velEl.innerHTML+=`<div class="score-bar-row">
-        <div class="score-bar-lbl">${comm}</div>
-        <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${Math.min(100,(score/150*100)).toFixed(0)}%;background:${color}"></div></div>
-        <div class="score-bar-val">${score} <span style="color:${color};font-size:9px">${label}</span></div>
+  // Append a note explaining the tier source if derived from % Paid
+  if (derivedRiskCol > realRiskCol) {
+    wEl.innerHTML += `
+      <div style="font-size:10px;color:var(--text3);margin-top:10px;padding:8px 12px;background:#F7F7F9;border-radius:6px;border-left:3px solid var(--red3)">
+        Risk tiers derived from <b>% Paid</b>: 100%+ = Collected, 75–99% = Near Completion, 50–74% = Low Risk, 25–49% = Medium Risk, &lt;25% = High Risk. Recovery probabilities (99/92/78/52/22%) are defaults — refine in code once you have empirical collection-team data.
       </div>`;
-    });
-  }
-
-  // ── So What: Revenue Forecast ──────────────────────
-  {
-    const sw = document.getElementById('sw-forecast');
-    const headline = document.getElementById('sw-forecast-headline');
-    const body = document.getElementById('sw-forecast-body');
-    if(sw && headline && body) {
-      const baseNext = proj[0]?.base||0;
-      const lastRev  = P.forecastActual.filter(v=>v!==null).slice(-1)[0]||0;
-      const growthPct = lastRev>0 ? ((baseNext-lastRev)/lastRev*100).toFixed(0) : 0;
-      const r2pct = (P.r2*100).toFixed(0);
-      const conf = P.r2>0.7 ? 'high' : P.r2>0.4 ? 'moderate' : 'low';
-      const confLabel = P.r2>0.7 ? 'reliable' : P.r2>0.4 ? 'directionally useful' : 'indicative only — treat with caution';
-      if(growthPct > 15) {
-        sw.className='sowhat sw-pos'; sw.dataset.ico='📈';
-        headline.textContent = `Revenue is forecast to grow ${growthPct}% next year — the pipeline has real momentum.`;
-        body.innerHTML = `Base case projection of <strong>${fB(proj[0].base)}</strong> (bull: <strong>${fB(proj[0].bull)}</strong>, bear: <strong>${fB(proj[0].bear)}</strong>). Model confidence is ${confLabel} (R²=${r2pct}%). <strong>Implication:</strong> This is not a moment to pull back on inventory. Accelerate launch pipeline and ensure agent capacity is in place before the year opens.`;
-      } else if(growthPct < 0) {
-        sw.className='sowhat sw-neg'; sw.dataset.ico='⚠️';
-        headline.textContent = `Revenue is projected to contract ${Math.abs(growthPct)}% — the current trend is working against you.`;
-        body.innerHTML = `The OLS model extrapolates a declining trajectory based on historical actuals. Model confidence is ${confLabel} (R²=${r2pct}%). <strong>Implication:</strong> Do not assume this year corrects itself. Identify which communities are dragging the aggregate — re-price slow-moving stock or activate dormant channels before the contraction deepens.`;
-      } else {
-        sw.className='sowhat sw-neu'; sw.dataset.ico='📊';
-        headline.textContent = `Revenue growth of ${growthPct}% is in line with historical trend — no structural break detected.`;
-        body.innerHTML = `Base case: <strong>${fB(proj[0].base)}</strong>. Model confidence: ${confLabel} (R²=${r2pct}%). <strong>Implication:</strong> Steady-state growth is not a cue for complacency. Use this window to widen margins — test price uplifts in high-velocity communities rather than chasing volume.`;
-      }
-      sw.style.display='';
-    }
-  }
-
-  // ── So What: Collections Recovery ──────────────────
-  {
-    const sw = document.getElementById('sw-recovery');
-    const headline = document.getElementById('sw-recovery-headline');
-    const body = document.getElementById('sw-recovery-body');
-    if(sw && headline && body) {
-      const hrOut = P.tierData['High Risk']?.outstanding||0;
-      const mrOut = P.tierData['Medium Risk']?.outstanding||0;
-      const hrCount = P.tierData['High Risk']?.count||0;
-      const totalOut = P.recoveryOut.reduce((s,v)=>s+v,0)||1;
-      const recPct = ((P.totalRecoverable/totalOut)*100).toFixed(0);
-      const atRiskPct = ((P.totalAtRisk/totalOut)*100).toFixed(0);
-      if(hrOut > 5e8) {
-        sw.className='sowhat sw-neg'; sw.dataset.ico='🔴';
-        headline.textContent = `${fB(hrOut)} sits in High Risk — with only a 22% recovery probability, this is the single largest controllable threat to cash flow.`;
-        body.innerHTML = `<strong>${hrCount} units</strong> have paid less than 25% of total contract value. The model estimates just <strong>${fB(P.tierData['High Risk']?.expected||0)}</strong> recoverable from this cohort. <strong>Implication:</strong> A dedicated collections task force on this segment alone could unlock material cash — every 10pp improvement in High Risk recovery probability adds roughly <strong>${fB(hrOut*0.1)}</strong> to the balance sheet.`;
-      } else if(parseFloat(recPct) > 70) {
-        sw.className='sowhat sw-pos'; sw.dataset.ico='💰';
-        headline.textContent = `${recPct}% of your outstanding balance is model-assessed as recoverable — your receivables book is in reasonable health.`;
-        body.innerHTML = `Of the total <strong>${fB(totalOut)}</strong> outstanding, the probability-weighted model estimates <strong>${fB(P.totalRecoverable)}</strong> recoverable within 24 months. <strong>Implication:</strong> Collections is not a crisis — but the <strong>${fB(P.totalAtRisk)}</strong> at risk still warrants structured attention. Prioritise Near Completion accounts first; they have 92% recovery probability and close within 3 months.`;
-      } else {
-        sw.className='sowhat sw-med'; sw.dataset.ico='⏳';
-        headline.textContent = `Collections recovery is mixed — the model sees ${recPct}% recoverable but ${atRiskPct}% in medium-to-high risk territory.`;
-        body.innerHTML = `Total outstanding: <strong>${fB(totalOut)}</strong>. Probability-weighted recovery: <strong>${fB(P.totalRecoverable)}</strong>. <strong>Implication:</strong> Segment your outreach strategy by risk tier — treat Medium Risk (52% recovery probability) as the immediate intervention priority since this cohort still responds to structured payment plans, whereas High Risk likely requires legal escalation pathways.`;
-      }
-      sw.style.display='';
-    }
-  }
-
-  // ── So What: Demand Velocity ────────────────────────
-  {
-    const sw = document.getElementById('sw-demand');
-    const headline = document.getElementById('sw-demand-headline');
-    const body = document.getElementById('sw-demand-body');
-    if(sw && headline && body) {
-      const velEntries = Object.entries(P.velocityScores).sort((a,b)=>b[1]-a[1]);
-      const topVel = velEntries[0];
-      const botVel = velEntries[velEntries.length-1];
-      const accelerating = velEntries.filter(([,s])=>s>110);
-      const slowing = velEntries.filter(([,s])=>s<80);
-      const trendDir = P.demandTrendDir;
-      if(trendDir === 'up' && accelerating.length > 0) {
-        sw.className='sowhat sw-pos'; sw.dataset.ico='🏘️';
-        headline.textContent = `Demand is accelerating — ${accelerating.length > 1 ? accelerating.length + ' communities are' : accelerating[0][0] + ' is'} outperforming prior-period absorption.`;
-        body.innerHTML = `<strong>${topVel[0]}</strong> leads with a velocity index of <strong>${topVel[1]}</strong> (base=100). The 3-year moving average is trending upward. <strong>Implication:</strong> This is a pricing power window. Test a 5–8% price uplift in ${topVel[0]} — strong absorption typically absorbs moderate price increases without meaningful volume loss. Don't leave this on the table.`;
-      } else if(trendDir === 'dn' || slowing.length > 1) {
-        sw.className='sowhat sw-neg'; sw.dataset.ico='📉';
-        headline.textContent = `Demand velocity is softening — ${slowing.length} ${slowing.length===1?'community is':'communities are'} showing below-baseline absorption.`;
-        body.innerHTML = `<strong>${botVel[0]}</strong> is the weakest performer with a velocity index of <strong>${botVel[1]}</strong>. The 3-year moving average slope is declining. <strong>Implication:</strong> Investigate the root cause in ${botVel[0]} before writing it off — is this a product issue, a channel distribution gap, or a pricing sensitivity signal? Each has a different intervention. Avoid across-the-board discounting, which compresses margin without restoring organic demand.`;
-      } else {
-        sw.className='sowhat sw-neu'; sw.dataset.ico='📐';
-        headline.textContent = `Demand is broadly stable — community performance is mixed, but no systemic deceleration detected.`;
-        body.innerHTML = `<strong>${topVel[0]}</strong> leads with velocity index <strong>${topVel[1]}</strong>; <strong>${botVel[0]}</strong> trails at <strong>${botVel[1]}</strong>. The 3-year moving average is flat. <strong>Implication:</strong> Stable aggregate demand can mask divergence at the community level. Concentrate inventory and marketing spend on your top-velocity communities — don't distribute resources equally when absorption is unequal.`;
-      }
-      sw.style.display='';
-    }
-  }
-
-  // ── Strategy insights (still rendered, used as standalone model-derived signals) ──
-  const siEl = document.getElementById('strategy-insights');
-  if(siEl) {
-    siEl.innerHTML='';
-    P.insights.forEach(ins=>{
-      const typeClass = ins.type==='high'?'#EAFAF1':ins.type==='low'?'#FDECEA':'#FEF9E7';
-      siEl.innerHTML+=`<div class="pred-insight" style="background:${typeClass};border-color:${ins.type==='high'?'#A9DFBF':ins.type==='low'?'#F5B7B1':'#FAD7A0'}">
-        <div class="pred-insight-ico" style="background:${ins.type==='high'?'#27AE60':ins.type==='low'?'var(--red)':'#E67E22'};font-size:15px;width:30px;height:30px;border-radius:7px">${ins.ico}</div>
-        <div class="pred-insight-body"><div class="pred-insight-title">${ins.title}</div><div class="pred-insight-sub">${ins.sub}</div></div>
-      </div>`;
-    });
   }
 }
 
-/* ─── HOOK INTO EXISTING RENDER PIPELINE ────────────── */
-let _lastAllRows = null;
 
 /* =====================================================
    AUTO-REFRESH
@@ -2479,28 +2288,10 @@ let _lastAllRows = null;
 setInterval(()=>loadData(false), 30 * 60 * 1000); // 30 minutes
 
 /* =====================================================
-   BOOT — same pattern as index 29
-   window.onAuthGateReady is defined BEFORE the auth script loads.
-   dashboard-auth-28.js calls it immediately after a valid sign-in,
-   or when a persisted Firebase session fires onAuthStateChanged
-   synchronously on page load (which happens before window.onload).
+   BOOT
    ===================================================== */
-window.onAuthGateReady = window.onAuthGateReady || function () {
-  // Dashboard data load — called once by dashboard-auth-28.js after sign-in
-  loadData(false);
-};
-
-// dashboard-auth-28.js and dashboard-analytics-28.js are loaded
-// as <script src="..."> tags at the end of <body> — they boot themselves.
+initFirebase();
+setupAuth();
 </script>
-
-<!-- Auth gate — self-contained, no dependency on inline scripts -->
-<!-- Mirrors the role of dashboard-auth.js in index 29             -->
-<script src="dashboard-auth-28.js"></script>
-
-<!-- Predictive analytics engine — runs models on idle thread     -->
-<!-- Mirrors the role of dashboard-pi-engine.js in index 29       -->
-<script src="dashboard-analytics-28.js"></script>
-
 </body>
 </html>
