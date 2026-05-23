@@ -1524,6 +1524,7 @@ async function renderFromRows(rows, fromCache) {
     analytics = computeAnalytics(rows);
     analytics.currentYearFilter = 'all';
     analytics.currentQtrFilter  = 'all';
+       window._lastAnalytics = analytics; // bridge for dashboard-analytics-28.js
   } catch(e) {
     telemetryError('computeAnalytics', e);
     analytics = { years:[], revByYear:[], unitsByYear:[], communities:[], commRevenue:[],
