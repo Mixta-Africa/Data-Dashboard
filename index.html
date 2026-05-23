@@ -227,7 +227,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <body>
 
 <!-- auth overlay injected by dashboard-auth-28.js -->
-</div>
 
 <div class="sync-toast" id="syncToast"></div>
 
@@ -1524,7 +1523,7 @@ async function renderFromRows(rows, fromCache) {
     analytics = computeAnalytics(rows);
     analytics.currentYearFilter = 'all';
     analytics.currentQtrFilter  = 'all';
-       window._lastAnalytics = analytics; // bridge for dashboard-analytics-28.js
+    window._lastAnalytics = analytics;
   } catch(e) {
     telemetryError('computeAnalytics', e);
     analytics = { years:[], revByYear:[], unitsByYear:[], communities:[], commRevenue:[],
