@@ -9,6 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
+<!-- Firebase loaded by dashboard-auth-28.js -->
 
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -24,28 +25,57 @@ html{scroll-behavior:smooth}
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 
 
+/* ── PREDICTIVE SECTION ───────────────────────────────── */
+.pred-section-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin:22px 0 14px;display:flex;align-items:center;gap:10px}
+.pred-section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(192,57,43,0.15),transparent)}
+.pred-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:9.5px;font-weight:600;letter-spacing:.3px}
+.pb-high{background:#EAFAF1;color:#1E8449}
+.pb-med{background:#FEF9E7;color:#D68910}
+.pb-low{background:#FDECEA;color:var(--red)}
+.pb-neutral{background:#F0F0F4;color:var(--text2)}
+.conf-band{opacity:0.18}
+.pred-insight{background:linear-gradient(135deg,var(--red4) 0%,rgba(255,255,255,0.6) 100%);border:1px solid var(--red3);border-radius:12px;padding:14px 18px;margin-bottom:12px;display:flex;gap:14px;align-items:flex-start}
+.pred-insight-ico{width:34px;height:34px;border-radius:8px;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.pred-insight-body{}
+.pred-insight-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:3px}
+.pred-insight-sub{font-size:11px;color:var(--text2);line-height:1.5}
+.score-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.score-bar-lbl{width:160px;font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.score-bar-wrap{flex:1;height:8px;background:#F0F0F4;border-radius:4px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:4px;transition:width 0.6s ease}
+.score-bar-val{width:90px;text-align:right;font-family:var(--mono);font-size:10px;color:var(--text);flex-shrink:0}
+.metric-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:500;background:rgba(255,255,255,0.85);border:1px solid rgba(0,0,0,0.07);color:var(--text2);margin:3px}
+.metric-pill span{font-weight:600;color:var(--text)}
+.forecast-note{font-size:10px;color:var(--text3);margin-top:8px;padding:6px 10px;background:#F7F7F9;border-radius:6px;border-left:3px solid var(--red3)}
+.prob-ring{width:70px;height:70px;flex-shrink:0}
+.scenario-card{background:rgba(255,255,255,0.85);border:1px solid rgba(0,0,0,0.07);border-radius:12px;padding:14px 16px;flex:1}
+.scenario-card.bull{border-top:3px solid #27AE60}
+.scenario-card.base{border-top:3px solid var(--red)}
+.scenario-card.bear{border-top:3px solid #E67E22}
+.scenario-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.scenario-card.bull .scenario-title{color:#1E8449}
+.scenario-card.base .scenario-title{color:var(--red)}
+.scenario-card.bear .scenario-title{color:#D35400}
+.scenario-val{font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.5px}
+.scenario-sub{font-size:10px;color:var(--text3);margin-top:3px}
+.scenarios-row{display:flex;gap:10px;margin-bottom:14px}
 
-/* ── PREDICTIVE ───────────────────────────────────── */
-.pred-head{font-size:10.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin:20px 0 12px;display:flex;align-items:center;gap:8px}
-.pred-head::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(192,57,43,0.2),transparent)}
-.scenario-row{display:flex;gap:10px;margin-bottom:14px}
-.sc-card{background:#fff;border-radius:12px;padding:14px 16px;flex:1;box-shadow:var(--shadow-sm)}
-.sc-card.bull{border-top:3px solid #27AE60}.sc-card.base{border-top:3px solid var(--red)}.sc-card.bear{border-top:3px solid #E67E22}
-.sc-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
-.sc-card.bull .sc-label{color:#1E8449}.sc-card.base .sc-label{color:var(--red)}.sc-card.bear .sc-label{color:#D35400}
-.sc-val{font-size:20px;font-weight:600;color:var(--text);letter-spacing:-.4px}
-.sc-yr{font-size:9px;color:var(--text3);margin-top:2px}
-.ins-card{background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;box-shadow:var(--shadow-sm);border-left:3px solid var(--red3)}
-.ins-card.high{border-left-color:#27AE60}.ins-card.low{border-left-color:var(--red)}.ins-card.med{border-left-color:#F39C12}
-.ins-ico{font-size:18px;flex-shrink:0;margin-top:1px}
-.ins-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px}
-.ins-sub{font-size:11px;color:var(--text2);line-height:1.45}
-.sbar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.sbar-lbl{width:160px;font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
-.sbar-wrap{flex:1;height:7px;background:#F0F0F4;border-radius:4px;overflow:hidden}
-.sbar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--red5),var(--red2))}
-.sbar-val{width:120px;text-align:right;font-family:var(--mono);font-size:10px;color:var(--text);flex-shrink:0}
-.pred-loading{text-align:center;padding:40px;color:var(--text3);font-size:12px}
+/* ── AUTH GATE ────────────────────────────────────── */
+#auth-gate{position:fixed;inset:0;background:rgba(255,255,255,0.97);backdrop-filter:blur(24px);z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity 0.4s}
+#auth-gate.hidden{opacity:0;pointer-events:none}
+.auth-card{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,0.1);padding:40px 48px;text-align:center;max-width:380px;width:90%}
+.auth-logo{width:48px;height:48px;background:linear-gradient(135deg,var(--red),var(--red2));border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 4px 14px rgba(192,57,43,0.3)}
+.auth-logo svg{width:24px;height:24px;fill:white}
+.auth-title{font-size:20px;font-weight:600;color:var(--text);margin-bottom:6px;letter-spacing:-0.4px}
+.auth-sub{font-size:13px;color:var(--text3);margin-bottom:28px;line-height:1.5}
+.auth-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 20px;border-radius:10px;font-size:14px;font-weight:500;color:var(--text);background:#fff;border:1.5px solid rgba(0,0,0,0.14);cursor:pointer;font-family:var(--font);transition:all 0.18s;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.auth-btn:hover{background:#F7F7F7;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.auth-btn img{width:20px;height:20px}
+.auth-err{font-size:12px;color:var(--red);margin-top:12px;display:none;text-align:left;line-height:1.5;background:var(--red4);border:1px solid var(--red3);border-radius:8px;padding:8px 12px}
+.auth-btn:disabled{opacity:0.65;cursor:not-allowed;pointer-events:none}
+.auth-btn:disabled svg{display:inline-block}
+.auth-user-strip{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:20px;background:var(--red4);border:1px solid var(--red3);font-size:11px;font-weight:500;color:var(--red);cursor:pointer;flex-shrink:0}
+.auth-user-strip img{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--red3)}
 
 /* ── GLASS & HEADER ───────────────────────────────── */
 .glass{background:var(--card);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid var(--card-border);border-radius:var(--r);box-shadow:var(--shadow-md)}
@@ -191,13 +221,19 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 </head>
 <body>
 
+<!-- auth overlay injected by dashboard-auth-28.js -->
+</div>
 
 <div class="sync-toast" id="syncToast"></div>
 
-<div class="loader-overlay" id="loader">
+<div class="loader-overlay hidden" id="loader">
   <div class="loader-spinner"></div>
   <div class="loader-text" id="loader-text">Loading dashboard…</div>
   <div class="loader-sub" id="loader-sub">Fetching data</div>
+  <div style="margin-top:12px;width:260px;height:3px;background:rgba(192,57,43,0.12);border-radius:2px;overflow:hidden">
+    <div id="loader-progress" style="height:100%;background:var(--red);border-radius:2px;width:0%;transition:width 0.4s ease"></div>
+  </div>
+  <div id="loader-step" style="font-size:9.5px;color:var(--text3);margin-top:6px;font-family:var(--mono)">step 1/7</div>
 </div>
 
 <header class="hdr">
@@ -218,7 +254,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <button class="nav-btn" onclick="showSection('collections',this)">Collections</button>
     <button class="nav-btn" onclick="showSection('agents',this)">Agents</button>
     <button class="nav-btn" onclick="showSection('buyers',this)">Buyers</button>
-    <button class="nav-btn" onclick="showSection('predict',this)" style="color:var(--red);font-weight:600">⬡ Predict</button>
+    <button class="nav-btn pred-tab" onclick="showSection('predict',this)" style="background:linear-gradient(135deg,var(--red4),#fff0ee);color:var(--red);border:1px solid var(--red3);font-weight:600">⬡ Predict</button>
   </nav>
 
   <div class="hdr-right">
@@ -235,7 +271,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       Sync
     </button>
     <div class="live-badge"><div class="live-dot"></div><span id="record-count">—</span> records</div>
-
+    <div class="auth-user-strip" id="userStrip" style="display:none" onclick="signOut()">
+      <img id="userAvatar" src="" alt="">
+      <span id="userName"></span>
+      <span style="opacity:.6">· Sign out</span>
+    </div>
   </div>
 </header>
 
@@ -509,62 +549,98 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 </div>
 
 
-<!-- ===== PREDICT ===== -->
+<!-- ===== PREDICTIVE INTELLIGENCE ===== -->
 <div id="section-predict" class="section">
 
+  <!-- Predictive model error bar (hidden unless a model throws) -->
+  <div id="predict-model-warn" style="display:none;background:#FFF3CD;border:1px solid #FFEAA7;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:12px;color:#856404;align-items:center;gap:8px">
+    ⚠️ <span></span>
+  </div>
+
+  <!-- KPI strip: model outputs -->
   <div class="kpi-strip">
-    <div class="kpi"><div class="kpi-label">Next-Year Forecast</div><div class="kpi-value red" id="pr-ny">—</div><div class="kpi-sub" id="pr-ny-s">OLS projection</div></div>
-    <div class="kpi"><div class="kpi-label">Model Confidence R²</div><div class="kpi-value" id="pr-r2">—</div><div class="kpi-sub">Revenue trend fit</div></div>
-    <div class="kpi"><div class="kpi-label">Recoverable Outstanding</div><div class="kpi-value red" id="pr-rec">—</div><div class="kpi-sub">Prob-weighted, 24 months</div></div>
-    <div class="kpi"><div class="kpi-label">Revenue at Risk</div><div class="kpi-value" id="pr-risk">—</div><div class="kpi-sub dn">High-risk receivables</div></div>
-    <div class="kpi"><div class="kpi-label">Demand Trend</div><div class="kpi-value red" id="pr-dem">—</div><div class="kpi-sub">3yr moving avg signal</div></div>
-    <div class="kpi"><div class="kpi-label">Price CAGR</div><div class="kpi-value" id="pr-cagr">—</div><div class="kpi-sub">₦/unit compound growth</div></div>
+    <div class="kpi"><div class="kpi-label">Next-Year Revenue Forecast</div><div class="kpi-value red" id="pr-nextyear">—</div><div class="kpi-sub" id="pr-nextyear-s">OLS linear projection</div></div>
+    <div class="kpi"><div class="kpi-label">Forecast Confidence</div><div class="kpi-value" id="pr-r2">—</div><div class="kpi-sub">R² model fit score</div></div>
+    <div class="kpi"><div class="kpi-label">Projected Collections Recovery</div><div class="kpi-value red" id="pr-recovery">—</div><div class="kpi-sub" id="pr-recovery-s">High + Med risk outstanding</div></div>
+    <div class="kpi"><div class="kpi-label">Portfolio Price CAGR</div><div class="kpi-value" id="pr-pcagr">—</div><div class="kpi-sub">₦/unit compound growth</div></div>
+    <div class="kpi"><div class="kpi-label">Demand Trend</div><div class="kpi-value red" id="pr-demtrend">—</div><div class="kpi-sub" id="pr-demtrend-s">Volume momentum signal</div></div>
+    <div class="kpi"><div class="kpi-label">Revenue at Risk</div><div class="kpi-value" id="pr-revatrisk">—</div><div class="kpi-sub dn" id="pr-revatrisk-s">High risk outstanding</div></div>
   </div>
 
-  <div class="pred-head">Revenue Forecast — 3 Year Projection</div>
-  <div class="scenario-row" id="sc-row">
-    <div class="sc-card bull"><div class="sc-label">Bull Case +1σ</div><div class="sc-val" id="sc-b1">—</div><div class="sc-yr" id="sc-b1y">yr+1</div><div class="sc-val" style="font-size:15px;margin-top:8px" id="sc-b2">—</div><div class="sc-yr" id="sc-b2y">yr+2</div><div class="sc-val" style="font-size:15px;margin-top:8px" id="sc-b3">—</div><div class="sc-yr">yr+3</div></div>
-    <div class="sc-card base"><div class="sc-label">Base Case OLS trend</div><div class="sc-val" id="sc-m1">—</div><div class="sc-yr" id="sc-m1y">yr+1</div><div class="sc-val" style="font-size:15px;margin-top:8px" id="sc-m2">—</div><div class="sc-yr" id="sc-m2y">yr+2</div><div class="sc-val" style="font-size:15px;margin-top:8px" id="sc-m3">—</div><div class="sc-yr">yr+3</div></div>
-    <div class="sc-card bear"><div class="sc-label">Bear Case −1σ</div><div class="sc-val" id="sc-r1">—</div><div class="sc-yr" id="sc-r1y">yr+1</div><div class="sc-val" style="font-size:15px;margin-top:8px" id="sc-r2">—</div><div class="sc-yr" id="sc-r2y">yr+2</div><div class="sc-val" style="font-size:15px;margin-top:8px" id="sc-r3">—</div><div class="sc-yr">yr+3</div></div>
-  </div>
-
-  <div class="g2">
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Revenue Forecast — OLS + Confidence Band</div><div class="cs">Actuals · trend line · ±1σ shaded cone</div></div><span id="pr-r2-badge" class="badge bg_">R²=—</span></div>
-      <div class="cw" style="height:260px"><canvas id="c-forecast"></canvas></div>
-      <div id="forecast-note" style="font-size:10px;color:var(--text3);margin-top:8px;padding:6px 10px;background:#F7F7F9;border-radius:6px;border-left:3px solid var(--red3)">Computing model…</div>
-    </div>
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Collection Recovery — 24-Month Timeline</div><div class="cs">Probability-weighted cumulative receivables recovery</div></div></div>
-      <div class="cw" style="height:260px"><canvas id="c-recovery"></canvas></div>
-    </div>
+  <!-- Scenario planner -->
+  <div class="pred-section-title">Revenue Scenario Planner — Next 3 Years</div>
+  <div class="scenarios-row" id="scenarios-row">
+    <div class="scenario-card bull"><div class="scenario-title">Bull Case (+1σ)</div><div class="scenario-val" id="sc-bull-1">—</div><div class="scenario-sub" id="sc-bull-1s">Year +1</div><div class="scenario-val" style="font-size:16px;margin-top:6px" id="sc-bull-2">—</div><div class="scenario-sub" id="sc-bull-2s">Year +2</div><div class="scenario-val" style="font-size:16px;margin-top:6px" id="sc-bull-3">—</div><div class="scenario-sub">Year +3</div></div>
+    <div class="scenario-card base"><div class="scenario-title">Base Case (OLS trend)</div><div class="scenario-val" id="sc-base-1">—</div><div class="scenario-sub" id="sc-base-1s">Year +1</div><div class="scenario-val" style="font-size:16px;margin-top:6px" id="sc-base-2">—</div><div class="scenario-sub" id="sc-base-2s">Year +2</div><div class="scenario-val" style="font-size:16px;margin-top:6px" id="sc-base-3">—</div><div class="scenario-sub">Year +3</div></div>
+    <div class="scenario-card bear"><div class="scenario-title">Bear Case (−1σ)</div><div class="scenario-val" id="sc-bear-1">—</div><div class="scenario-sub" id="sc-bear-1s">Year +1</div><div class="scenario-val" style="font-size:16px;margin-top:6px" id="sc-bear-2">—</div><div class="scenario-sub" id="sc-bear-2s">Year +2</div><div class="scenario-val" style="font-size:16px;margin-top:6px" id="sc-bear-3">—</div><div class="scenario-sub">Year +3</div></div>
   </div>
 
   <div class="g2">
     <div class="cc">
-      <div class="ch"><div><div class="ct">Demand Velocity — 3yr Moving Average</div><div class="cs">Smoothed unit sales trend with acceleration signal</div></div></div>
-      <div class="cw" style="height:230px"><canvas id="c-mavg"></canvas></div>
+      <div class="ch"><div><div class="ct">Revenue Forecast — OLS Regression + Confidence Band</div><div class="cs">Historical actuals · trend line · ±1σ cone</div></div><span class="pred-badge pb-neutral" id="pr-r2-badge">R²=—</span></div>
+      <div class="cw" style="height:270px"><canvas id="c-forecast"></canvas></div>
+      <div class="forecast-note" id="forecast-note">Loading model…</div>
     </div>
     <div class="cc">
-      <div class="ch"><div><div class="ct">Community Velocity Index</div><div class="cs">Recent 2yr vs prior 2yr absorption (base = 100)</div></div></div>
-      <div id="vel-bars" class="pred-loading">Computing…</div>
+      <div class="ch"><div><div class="ct">Price Appreciation Trajectory</div><div class="cs">Avg ₦/unit per year + 3yr projection by community</div></div></div>
+      <div class="cw" style="height:270px"><canvas id="c-priceforecast"></canvas></div>
     </div>
   </div>
 
+  <!-- Collections recovery model -->
+  <div class="pred-section-title">Collections Recovery Model — Probability-Weighted Receivables</div>
+  <div class="g2">
+    <div class="cc">
+      <div class="ch"><div><div class="ct">Recovery Probability by Risk Tier</div><div class="cs">Expected ₦ recoverable vs at-risk per segment</div></div></div>
+      <div class="cw" style="height:250px"><canvas id="c-recovery"></canvas></div>
+    </div>
+    <div class="cc">
+      <div class="ch"><div><div class="ct">Outstanding Resolution Timeline</div><div class="cs">Projected cumulative recovery over 24 months</div></div></div>
+      <div class="cw" style="height:250px"><canvas id="c-resolution"></canvas></div>
+    </div>
+  </div>
+  <div class="cc full" style="margin-bottom:14px">
+    <div class="ch"><div><div class="ct">Recovery Waterfall — By Risk Tier</div><div class="cs">Collectable · probable · at-risk breakdown across portfolio</div></div></div>
+    <div id="recovery-waterfall"></div>
+  </div>
+
+  <!-- Demand velocity -->
+  <div class="pred-section-title">Demand Velocity — Sales Momentum Analysis</div>
+  <div class="g2">
+    <div class="cc">
+      <div class="ch"><div><div class="ct">3-Year Moving Average — Unit Sales</div><div class="cs">Smoothed demand trend with acceleration signal</div></div></div>
+      <div class="cw" style="height:240px"><canvas id="c-mavg"></canvas></div>
+    </div>
+    <div class="cc">
+      <div class="ch"><div><div class="ct">Community Velocity Score</div><div class="cs">Sales momentum: recent 2yr vs prior 2yr (indexed to 100)</div></div></div>
+      <div id="velocity-bars"></div>
+    </div>
+  </div>
+
+  <!-- Agent productivity -->
+  <div class="pred-section-title">Agent Productivity Index — Composite Performance Score</div>
   <div class="g21">
     <div class="cc">
-      <div class="ch"><div><div class="ct">Strategic Insights</div><div class="cs">Model-derived action signals</div></div></div>
-      <div id="insights-wrap" class="pred-loading">Computing…</div>
+      <div class="ch"><div><div class="ct">Agent Composite Score</div><div class="cs">Revenue efficiency × collection health × trend momentum</div></div><span class="pred-badge pb-neutral">Indexed 0–100</span></div>
+      <div id="agent-score-bars"></div>
     </div>
     <div class="cc">
-      <div class="ch"><div><div class="ct">Channel Productivity Score</div><div class="cs">Revenue efficiency × collection health · indexed 0–100</div></div></div>
-      <div id="agent-scores" class="pred-loading">Computing…</div>
+      <div class="ch"><div><div class="ct">Strategic Insights</div><div class="cs">Model-derived action signals</div></div></div>
+      <div id="strategy-insights"></div>
     </div>
   </div>
 
-  <div class="cc full">
-    <div class="ch"><div><div class="ct">Recovery Waterfall — By Risk Tier</div><div class="cs">Collectable vs at-risk across portfolio</div></div></div>
-    <div id="rec-waterfall" class="pred-loading">Computing…</div>
+  <!-- Price elasticity signal -->
+  <div class="pred-section-title">Pricing Intelligence — Price vs Demand Elasticity</div>
+  <div class="g2">
+    <div class="cc">
+      <div class="ch"><div><div class="ct">Price vs Volume Correlation</div><div class="cs">How price changes map to unit absorption rate</div></div></div>
+      <div class="cw" style="height:240px"><canvas id="c-elasticity"></canvas></div>
+    </div>
+    <div class="cc">
+      <div class="ch"><div><div class="ct">Optimal Price Range by Community</div><div class="cs">Highest absorption band per community (historical)</div></div></div>
+      <div id="price-bands"></div>
+    </div>
   </div>
 
 </div>
@@ -572,85 +648,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 </main>
 
 <script>
-/* =====================================================
-   FIREBASE CONFIG
-   ⚠️  Replace these placeholder values with your actual
-       Firebase project credentials before deploying.
-   ===================================================== */
-const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyB2TvSXbXOAutbt0MqJeOrn-7hKfpaqfAo",
-  projectId:         "data-dashboard-ad94f",
-  messagingSenderId: "1012632142221",
-  appId:             "1:1012632142221:web:1aa118b847705bd1353dc4"
-};
-
-// Allowed email domain — only Mixta accounts can sign in
-
-/* =====================================================
-   DATA SOURCE CONFIG
-   ===================================================== */
-const XLSX_URL      = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTg9nVEiwrU8xBzl6DaP3-b2enA8Ae_oNW-5VXlg2yRq9godA1cBjwzdRYbY4O9zdbU_2xnprBVo1QO/pub?output=xlsx';
-const LS_CACHE_KEY  = 'mixta_xl_v4';
-const LS_TS_KEY     = 'mixta_xl_v4_ts';
-const LS_MAX_BYTES  = 4.5 * 1024 * 1024;
-const CACHE_TTL_MS  = 30 * 60 * 1000;             
-
-const FETCH_MAX_RETRIES = 3;
-const FETCH_BASE_DELAY  = 1200;                    
-
-const SCHEMA_VERSION = 'v3-2025-06';
-
-/* =====================================================
-   EXPANDED HEADER MAP
-   ===================================================== */
-const HEADER_MAP = {
-  community:         ['Community'],
-  property:          ['Property'],
-  unitNo:            ['Unit No','Unit No.','UnitNo'],
-  unitType:          ['Unit Type','UnitType'],
-  refNo:             ['Ref No','Ref No.','RefNo','Reference No'],
-  bedrooms:          ['Bedrooms','Bedroom'],
-  builtup:           ['Builtup Area','Built-up Area','BuiltupArea','Builtup (sqm)'],
-  phase:             ['Phase'],
-  finishType:        ['Finish Type','FinishType','Finish'],
-  primaryView:       ['Primary View','PrimaryView','View'],
-  unitStatus:        ['Unit Status','UnitStatus','Status'],
-  soldDate:          ['Sold Date','SoldDate','Date Sold'],
-  paymentReceipt:    ['Sale Payment Receipt Date','Receipt Date'],
-  paymentPaid:       ['Sale Payment Paid Date','Paid Date'],
-  paymentPlan:       ['Payment Plan','PaymentPlan'],
-  agentGroup:        ['Agent Group','AgentGroup','Channel'],
-  dealingAgent:      ['Dealing Agent','DealingAgent','Agent'],
-  mortgage:          ['Mortgage'],
-  sellingPrice:      ['Selling Price','SellingPrice','Sale Price'],
-  basePrice:         ['Base Price','BasePrice'],
-  legalFees:         ['Legal Fees','LegalFees'],
-  agencyFee:         ['Agency Fee (Seller)','Agency Fee','AgencyFee'],
-  vat:               ['VAT'],
-  serviceCharge:     ['Service Charge','ServiceCharge'],
-  discounts:         ['Discounts','Discount'],
-  discountPct:       ['% Discount','PercentDiscount','Discount %'],
-  totalPaid:         ['Total Paid','TotalPaid'],
-  pctPaid:           ['% Paid','%Paid','Percent Paid','Pct Paid'],
-  totalOutstanding:  ['Total Outstanding','TotalOutstanding'],
-  outstandingToDate: ['Outstanding to Date','OutstandingToDate'],
-  revYear:           ['Revenue Recognition Year','RevenueRecognitionYear','Rev Year'],
-  handoverYear:      ['Handover Year','HandoverYear'],
-  buyerType:         ['Buyer_Type','Buyer Type','BuyerType'],
-  collectionRisk:    ['Collection_Risk','Collection Risk','CollectionRisk'],
-  pctPaidBucket:     ['Pct_Paid_Bucket','Pct Paid Bucket','Payment Bucket'],
-  pricePerSqM:       ['Price_Per_SqM','Price Per SqM','₦/sqm','Price/sqm'],
-  nationality:       ['Buyer Nationality','BuyerNationality','Nationality'],
-  state:             ['Buyer State','BuyerState','Buyer Lead Country','Lead Country'],
-  residency:         ['Buyer Residency','BuyerResidency','Residency'],
-  salutation:        ['Buyer Salutation','BuyerSalutation','Salutation'],
-  buyerFirstName:    ['Buyer First Name','First Name'],
-  buyerFamilyName:   ['Buyer Family Name','Family Name','Last Name'],
-};
-
-const REQUIRED_COLS = ['community','property','sellingPrice','totalPaid','totalOutstanding','pctPaid','revYear'];
-
-
+/* Firebase config, auth state, and user management
+   are now handled by dashboard-auth-28.js */
 
 /* =====================================================
    HELPERS
@@ -664,7 +663,28 @@ const groupBy  = (arr,key) => arr.reduce((acc,r)=>{ const k=r[key]||'Unknown'; (
 const sumKey   = (arr,key) => arr.reduce((s,r)=>s+num(r[key]),0);
 const topN     = (obj,n,valFn) => Object.entries(obj).map(([k,v])=>({k,v:valFn(v)})).sort((a,b)=>b.v-a.v).slice(0,n);
 const setText  = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
-const sleep    = ms => new Promise(r => setTimeout(r, ms));
+const sleep      = ms => new Promise(r => setTimeout(r, ms));
+// yieldThread: releases the main thread for ONE event-loop tick (0ms).
+// This lets the browser repaint, process input events, and prevents
+// "page unresponsive" freezes during long synchronous computation.
+const yieldThread = () => new Promise(r => setTimeout(r, 0));
+
+// telemetryError: surface model errors visibly instead of swallowing them
+function telemetryError(stage, err) {
+  console.error('[Pipeline] ' + stage + ' failed:', err.message, err.stack);
+  const eb = document.getElementById('errorBar');
+  const em = document.getElementById('errorMsg');
+  if(eb && em) {
+    em.textContent = 'Pipeline error in [' + stage + ']: ' + err.message;
+    eb.classList.add('show');
+  }
+}
+
+// showPredictiveError: yellow warning in the predict section itself
+function showPredictiveError(msg) {
+  const el = document.getElementById('predict-model-warn');
+  if(el) { el.textContent = 'Predictive model error: ' + msg + '. Other dashboard sections are unaffected.'; el.style.display='flex'; }
+}
 
 function schemaHash(headers) {
   const sorted = [...headers].sort().join(',');
@@ -1255,8 +1275,20 @@ function updateFreshness(fromCache) {
   el.textContent = mins < 2 ? 'Live · just now' : `Cached · ${mins}m ago`;
 }
 
-function setLoaderSub(msg) { const el=document.getElementById('loader-sub'); if(el) el.textContent=msg; }
-function setLoaderText(msg){ const el=document.getElementById('loader-text'); if(el) el.textContent=msg; }
+let _loaderStep = 0;
+const LOADER_STEPS = ['Fetching data','Enriching records','Building filters',
+  'Computing analytics','Rendering KPIs','Drawing charts','Running models'];
+
+function setLoaderSub(msg) {
+  const el = document.getElementById('loader-sub'); if(el) el.textContent = msg;
+  // Find matching step index for progress bar
+  const idx = LOADER_STEPS.findIndex(s => msg.toLowerCase().includes(s.toLowerCase().split(' ')[0]));
+  const step = idx >= 0 ? idx : _loaderStep++;
+  const pct  = Math.min(95, Math.round((step / LOADER_STEPS.length) * 100));
+  const pb   = document.getElementById('loader-progress'); if(pb) pb.style.width = pct + '%';
+  const st   = document.getElementById('loader-step'); if(st) st.textContent = 'step ' + (step+1) + '/' + LOADER_STEPS.length;
+}
+function setLoaderText(msg){ const el=document.getElementById('loader-text'); if(el) el.textContent=msg; _loaderStep=0; }
 
 /* =====================================================
    FILTER ENGINE
@@ -1358,6 +1390,19 @@ function applyFilters() {
 
   renderKPIs(analytics);
   renderCharts(analytics);
+
+  // Predictive always uses the full unfiltered dataset for statistical validity
+  // Run async so it doesn't block the filter UI update
+  if(_lastAllRows) {
+    (async () => {
+      try {
+        const fa = computeAnalytics(_lastAllRows);
+        fa.currentYearFilter='all'; fa.currentQtrFilter='all';
+        const P = await computePredictiveAsync(fa, _lastAllRows);
+        renderPredictive(fa, P);
+      } catch(e) { telemetryError('Predictive (filter)', e); }
+    })();
+  }
 }
 
 function resetFilters() {
@@ -1369,17 +1414,72 @@ function resetFilters() {
 /* =====================================================
    RENDER HELPERS — called with any row set
    ===================================================== */
-function renderFromRows(rows, fromCache) {
-  enrichData(rows);
-  populateFilters(rows);
-  const analytics = computeAnalytics(rows);
-  analytics.currentYearFilter = 'all';
-  analytics.currentQtrFilter  = 'all';
-  window._lastAnalytics = analytics;   // predictive models read from here
-  renderKPIs(analytics);
-  renderCharts(analytics);
+async function renderFromRows(rows, fromCache) {
+  _lastAllRows = rows;
+
+  // ── Step 1: Enrich (date parsing) ─────────────────────
+  setLoaderSub('Enriching ' + rows.length.toLocaleString() + ' records…');
+  await yieldThread();
+  try { enrichData(rows); } catch(e) { telemetryError('enrichData', e); }
+
+  // ── Step 2: Build filter dropdowns ────────────────────
+  setLoaderSub('Building filters…');
+  await yieldThread();
+  try { populateFilters(rows); } catch(e) { telemetryError('populateFilters', e); }
+
+  // ── Step 3: Core analytics ────────────────────────────
+  setLoaderSub('Computing portfolio analytics…');
+  await yieldThread();
+  let analytics;
+  try {
+    analytics = computeAnalytics(rows);
+    analytics.currentYearFilter = 'all';
+    analytics.currentQtrFilter  = 'all';
+  } catch(e) {
+    telemetryError('computeAnalytics', e);
+    analytics = { years:[], revByYear:[], unitsByYear:[], communities:[], commRevenue:[],
+      commUnits:[], commOutstanding:[], commYearMatrix:{}, propRevenue:[], propUnits:{},
+      agentGroups:[], agentGrpRev:[], agentGrpCnt:[], finishTypes:[], finishRev:[],
+      finishUnits:[], finishAvg:[], statusLabels:[], statusCounts:[], unitTypes:[],
+      unitTypeRevs:[], bedroomLabels:[], bedroomRevs:[], ppLabels:[], ppCounts:[],
+      totalRows:0, totalRev:0, totalPaid:0, totalOut:0, mortgageCount:0,
+      avgPctPaid:0, fullyPaidCnt:0, highRiskCnt:0, collBrackets:[], collBracketCounts:[],
+      mortgageByYear:[], cashByYear:[], paidByYear:[], outByYear:[], riskLabels:[],
+      riskCounts:[], riskRevs:[], riskOuts:[], buyerTypeLabels:[], buyerTypeCounts:[],
+      stateLabels:[], stateCounts:[], salLabels:[], salCounts:[], countries:0,
+      diaspora:0, crossStateCount:0, topStateName:'—', topStateCount:0, topNat:'—',
+      topNatCnt:0, phaseLabels:[], phaseRevs:[], phaseUnits:[], collectionsBook:0,
+      cagr:'—', latestAvgPrice:0, avgPricePerSqM:0, currentYearFilter:'all', currentQtrFilter:'all' };
+  }
+
+  // ── Step 4: Render KPIs (instant DOM writes) ──────────
+  setLoaderSub('Rendering KPIs…');
+  await yieldThread();
+  try { renderKPIs(analytics); } catch(e) { telemetryError('renderKPIs', e); }
+
+  // ── Step 5: Render charts (heaviest DOM work) ─────────
+  setLoaderSub('Drawing charts…');
+  await yieldThread();
+  try { renderCharts(analytics); } catch(e) { telemetryError('renderCharts', e); }
+
+  // ── Step 6: Predictive engine (most CPU-intensive) ────
+  // This step is deliberately deferred AFTER the dashboard is already visible.
+  // Users see the main data immediately; predictions load ~500ms later.
+  setLoaderSub('Running predictive models…');
+  await yieldThread();
+  try {
+    const P = await computePredictiveAsync(analytics, rows);
+    renderPredictive(analytics, P);
+  } catch(e) {
+    telemetryError('computePredictive', e);
+    // Show degraded state in predictive section rather than crashing
+    const warnEl = document.getElementById('pr-nextyear');
+    if(warnEl) warnEl.textContent = 'Model error';
+    showPredictiveError(e.message);
+  }
+
   updateFreshness(fromCache);
-  document.getElementById('filterCount').textContent = rows.length.toLocaleString()+' records';
+  document.getElementById('filterCount').textContent = rows.length.toLocaleString() + ' records';
   document.getElementById('errorBar').classList.remove('show');
 }
 
@@ -1417,41 +1517,11 @@ async function loadData(forceRefresh=false) {
   const syncBtn = document.getElementById('syncBtn');
   const isFirstLoad = !_allRows;
 
-  // ── STEP 1: Serve localStorage cache instantly if available ──
-  if(!forceRefresh && !isFirstLoad===false) {
-    try {
-      const cached = localStorage.getItem(LS_CACHE_KEY);
-      const ts     = parseInt(localStorage.getItem(LS_TS_KEY)||'0');
-      if(cached && (Date.now()-ts) < CACHE_TTL_MS) {
-        const rows = JSON.parse(cached);
-        if(rows && rows.length) {
-          _allRows = rows;
-          renderFromRows(rows, true);
-          schedulePredictive(rows);
-          // Still fetch fresh in background silently
-          _fetchInProgress = false;
-          syncBtn.classList.add('spinning');
-          showSyncStatus('Refreshing…');
-          try {
-            const fresh = await getLiveSheetData();
-            _allRows = fresh;
-            renderFromRows(fresh, false);
-            schedulePredictive(fresh);
-            safeCache(fresh);
-          } catch(e){ console.warn('[bg refresh]', e.message); }
-          syncBtn.classList.remove('spinning');
-          hideSyncStatus(true);
-          return;
-        }
-      }
-    } catch(e){ /* cache miss — fall through to live fetch */ }
-  }
-
-  // ── STEP 2: Cold start or force refresh — show loader ────────────────
+  // Show UI feedback
   if(isFirstLoad) {
     loader.classList.remove('hidden');
     setLoaderText('Loading dashboard…');
-    setLoaderSub('Downloading data…');
+    setLoaderSub('Fetching all tabs…');
   } else {
     syncBtn.classList.add('spinning');
     showSyncStatus('Syncing…');
@@ -1459,37 +1529,26 @@ async function loadData(forceRefresh=false) {
 
   try {
     const rows = await getLiveSheetData();
+    
     _allRows = rows;
-    renderFromRows(rows, false);
-    safeCache(rows);
-    schedulePredictive(rows);
+    await renderFromRows(rows, false);
+    // Notify analytics engine after every sync — mirrors dashboard-pi-engine.js in index 29
+    if (typeof window.onPostSync === 'function') window.onPostSync(rows);
+
     const fl = document.getElementById('freshness-label');
-    if(fl){ fl.style.color='#27AE60'; setTimeout(()=>fl.style.color='',2000); }
+    if(fl) { fl.style.color='#27AE60'; setTimeout(()=>fl.style.color='',2000); }
+
   } catch(err) {
     console.error('[loadData]', err);
-    document.getElementById('errorMsg').textContent = 'Could not load: ' + err.message + '. Check connection.';
-    document.getElementById('errorBar').classList.add('show');
-    // Emergency: render from localStorage if available
-    try {
-      const cached = localStorage.getItem(LS_CACHE_KEY);
-      if(cached) { const rows=JSON.parse(cached); _allRows=rows; renderFromRows(rows,true); schedulePredictive(rows); }
-    } catch(e2){}
+    const eb = document.getElementById('errorBar');
+    document.getElementById('errorMsg').textContent = 'Could not load sheets: ' + err.message;
+    eb.classList.add('show');
   } finally {
     loader.classList.add('hidden');
     syncBtn.classList.remove('spinning');
     hideSyncStatus(!document.getElementById('errorBar').classList.contains('show'));
     _fetchInProgress = false;
   }
-}
-
-function safeCache(rows) {
-  try {
-    const s = JSON.stringify(rows);
-    if(s.length < LS_MAX_BYTES) {
-      localStorage.setItem(LS_CACHE_KEY, s);
-      localStorage.setItem(LS_TS_KEY, String(Date.now()));
-    }
-  } catch(e){ console.warn('[cache]', e.message); }
 }
 
 function syncData() {
@@ -1613,303 +1672,619 @@ Please write a structured, executive-level Performance Report tailored exactly t
 
 
 /* =====================================================
-   PREDICTIVE ENGINE
-   All 5 models run via requestIdleCallback — the browser
-   schedules them only when the main thread is idle.
-   They never compete with rendering or user interaction.
+   PREDICTIVE ANALYTICS ENGINE
+   Models: OLS Regression, Confidence Bands, Collection
+   Recovery Scoring, Moving Average, Agent Composite Index,
+   Price Elasticity. Zero external APIs — pure mathematics.
    ===================================================== */
 
-/* ── Math primitives ─────────────────────────────── */
-function ols(xs, ys) {
-  const n=xs.length; if(n<2) return {a:0,b:0,r2:0,sigma:0,pred:x=>0};
-  const xm=xs.reduce((s,v)=>s+v,0)/n, ym=ys.reduce((s,v)=>s+v,0)/n;
-  let sxy=0,sxx=0,sst=0;
-  xs.forEach((x,i)=>{sxy+=(x-xm)*(ys[i]-ym);sxx+=(x-xm)**2;sst+=(ys[i]-ym)**2;});
-  const b=sxx?sxy/sxx:0, a=ym-b*xm;
-  const sse=xs.reduce((s,x,i)=>s+(ys[i]-(a+b*x))**2,0);
-  const sigma=Math.sqrt(sse/Math.max(n-2,1));
-  const r2=sst?Math.max(0,1-sse/sst):0;
-  return {a,b,r2,sigma,pred:x=>a+b*x};
+/* ─── MATH PRIMITIVES ───────────────────────────────── */
+function olsRegression(xArr, yArr) {
+  // Ordinary Least Squares: y = a + b*x
+  // Returns {a, b, r2, sigma, predict(x)}
+  const n = xArr.length;
+  if (n < 2) return { a:0, b:0, r2:0, sigma:0, predict: x => 0 };
+  const xMean = xArr.reduce((s,v)=>s+v,0)/n;
+  const yMean = yArr.reduce((s,v)=>s+v,0)/n;
+  let ssXY=0, ssXX=0, ssTot=0;
+  for(let i=0;i<n;i++){
+    ssXY += (xArr[i]-xMean)*(yArr[i]-yMean);
+    ssXX += (xArr[i]-xMean)**2;
+    ssTot+= (yArr[i]-yMean)**2;
+  }
+  const b = ssXX ? ssXY/ssXX : 0;
+  const a = yMean - b*xMean;
+  // Residuals & std error
+  const residuals = xArr.map((x,i)=>yArr[i]-(a+b*x));
+  const sse = residuals.reduce((s,r)=>s+r*r,0);
+  const sigma = Math.sqrt(sse/Math.max(n-2,1));
+  const r2 = ssTot ? Math.max(0, 1 - sse/ssTot) : 0;
+  return { a, b, r2, sigma, predict: x => a + b*x };
 }
 
-function movAvg(arr, w) {
-  return arr.map((_,i)=>{
-    const sl=arr.slice(Math.max(0,i-w+1),i+1);
-    return sl.reduce((s,v)=>s+v,0)/sl.length;
+function movingAverage(arr, window) {
+  return arr.map((_,i) => {
+    const slice = arr.slice(Math.max(0,i-window+1), i+1);
+    return slice.reduce((s,v)=>s+v,0)/slice.length;
   });
 }
 
-function pearson(xs,ys){
-  const n=xs.length; if(n<2) return 0;
-  const xm=xs.reduce((s,v)=>s+v,0)/n, ym=ys.reduce((s,v)=>s+v,0)/n;
-  let num=0,dx=0,dy=0;
-  xs.forEach((x,i)=>{num+=(x-xm)*(ys[i]-ym);dx+=(x-xm)**2;dy+=(ys[i]-ym)**2;});
-  return dx&&dy?num/Math.sqrt(dx*dy):0;
+function pearsonCorr(xArr, yArr) {
+  const n = xArr.length;
+  if(n<2) return 0;
+  const xM = xArr.reduce((s,v)=>s+v,0)/n;
+  const yM = yArr.reduce((s,v)=>s+v,0)/n;
+  let num=0, dx=0, dy=0;
+  for(let i=0;i<n;i++){
+    num += (xArr[i]-xM)*(yArr[i]-yM);
+    dx  += (xArr[i]-xM)**2;
+    dy  += (yArr[i]-yM)**2;
+  }
+  return (dx&&dy) ? num/Math.sqrt(dx*dy) : 0;
 }
 
-/* ── Schedule all 5 models on idle thread ─────────── */
-function schedulePredictive(rows) {
-  // requestIdleCallback fires only when browser has spare cycles.
-  // Deadline.timeRemaining() lets each model check if it should pause.
-  // This guarantees zero UI freeze regardless of dataset size.
-  const ric = window.requestIdleCallback || (cb=>setTimeout(()=>cb({timeRemaining:()=>50}),100));
-
-  ric(deadline => { try { runModel1_Forecast(rows); } catch(e){ console.error('[M1]',e); } });
-  ric(deadline => { try { runModel2_Recovery(rows); } catch(e){ console.error('[M2]',e); } });
-  ric(deadline => { try { runModel3_Velocity(rows); } catch(e){ console.error('[M3]',e); } });
-  ric(deadline => { try { runModel4_Agents(rows);   } catch(e){ console.error('[M4]',e); } });
-  ric(deadline => { try { runModel5_Insights(rows); } catch(e){ console.error('[M5]',e); } });
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function linearInterp(x, x0, x1, y0, y1) {
+  if(x1===x0) return y0;
+  return y0 + (y1-y0)*(x-x0)/(x1-x0);
 }
 
-/* ── MODEL 1: OLS Revenue Forecast ──────────────── */
-function runModel1_Forecast(rows) {
-  const C = window._lastAnalytics;
-  if(!C||!C.years||C.years.length<3) return;
+/* ─── PREDICTIVE MODELS ─────────────────────────────── */
+async function computePredictiveAsync(d, allRows) {
+  const P = {};
 
-  const xs = C.years.map(y=>parseInt(y));
-  const ys = C.revByYear;
-  const m  = ols(xs, ys);
-  const lastYr = xs[xs.length-1];
+  // ── 1. REVENUE FORECAST (OLS on annual series) ──────
+  const validYears = d.years.filter((y,i) => d.revByYear[i] > 0);
+  const validRevs  = validYears.map(y => d.revByYear[d.years.indexOf(y)]);
+  const xNorm = validYears.map(y => parseInt(y));   // raw year as x
+  const ols   = olsRegression(xNorm, validRevs);
+  P.ols       = ols;
+  const lastYr = parseInt(validYears[validYears.length-1] || new Date().getFullYear());
 
-  const proj = [1,2,3].map(k=>({
-    yr: lastYr+k,
-    base: Math.max(0, m.pred(lastYr+k)),
-    bull: Math.max(0, m.pred(lastYr+k)+m.sigma),
-    bear: Math.max(0, m.pred(lastYr+k)-m.sigma),
+  // Project +1, +2, +3
+  const proj = [1,2,3].map(k => ({
+    year: lastYr + k,
+    base: Math.max(0, ols.predict(lastYr + k)),
+    bull: Math.max(0, ols.predict(lastYr + k) + ols.sigma),
+    bear: Math.max(0, ols.predict(lastYr + k) - ols.sigma),
   }));
+  P.projections = proj;
+  P.r2 = ols.r2;
 
-  // KPIs
-  setText('pr-ny',  fB(proj[0].base));
-  setText('pr-ny-s', 'Bull '+fB(proj[0].bull)+' / Bear '+fB(proj[0].bear));
-  setText('pr-r2',  (m.r2*100).toFixed(0)+'%');
-  const n=C.years.length, fp=C.avgPriceByYear?.[0]||0, lp=C.avgPriceByYear?.[n-1]||0;
-  const cagr = n>1&&fp>0 ? ((Math.pow(lp/fp,1/(n-1))-1)*100).toFixed(1)+'%' : '—';
-  setText('pr-cagr', cagr);
-  const r2Badge=document.getElementById('pr-r2-badge');
-  if(r2Badge){r2Badge.textContent='R²='+(m.r2*100).toFixed(0)+'%';r2Badge.className='badge '+(m.r2>.7?'bgrn':m.r2>.4?'bg_':'br');}
+  // Forecast chart data: historical + projection with confidence band
+  const forecastLabels = [...validYears, ...proj.map(p=>String(p.year))];
+  const forecastActual = [...validRevs,  ...proj.map(()=>null)];
+  const forecastBase   = [
+    ...validYears.map(y => ols.predict(parseInt(y))),
+    ...proj.map(p=>p.base)
+  ];
+  const forecastUpper  = [
+    ...validYears.map(y => ols.predict(parseInt(y)) + ols.sigma),
+    ...proj.map(p=>p.bull)
+  ];
+  const forecastLower  = [
+    ...validYears.map(y => Math.max(0,ols.predict(parseInt(y)) - ols.sigma)),
+    ...proj.map(p=>p.bear)
+  ];
+  P.forecastLabels  = forecastLabels;
+  P.forecastActual  = forecastActual;
+  P.forecastBase    = forecastBase;
+  P.forecastUpper   = forecastUpper;
+  P.forecastLower   = forecastLower;
+
+  // ── 2. PRICE APPRECIATION per community ─────────────
+  await yieldThread();
+  P.priceForecasts = {};
+  const projYrLabels = [...d.years, ...proj.map(p=>String(p.year))];
+  // PRE-INDEX: build comm+year lookup once (O(n) instead of O(n×comms×years))
+  const commYearCount = {};
+  allRows.forEach(r => {
+    if(!r.community||!r._year) return;
+    const key = r.community + '|' + r._year;
+    commYearCount[key] = (commYearCount[key]||0) + 1;
+  });
+
+  d.communities.forEach(comm => {
+    const cYears = d.years.filter(y => (d.commYearMatrix[comm]?.[y]||0) > 0);
+    if(cYears.length < 2) return;
+    const cUnitsByYear = cYears.map(y => commYearCount[comm+'|'+y]||0);
+    const cAvgPrice = cYears.map((y,i) => {
+      const rev = d.commYearMatrix[comm][y] || 0;
+      const u   = cUnitsByYear[i] || 1;
+      return rev / u;
+    });
+    const cOls = olsRegression(cYears.map(y=>parseInt(y)), cAvgPrice);
+    P.priceForecasts[comm] = projYrLabels.map(y => Math.max(0, cOls.predict(parseInt(y))));
+  });
+  P.priceProjectionLabels = projYrLabels;
+
+  // ── 3. COLLECTION RECOVERY MODEL ────────────────────
+  await yieldThread();
+  // Assign recovery probability per risk tier based on empirical % paid distributions
+  // p(recovery) = f(currentPctPaid, tier)
+  // We model each tier's likely recovery path as a probability-weighted expected value
+  const RECOVERY_PROB = {
+    'Collected':       { prob: 0.99, monthsToClose: 0  },
+    'Near Completion': { prob: 0.92, monthsToClose: 3  },
+    'Low Risk':        { prob: 0.78, monthsToClose: 6  },
+    'Medium Risk':     { prob: 0.52, monthsToClose: 12 },
+    'High Risk':       { prob: 0.22, monthsToClose: 20 },
+  };
+  // Default for unmapped rows: score from pctPaid linearly
+  function recProb(row) {
+    const tier = row.collectionRisk;
+    if(RECOVERY_PROB[tier]) return RECOVERY_PROB[tier].prob;
+    const p = row._ppct / 100;
+    // Logistic-style scoring: high % paid = high prob
+    return clamp(1 / (1 + Math.exp(-8*(p-0.5))), 0.05, 0.99);
+  }
+
+  // Per-tier outstanding and expected recovery
+  const tierData = {};
+  const riskTiers = ['Collected','Near Completion','Low Risk','Medium Risk','High Risk'];
+  riskTiers.forEach(t => {
+    const tRows = allRows.filter(r => r.collectionRisk === t && r._out > 0);
+    const outstanding = tRows.reduce((s,r)=>s+r._out,0);
+    const expected    = tRows.reduce((s,r)=>s+r._out*recProb(r),0);
+    tierData[t] = { outstanding, expected, count: tRows.length };
+  });
+  // For rows with no risk tier, use pctPaid model
+  const unmapped = allRows.filter(r => (!r.collectionRisk||r.collectionRisk==='') && r._out > 0);
+  const unmappedOut = unmapped.reduce((s,r)=>s+r._out,0);
+  const unmappedExp = unmapped.reduce((s,r)=>s+r._out*recProb(r),0);
+
+  P.tierData = tierData;
+  P.totalRecoverable = Object.values(tierData).reduce((s,t)=>s+t.expected,0) + unmappedExp;
+  P.totalAtRisk      = (tierData['High Risk']?.outstanding||0) + (tierData['Medium Risk']?.outstanding||0)*0.5;
+  P.recoveryLabels   = riskTiers.filter(t=>tierData[t]?.outstanding>0);
+  P.recoveryOut      = P.recoveryLabels.map(t=>tierData[t].outstanding);
+  P.recoveryExp      = P.recoveryLabels.map(t=>tierData[t].expected);
+  P.recoveryLoss     = P.recoveryLabels.map((t,i)=>P.recoveryOut[i]-P.recoveryExp[i]);
+
+  // 24-month recovery timeline: weighted by months-to-close
+  const months = Array.from({length:24},(_,i)=>i+1);
+  let cumulativeRecovered = 0;
+  P.resolutionData = months.map(m => {
+    // Each tier contributes proportionally as its months-to-close passes
+    let addedThisMonth = 0;
+    riskTiers.forEach(t => {
+      const cfg = RECOVERY_PROB[t];
+      if(!cfg || !tierData[t]) return;
+      const mtc = cfg.monthsToClose || 1;
+      if(m === mtc) addedThisMonth += tierData[t].expected;
+      else if(mtc===0 && m===1) addedThisMonth += tierData[t].expected;
+    });
+    cumulativeRecovered += addedThisMonth;
+    return cumulativeRecovered;
+  });
+
+  // ── 4. MOVING AVERAGE & DEMAND VELOCITY ─────────────
+  await yieldThread();
+  P.mavgLabels = d.years;
+  P.mavg3yr    = movingAverage(d.unitsByYear, 3);
+  P.mavg2yr    = movingAverage(d.unitsByYear, 2);
+  P.unitsByYear= d.unitsByYear;
+
+  // Velocity score: compare last 2 years vs prior 2 years per community
+  // Score = (recent avg / prior avg) * 100. 100 = flat, >100 = accelerating
+  // Use the pre-built commYearCount index (built above in model 2)
+  P.velocityScores = {};
+  d.communities.forEach(comm => {
+    const n = d.years.length;
+    if(n < 4) { P.velocityScores[comm] = 100; return; }
+    const recentYrs = d.years.slice(-2);
+    const priorYrs  = d.years.slice(-4,-2);
+    const recentAvg = recentYrs.reduce((s,y)=>s+(commYearCount[comm+'|'+y]||0),0) / 2;
+    const priorAvg  = priorYrs.reduce((s,y)=>s+(commYearCount[comm+'|'+y]||0),0) / 2;
+    P.velocityScores[comm] = priorAvg > 0 ? Math.round((recentAvg/priorAvg)*100) : 100;
+  });
+
+  // Demand trend signal: slope of 3yr MA
+  const maSlope = P.mavg3yr.length > 1
+    ? P.mavg3yr[P.mavg3yr.length-1] - P.mavg3yr[Math.max(0,P.mavg3yr.length-3)]
+    : 0;
+  P.demandTrend = maSlope > 2 ? 'Accelerating ▲' : maSlope < -2 ? 'Decelerating ▼' : 'Stable →';
+  P.demandTrendDir = maSlope > 2 ? 'up' : maSlope < -2 ? 'dn' : 'flat';
+
+  // ── 5. AGENT COMPOSITE SCORE ─────────────────────────
+  await yieldThread();
+  // Score = 0.40 × Revenue_efficiency + 0.35 × Collection_health + 0.25 × Trend_momentum
+  // All sub-scores normalised 0–100
+  // PRE-INDEX: group rows by agent once instead of re-filtering per agent
+  const agentRowMap = {};
+  allRows.forEach(r => {
+    if(!r.dealingAgent||r.dealingAgent==='') return;
+    (agentRowMap[r.dealingAgent] = agentRowMap[r.dealingAgent]||[]).push(r);
+  });
+  const agentGroups_ = Object.keys(agentRowMap);
+  const agentScores  = [];
+  const avgRevPerUnit = d.totalRev / Math.max(d.totalRows,1);
+  const avgCollRate   = d.avgPctPaid / 100;
+
+  agentGroups_.forEach(ag => {
+    const agRows = agentRowMap[ag];
+    if(agRows.length < 2) return; // too small a sample
+    const rev   = agRows.reduce((s,r)=>s+r._sp,0);
+    const revPerUnit = rev / agRows.length;
+    const collRate   = agRows.filter(r=>r._ppct>0).reduce((s,r,_,a)=>s+r._ppct/a.length,0)/100;
+    // Trend: compare last half of years vs first half
+    const agYears = [...new Set(agRows.map(r=>r._year).filter(Boolean))].sort();
+    let trendScore = 50;
+    if(agYears.length >= 4) {
+      const half = Math.floor(agYears.length/2);
+      const early = agYears.slice(0,half).reduce((s,y)=>s+agRows.filter(r=>r._year===y).length,0)/half;
+      const late  = agYears.slice(-half).reduce((s,y)=>s+agRows.filter(r=>r._year===y).length,0)/half;
+      trendScore  = early>0 ? clamp((late/early)*50, 0, 100) : 50;
+    }
+    const revScore  = clamp((revPerUnit/avgRevPerUnit)*50, 0, 100);
+    const collScore = clamp(collRate*100, 0, 100);
+    const composite = 0.40*revScore + 0.35*collScore + 0.25*trendScore;
+    agentScores.push({ name:ag, score:composite, rev, units:agRows.length, collRate:collRate*100 });
+  });
+  agentScores.sort((a,b)=>b.score-a.score);
+  P.agentScores = agentScores.slice(0,12);
+
+  // ── 6. PRICE ELASTICITY SIGNAL ───────────────────────
+  await yieldThread();
+  // Correlation between avg price changes and unit volume changes year-on-year
+  const priceDelta  = d.avgPriceByYear.slice(1).map((v,i) => v - d.avgPriceByYear[i]);
+  const volumeDelta = d.unitsByYear.slice(1).map((v,i) => v - d.unitsByYear[i]);
+  P.elasticityCorr = pearsonCorr(priceDelta, volumeDelta);
+
+  // Scatter data: price vs units per year
+  P.elasticityX = d.avgPriceByYear.map(v=>+(v/1e6).toFixed(1)); // ₦M
+  P.elasticityY = d.unitsByYear;
+  P.elasticityYears = d.years;
+
+  // Price bands per community: find ₦ range with highest absorption
+  P.priceBands = {};
+  d.communities.forEach(comm => {
+    const cRows = allRows.filter(r=>r.community===comm&&r._sp>0);
+    if(!cRows.length) return;
+    const prices = cRows.map(r=>r._sp).sort((a,b)=>a-b);
+    const q1 = prices[Math.floor(prices.length*0.25)];
+    const q3 = prices[Math.floor(prices.length*0.75)];
+    const median = prices[Math.floor(prices.length*0.5)];
+    P.priceBands[comm] = { q1, q3, median, count: cRows.length };
+  });
+
+  // ── 7. STRATEGIC INSIGHTS (rule-based from model outputs) ──
+  const insights = [];
+  // Revenue forecast insight
+  const baseNext = proj[0]?.base||0;
+  const lastRev2 = validRevs[validRevs.length-1]||0;
+  const revGrowth = lastRev2>0 ? ((baseNext-lastRev2)/lastRev2*100).toFixed(0) : 0;
+  if(revGrowth > 15) insights.push({ico:'📈',title:'Strong revenue growth trajectory', sub:`OLS model projects ${revGrowth}% growth next year (₦${(baseNext/1e9).toFixed(1)}B). Capitalise by accelerating launch pipeline.`, type:'high'});
+  else if(revGrowth < 0) insights.push({ico:'⚠️',title:'Revenue deceleration signal', sub:`Model projects ${Math.abs(revGrowth)}% contraction. Consider re-pricing slower-moving stock or activating dormant agent channels.`, type:'low'});
+  else insights.push({ico:'📊',title:'Steady-state revenue outlook', sub:`Projected growth of ${revGrowth}% aligns with historical trend. Focus on margin optimisation rather than volume expansion.`, type:'med'});
+
+  // Collection risk insight
+  const hrOut = tierData['High Risk']?.outstanding||0;
+  const mrOut = tierData['Medium Risk']?.outstanding||0;
+  if(hrOut > 5e8) insights.push({ico:'🔴',title:`₦${(hrOut/1e9).toFixed(1)}B in high-risk receivables`, sub:`${tierData['High Risk']?.count||0} units below 25% paid. Recovery probability: ~22%. Recommend dedicated collections task force and legal escalation review.`, type:'low'});
+  if(P.totalRecoverable > d.totalOut*0.6) insights.push({ico:'💰',title:'Receivables largely recoverable', sub:`Model estimates ${((P.totalRecoverable/d.totalOut)*100).toFixed(0)}% of outstanding (₦${(P.totalRecoverable/1e9).toFixed(1)}B) is probability-weighted recoverable within 24 months.`, type:'high'});
+
+  // Demand velocity insight
+  const topVel = Object.entries(P.velocityScores).sort((a,b)=>b[1]-a[1])[0];
+  const botVel = Object.entries(P.velocityScores).sort((a,b)=>a[1]-b[1])[0];
+  if(topVel) insights.push({ico:'🏘️',title:`${topVel[0]} is your fastest-growing community`, sub:`Velocity index: ${topVel[1]} (recent 2yr vs prior 2yr, base=100). Prioritise inventory allocation and pricing power here.`, type:'high'});
+  if(botVel && botVel[1] < 80) insights.push({ico:'📉',title:`${botVel[0]} showing demand softness`, sub:`Velocity index: ${botVel[1]}. Recent absorption is slowing. Review pricing, product mix, or channel activation in this community.`, type:'low'});
+
+  // Elasticity insight
+  if(P.elasticityCorr < -0.5) insights.push({ico:'💹',title:'Price-sensitive demand detected', sub:`Pearson correlation = ${P.elasticityCorr.toFixed(2)}: volume falls when price rises. Aggressive pricing may suppress absorption. Recommend value-add over price increases.`, type:'med'});
+  else if(P.elasticityCorr > 0.3) insights.push({ico:'🎯',title:'Demand quality signal: buyers upgrade with price', sub:`Positive price-volume correlation (r=${P.elasticityCorr.toFixed(2)}) suggests aspirational buyer base. Premium positioning sustainable.`, type:'high'});
+
+  P.insights = insights.slice(0,5);
+
+  return P;
+}
+
+/* ─── PREDICTIVE RENDERERS ──────────────────────────── */
+function renderPredictive(d, P) {
+  const C = {red:'#C0392B',red2:'#E74C3C',red3:'#F5B7B1',blue:'#2980B9',green:'#27AE60',
+             purple:'#8E44AD',orange:'#D35400',teal:'#16A085',amber:'#F39C12',gray:'#7F8C8D'};
+
+  // KPI updates
+  const proj = P.projections;
+  setText('pr-nextyear', proj[0] ? fB(proj[0].base) : '—');
+  setText('pr-nextyear-s', proj[0] ? `Bull: ${fB(proj[0].bull)} · Bear: ${fB(proj[0].bear)}` : 'Insufficient data');
+  setText('pr-r2', (P.r2*100).toFixed(0)+'%');
+  setText('pr-recovery', fB(P.totalRecoverable));
+  setText('pr-recovery-s', 'Probability-weighted, 24-month horizon');
+  const n_ = d.years.length;
+  const firstAvg = d.avgPriceByYear?.find(v=>v>0)||0;
+  const lastAvg  = d.avgPriceByYear?.[d.avgPriceByYear.length-1]||0;
+  const pcagr = n_>1&&firstAvg>0 ? ((Math.pow(lastAvg/firstAvg,1/(n_-1))-1)*100).toFixed(1)+'%' : '—';
+  setText('pr-pcagr', pcagr);
+  setText('pr-demtrend', P.demandTrend);
+  setText('pr-revatrisk', fB(P.totalAtRisk));
+  const r2Badge = document.getElementById('pr-r2-badge');
+  if(r2Badge) { r2Badge.textContent = `R²=${(P.r2*100).toFixed(0)}%`; r2Badge.className='pred-badge '+(P.r2>0.7?'pb-high':P.r2>0.4?'pb-med':'pb-low'); }
 
   // Scenario cards
-  [['b','bull'],['m','base'],['r','bear']].forEach(([k,s])=>{
-    proj.forEach((p,i)=>{
-      setText('sc-'+k+(i+1), fB(p[s]));
-      setText('sc-'+k+(i+1)+'y', String(p.yr));
+  ['bull','base','bear'].forEach(s => {
+    proj.forEach((p,k)=>{
+      const el1 = document.getElementById(`sc-${s}-${k+1}`);
+      if(el1) el1.textContent = fB(p[s]);
+      const el1s = document.getElementById(`sc-${s}-${k+1}s`);
+      if(el1s) el1s.textContent = String(p.year);
     });
   });
 
-  // Forecast chart
-  const allLbls = [...C.years, ...proj.map(p=>String(p.yr))];
-  const actuals = [...C.revByYear, null, null, null];
-  const trend   = [...xs.map(x=>m.pred(x)), ...proj.map(p=>p.base)];
-  const upper   = [...xs.map(x=>m.pred(x)+m.sigma), ...proj.map(p=>p.bull)];
-  const lower   = [...xs.map(x=>Math.max(0,m.pred(x)-m.sigma)), ...proj.map(p=>p.bear)];
-
-  mkChart('c-forecast',{type:'line',data:{labels:allLbls,datasets:[
-    {label:'Upper',data:upper.map(v=>+(v/1e9).toFixed(2)),borderColor:'transparent',backgroundColor:'rgba(192,57,43,0.10)',fill:'+1',tension:0.4,pointRadius:0},
-    {label:'Trend',data:trend.map(v=>+(v/1e9).toFixed(2)),borderColor:'rgba(192,57,43,0.55)',borderWidth:2,borderDash:[6,3],tension:0.4,pointRadius:0,fill:false},
-    {label:'Lower',data:lower.map(v=>+(v/1e9).toFixed(2)),borderColor:'transparent',backgroundColor:'rgba(192,57,43,0.10)',fill:false,tension:0.4,pointRadius:0},
-    {label:'Actual',data:actuals.map(v=>v!=null?+(v/1e9).toFixed(2):null),borderColor:'#C0392B',backgroundColor:'rgba(192,57,43,0.06)',fill:false,tension:0.4,borderWidth:2.5,pointBackgroundColor:'#C0392B',pointRadius:4},
-  ]},options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},
-      tooltip:{callbacks:{label:c=>c.dataset.label+': \u20a6'+c.parsed.y.toFixed(1)+'B'}}},
-    scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'\u20a6'+v+'B'}}}}});
-
-  const fnEl=document.getElementById('forecast-note');
-  if(fnEl) fnEl.textContent='OLS fitted on '+C.years.length+' years. R²='+(m.r2*100).toFixed(0)+'% variance explained. Shaded = ±1\u03c3. Assumes no structural break.';
-}
-
-/* ── MODEL 2: Collection Recovery ─────────────────── */
-function runModel2_Recovery(rows) {
-  const RPROB = {Collected:0.99,'Near Completion':0.92,'Low Risk':0.78,'Medium Risk':0.52,'High Risk':0.22};
-  const RMTHS = {Collected:0,'Near Completion':3,'Low Risk':6,'Medium Risk':12,'High Risk':20};
-  const tiers  = Object.keys(RPROB);
-  const tData  = {};
-
-  tiers.forEach(t=>{
-    let out=0,exp=0,cnt=0;
-    rows.forEach(r=>{
-      if(r.collectionRisk!==t||!(r._out>0)) return;
-      out+=r._out; exp+=r._out*RPROB[t]; cnt++;
-    });
-    tData[t]={out,exp,cnt};
+  // ── Forecast chart ──
+  mkChart('c-forecast', {
+    type:'line',
+    data:{
+      labels: P.forecastLabels,
+      datasets:[
+        { label:'Upper bound', data: P.forecastUpper.map(v=>+(v/1e9).toFixed(2)),
+          borderColor:'transparent', backgroundColor:'rgba(192,57,43,0.12)',
+          fill:'+1', tension:0.4, pointRadius:0 },
+        { label:'OLS Trend', data: P.forecastBase.map(v=>+(v/1e9).toFixed(2)),
+          borderColor:'rgba(192,57,43,0.6)', borderWidth:2, borderDash:[6,3],
+          tension:0.4, pointRadius:0, fill:false },
+        { label:'Lower bound', data: P.forecastLower.map(v=>+(v/1e9).toFixed(2)),
+          borderColor:'transparent', backgroundColor:'rgba(192,57,43,0.12)',
+          fill:false, tension:0.4, pointRadius:0 },
+        { label:'Actual Revenue', data: P.forecastActual.map(v=>v!==null?+(v/1e9).toFixed(2):null),
+          borderColor:C.red, backgroundColor:'rgba(192,57,43,0.07)',
+          fill:false, tension:0.4, borderWidth:2.5,
+          pointBackgroundColor:C.red, pointRadius:4, pointHoverRadius:6 },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}
+      },
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,0.04)'}},
+        y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}
+      }
+    }
   });
 
-  // Unmapped: logistic on pctPaid
-  let unmapExp=0;
-  rows.forEach(r=>{
-    if(r.collectionRisk||!(r._out>0)) return;
-    const p=r._ppct/100;
-    unmapExp+=r._out*Math.max(0.05,Math.min(0.99,1/(1+Math.exp(-8*(p-0.5)))));
+  const fnEl = document.getElementById('forecast-note');
+  if(fnEl) fnEl.textContent = `OLS linear model fitted on ${P.forecastActual.filter(v=>v!==null).length} years of actuals. R²=${(P.r2*100).toFixed(0)}% explains ${(P.r2*100).toFixed(0)}% of revenue variance. Shaded band = ±1 standard deviation. Projections assume no structural break.`;
+
+  // ── Price forecast chart ──
+  const topCommsP = d.communities
+    .map((c,i)=>({c,r:d.commRevenue[i]}))
+    .sort((a,b)=>b.r-a.r).slice(0,4).map(x=>x.c);
+  const commPColors = [C.red,C.blue,C.green,C.purple];
+  mkChart('c-priceforecast',{
+    type:'line',
+    data:{
+      labels: P.priceProjectionLabels,
+      datasets: topCommsP.map((comm,i)=>({
+        label: comm,
+        data: P.priceForecasts[comm]?.map(v=>+(v/1e6).toFixed(1))||[],
+        borderColor: commPColors[i],
+        backgroundColor:'transparent',
+        borderWidth: 2,
+        borderDash: P.priceProjectionLabels.map((y,_)=>
+          parseInt(y) > parseInt(d.years[d.years.length-1]) ? [5,3] : []
+        )[0] || [],
+        tension:0.4, pointRadius:3,
+        segment:{ borderDash: ctx => {
+          const lbl = P.priceProjectionLabels[ctx.p1DataIndex];
+          return parseInt(lbl)>parseInt(d.years[d.years.length-1]) ? [5,3] : undefined;
+        }}
+      }))
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'M/unit'}}
+      },
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,0.04)'}},
+        y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'M'}}
+      }
+    }
   });
 
-  const totalRec  = tiers.reduce((s,t)=>s+(tData[t]?.exp||0),0)+unmapExp;
-  const totalOut  = tiers.reduce((s,t)=>s+(tData[t]?.out||0),0);
-  const atRisk    = (tData['High Risk']?.out||0)+(tData['Medium Risk']?.out||0)*0.5;
-
-  setText('pr-rec',  fB(totalRec));
-  setText('pr-risk', fB(atRisk));
-
-  // 24-month cumulative timeline
-  let cum=0;
-  const resData=Array.from({length:24},(_,i)=>i+1).map(m=>{
-    tiers.forEach(t=>{ if((RMTHS[t]===0&&m===1)||m===RMTHS[t]) cum+=tData[t]?.exp||0; });
-    return cum;
+  // ── Recovery chart ──
+  mkChart('c-recovery',{
+    type:'bar',
+    data:{
+      labels: P.recoveryLabels,
+      datasets:[
+        { label:'Expected Recovery', data:P.recoveryExp.map(v=>+(v/1e9).toFixed(2)),
+          backgroundColor:'#27AE60', borderRadius:4, borderSkipped:false },
+        { label:'At Risk (irrecoverable)', data:P.recoveryLoss.map(v=>+(v/1e9).toFixed(2)),
+          backgroundColor:'rgba(192,57,43,0.35)', borderRadius:4, borderSkipped:false },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}
+      },
+      scales:{
+        x:{stacked:true,grid:{display:false}},
+        y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}
+      }
+    }
   });
 
-  mkChart('c-recovery',{type:'line',data:{
-    labels:Array.from({length:24},(_,i)=>'M'+(i+1)),
-    datasets:[{label:'Cumulative Recovery',data:resData.map(v=>+(v/1e9).toFixed(2)),
-      borderColor:'#27AE60',backgroundColor:'rgba(39,174,96,0.08)',fill:true,tension:0.4,borderWidth:2.5,pointRadius:0}]
-  },options:{responsive:true,maintainAspectRatio:false,
-    plugins:{tooltip:{callbacks:{label:c=>'\u20a6'+c.parsed.y.toFixed(1)+'B recovered'}}},
-    scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'\u20a6'+v+'B'}}}}});
+  mkChart('c-resolution',{
+    type:'line',
+    data:{
+      labels: Array.from({length:24},(_,i)=>'M'+(i+1)),
+      datasets:[{
+        label:'Cumulative Recovery ₦B',
+        data: P.resolutionData.map(v=>+(v/1e9).toFixed(2)),
+        borderColor:C.green, backgroundColor:'rgba(39,174,96,0.08)',
+        fill:true, tension:0.4, borderWidth:2.5,
+        pointRadius:0, pointHoverRadius:5
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(1)+'B recovered'}}},
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,0.04)'}},
+        y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}
+      }
+    }
+  });
 
-  // Waterfall
-  const rwEl=document.getElementById('rec-waterfall');
-  if(rwEl){
+  // Recovery waterfall bars
+  const rwEl = document.getElementById('recovery-waterfall');
+  if(rwEl) {
     rwEl.innerHTML='';
-    const maxO=Math.max(...tiers.map(t=>tData[t]?.out||0))||1;
-    const cls={'Collected':'bgrn','Near Completion':'bgrn','Low Risk':'bg_','Medium Risk':'bg_','High Risk':'br'};
-    tiers.filter(t=>tData[t]?.out>0).forEach(t=>{
-      const d=tData[t], pct=(d.exp/d.out*100).toFixed(0);
-      rwEl.innerHTML+=`<div class="sbar-row">
-        <div class="sbar-lbl"><span class="badge ${cls[t]||'bg_'}">${t}</span></div>
-        <div style="flex:1;position:relative;height:16px;background:#F0F0F4;border-radius:4px;overflow:hidden">
-          <div style="position:absolute;left:0;top:0;height:100%;width:${(d.exp/maxO*100).toFixed(0)}%;background:#27AE60;border-radius:4px"></div>
-          <div style="position:absolute;left:${(d.exp/maxO*100).toFixed(0)}%;top:0;height:100%;width:${((d.out-d.exp)/maxO*100).toFixed(0)}%;background:rgba(192,57,43,0.3)"></div>
+    const maxRW = Math.max(...P.recoveryOut)||1;
+    const riskClsMap={'Collected':'pb-high','Near Completion':'pb-high','Low Risk':'pb-med','Medium Risk':'pb-med','High Risk':'pb-low'};
+    P.recoveryLabels.forEach((t,i)=>{
+      const pct_exp = P.recoveryOut[i]>0?(P.recoveryExp[i]/P.recoveryOut[i]*100).toFixed(0):0;
+      rwEl.innerHTML+=`<div class="score-bar-row">
+        <div class="score-bar-lbl"><span class="pred-badge ${riskClsMap[t]||'pb-neutral'}">${t}</span></div>
+        <div style="flex:1;position:relative;height:18px;background:#F0F0F4;border-radius:4px;overflow:hidden">
+          <div style="position:absolute;left:0;top:0;height:100%;width:${(P.recoveryExp[i]/maxRW*100).toFixed(0)}%;background:#27AE60;border-radius:4px;transition:width 0.6s"></div>
+          <div style="position:absolute;left:${(P.recoveryExp[i]/maxRW*100).toFixed(0)}%;top:0;height:100%;width:${(P.recoveryLoss[i]/maxRW*100).toFixed(0)}%;background:rgba(192,57,43,0.3);border-radius:0 4px 4px 0;transition:width 0.6s"></div>
         </div>
-        <div class="sbar-val">${fB(d.exp)} recoverable (${pct}%)</div>
+        <div class="score-bar-val" style="width:220px;text-align:right">${fB(P.recoveryExp[i])} recoverable (${pct_exp}%)</div>
       </div>`;
     });
   }
-}
 
-/* ── MODEL 3: Demand Velocity ─────────────────────── */
-function runModel3_Velocity(rows) {
-  const C=window._lastAnalytics;
-  if(!C||!C.years||C.years.length<3) return;
-
-  const ma3=movAvg(C.unitsByYear,3);
-  const ma2=movAvg(C.unitsByYear,2);
-  const slope=ma3.length>1?ma3[ma3.length-1]-ma3[Math.max(0,ma3.length-3)]:0;
-  const trend=slope>2?'Accelerating \u25b2':slope<-2?'Decelerating \u25bc':'Stable \u2192';
-  setText('pr-dem',trend);
-
-  mkChart('c-mavg',{type:'bar',data:{labels:C.years,datasets:[
-    {label:'Annual Units',data:C.unitsByYear,backgroundColor:'rgba(192,57,43,0.15)',borderRadius:4,borderSkipped:false},
-    {label:'3yr MA',data:ma3.map(v=>+v.toFixed(1)),type:'line',borderColor:'#C0392B',backgroundColor:'transparent',borderWidth:2.5,tension:0.4,pointRadius:3},
-    {label:'2yr MA',data:ma2.map(v=>+v.toFixed(1)),type:'line',borderColor:'#2980B9',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,2],tension:0.4,pointRadius:0},
-  ]},options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}}},
-    scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+'u'}}}}});
-
-  // Velocity per community using commYearMatrix
-  const velEl=document.getElementById('vel-bars');
-  if(!velEl||!C.commYearMatrix) return;
-  velEl.innerHTML='';
-  const n=C.years.length;
-  const scores=C.communities.map(comm=>{
-    if(n<4) return {comm,score:100};
-    const rec=C.years.slice(-2).reduce((s,y)=>s+(C.commYearMatrix[comm]?.[y]?1:0),0)/2;
-    const pri=C.years.slice(-4,-2).reduce((s,y)=>s+(C.commYearMatrix[comm]?.[y]?1:0),0)/2;
-    return {comm, score: pri>0?Math.round((rec/pri)*100):100};
-  }).sort((a,b)=>b.score-a.score);
-
-  scores.forEach(({comm,score})=>{
-    const col=score>110?'#27AE60':score>90?'#F39C12':'#C0392B';
-    const lbl=score>110?'Accelerating':score>90?'Stable':'Slowing';
-    velEl.innerHTML+=`<div class="sbar-row">
-      <div class="sbar-lbl">${comm}</div>
-      <div class="sbar-wrap"><div class="sbar-fill" style="width:${Math.min(100,score/150*100).toFixed(0)}%;background:${col}"></div></div>
-      <div class="sbar-val">${score} <span style="color:${col};font-size:9px">${lbl}</span></div>
-    </div>`;
-  });
-}
-
-/* ── MODEL 4: Channel Productivity ────────────────── */
-function runModel4_Agents(rows) {
-  const C=window._lastAnalytics;
-  if(!C||!C.agentGroups||!C.agentGroups.length) return;
-  const maxR=Math.max(...C.agentGrpRev)||1;
-  const maxU=Math.max(...C.agentGrpCnt)||1;
-  const scores=C.agentGroups.map((ag,i)=>({
-    name:ag,
-    score:Math.round(0.6*(C.agentGrpRev[i]/maxR*100)+0.4*(C.agentGrpCnt[i]/maxU*100)),
-    rev:C.agentGrpRev[i], units:C.agentGrpCnt[i]
-  })).sort((a,b)=>b.score-a.score);
-
-  const el=document.getElementById('agent-scores');
-  if(!el) return;
-  el.innerHTML='';
-  scores.forEach((ag,i)=>{
-    const col=ag.score>70?'#27AE60':ag.score>40?'#F39C12':'#C0392B';
-    el.innerHTML+=`<div class="sbar-row">
-      <div class="sbar-lbl"><span class="rn">${i+1}</span> ${ag.name.length>20?ag.name.slice(0,19)+'\u2026':ag.name}</div>
-      <div class="sbar-wrap"><div class="sbar-fill" style="width:${ag.score}%;background:${col}"></div></div>
-      <div class="sbar-val">${ag.score}/100 <span style="color:var(--text3)">${fB(ag.rev)}</span></div>
-    </div>`;
-  });
-}
-
-/* ── MODEL 5: Strategic Insights ─────────────────── */
-function runModel5_Insights(rows) {
-  const C=window._lastAnalytics;
-  if(!C||!C.years||C.years.length<2) return;
-
-  const xs=C.years.map(y=>parseInt(y));
-  const m=ols(xs,C.revByYear);
-  const lastYr=xs[xs.length-1];
-  const lastRev=C.revByYear[C.revByYear.length-1]||0;
-  const nextRev=Math.max(0,m.pred(lastYr+1));
-  const growth=lastRev>0?((nextRev-lastRev)/lastRev*100).toFixed(0):0;
-
-  const RPROB={'High Risk':0.22,'Medium Risk':0.52};
-  let hrOut=0,hrCnt=0;
-  rows.forEach(r=>{
-    if(r.collectionRisk==='High Risk'&&r._out>0){hrOut+=r._out;hrCnt++;}
+  // ── Moving average chart ──
+  mkChart('c-mavg',{
+    type:'bar',
+    data:{
+      labels:P.mavgLabels,
+      datasets:[
+        { label:'Annual Units', data:P.unitsByYear, backgroundColor:'rgba(192,57,43,0.15)',
+          borderRadius:4, borderSkipped:false },
+        { label:'3yr Moving Avg', data:P.mavg3yr.map(v=>+v.toFixed(1)),
+          type:'line', borderColor:C.red, backgroundColor:'transparent',
+          borderWidth:2.5, tension:0.4, pointRadius:3 },
+        { label:'2yr Moving Avg', data:P.mavg2yr.map(v=>+v.toFixed(1)),
+          type:'line', borderColor:C.blue, backgroundColor:'transparent',
+          borderWidth:1.5, borderDash:[4,2], tension:0.4, pointRadius:0 },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y.toFixed(1)+' units'}}
+      },
+      scales:{
+        x:{grid:{display:false}},
+        y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' u'}}
+      }
+    }
   });
 
-  // Price elasticity signal
-  const pd=C.avgPriceByYear?.slice(1).map((v,i)=>v-(C.avgPriceByYear[i]||0))||[];
-  const vd=C.unitsByYear?.slice(1).map((v,i)=>v-(C.unitsByYear[i]||0))||[];
-  const pcorr=pearson(pd,vd);
+  // Velocity bars
+  const velEl = document.getElementById('velocity-bars');
+  if(velEl) {
+    const velSorted = Object.entries(P.velocityScores).sort((a,b)=>b[1]-a[1]);
+    velEl.innerHTML='';
+    velSorted.forEach(([comm,score])=>{
+      const color = score>110?C.green:score>90?C.amber:C.red;
+      const label = score>110?'Accelerating':score>90?'Stable':'Slowing';
+      velEl.innerHTML+=`<div class="score-bar-row">
+        <div class="score-bar-lbl">${comm}</div>
+        <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${Math.min(100,(score/150*100)).toFixed(0)}%;background:${color}"></div></div>
+        <div class="score-bar-val">${score} <span style="color:${color};font-size:9px">${label}</span></div>
+      </div>`;
+    });
+  }
 
-  // Velocity: top and bottom community
-  const n=C.years.length;
-  const velScores=C.communities?.map(comm=>{
-    const rec=n>=4?C.years.slice(-2).reduce((s,y)=>s+(C.commYearMatrix[comm]?.[y]||0),0)/2:0;
-    const pri=n>=4?C.years.slice(-4,-2).reduce((s,y)=>s+(C.commYearMatrix[comm]?.[y]||0),0)/2:1;
-    return {comm,score:pri>0?Math.round((rec/pri)*100):100};
-  })||[];
-  const topVel=velScores.sort((a,b)=>b.score-a.score)[0];
-  const botVel=velScores[velScores.length-1];
+  // ── Agent composite scores ──
+  const asEl = document.getElementById('agent-score-bars');
+  if(asEl) {
+    asEl.innerHTML='';
+    P.agentScores.forEach((ag,i)=>{
+      const col = ag.score>70?C.green:ag.score>45?C.amber:C.red;
+      asEl.innerHTML+=`<div class="score-bar-row">
+        <div class="score-bar-lbl"><span class="rn">${i+1}</span> ${ag.name.length>18?ag.name.slice(0,17)+'…':ag.name}</div>
+        <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${ag.score.toFixed(0)}%;background:${col}"></div></div>
+        <div class="score-bar-val">${ag.score.toFixed(0)}/100 <span style="color:var(--text3);font-size:9px">(${ag.collRate.toFixed(0)}% coll.)</span></div>
+      </div>`;
+    });
+  }
 
-  const insights=[];
-  if(growth>10) insights.push({ico:'📈',type:'high',title:'Strong revenue growth projected',sub:`OLS projects ${growth}% growth next year (${fB(nextRev)}). Capitalise by accelerating launch pipeline.`});
-  else if(growth<0) insights.push({ico:'⚠️',type:'low',title:'Revenue contraction signal',sub:`Model projects ${Math.abs(growth)}% decline. Review pricing and channel activation.`});
-  else insights.push({ico:'📊',type:'med',title:'Steady revenue outlook',sub:`${growth}% projected growth aligns with trend. Focus on margin optimisation.`});
+  // ── Strategy insights ──
+  const siEl = document.getElementById('strategy-insights');
+  if(siEl) {
+    siEl.innerHTML='';
+    P.insights.forEach(ins=>{
+      const typeClass = ins.type==='high'?'#EAFAF1':ins.type==='low'?'#FDECEA':'#FEF9E7';
+      siEl.innerHTML+=`<div class="pred-insight" style="background:${typeClass};border-color:${ins.type==='high'?'#A9DFBF':ins.type==='low'?'#F5B7B1':'#FAD7A0'}">
+        <div class="pred-insight-ico" style="background:${ins.type==='high'?'#27AE60':ins.type==='low'?'var(--red)':'#E67E22'};font-size:15px;width:30px;height:30px;border-radius:7px">${ins.ico}</div>
+        <div class="pred-insight-body"><div class="pred-insight-title">${ins.title}</div><div class="pred-insight-sub">${ins.sub}</div></div>
+      </div>`;
+    });
+  }
 
-  if(hrOut>5e8) insights.push({ico:'🔴',type:'low',title:`${fB(hrOut)} in high-risk receivables`,sub:`${hrCnt} units below 25% paid. ~22% recovery probability. Escalate collections immediately.`});
-
-  if(topVel&&topVel.score>110) insights.push({ico:'🏘️',type:'high',title:`${topVel.comm} is your fastest-growing community`,sub:`Velocity index ${topVel.score}. Prioritise inventory allocation and pricing power here.`});
-  if(botVel&&botVel.score<80) insights.push({ico:'📉',type:'low',title:`${botVel.comm} showing demand softness`,sub:`Velocity index ${botVel.score}. Review pricing or channel activation in this community.`});
-
-  if(pcorr<-0.5) insights.push({ico:'💹',type:'med',title:'Price-sensitive demand detected',sub:`Pearson r=${pcorr.toFixed(2)}. Volume falls when price rises. Recommend value-add over price hikes.`});
-  else if(pcorr>0.3) insights.push({ico:'🎯',type:'high',title:'Aspirational buyer base detected',sub:`Positive price-volume correlation (r=${pcorr.toFixed(2)}). Premium positioning is sustainable.`});
-
-  const el=document.getElementById('insights-wrap');
-  if(!el) return;
-  el.innerHTML='';
-  insights.slice(0,5).forEach(ins=>{
-    el.innerHTML+=`<div class="ins-card ${ins.type}">
-      <div class="ins-ico">${ins.ico}</div>
-      <div><div class="ins-title">${ins.title}</div><div class="ins-sub">${ins.sub}</div></div>
-    </div>`;
+  // ── Elasticity scatter ──
+  const esDatasets = P.elasticityX.map((x,i)=>({
+    x, y: P.elasticityY[i], label: P.elasticityYears[i]
+  }));
+  // Regression line for elasticity
+  const eOls = olsRegression(P.elasticityX, P.elasticityY.map(v=>v));
+  const eXMin = Math.min(...P.elasticityX)*0.95, eXMax = Math.max(...P.elasticityX)*1.05;
+  mkChart('c-elasticity',{
+    type:'scatter',
+    data:{
+      datasets:[
+        { label:'Year (price vs units)', data: esDatasets,
+          backgroundColor:C.red, pointRadius:6, pointHoverRadius:8 },
+        { label:'Correlation line', data:[{x:eXMin,y:eOls.predict(eXMin)},{x:eXMax,y:eOls.predict(eXMax)}],
+          type:'line', borderColor:'rgba(41,128,185,0.5)', borderWidth:2,
+          borderDash:[5,3], pointRadius:0, fill:false }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},
+        tooltip:{callbacks:{label:ctx=>{
+          if(ctx.datasetIndex===0) return `${ctx.raw.label}: ₦${ctx.raw.x}M avg, ${ctx.raw.y} units`;
+          return 'Trend';
+        }}}
+      },
+      scales:{
+        x:{title:{display:true,text:'Avg Unit Price (₦M)',font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}},
+        y:{title:{display:true,text:'Units Sold',font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}}
+      }
+    }
   });
+
+  // Price bands
+  const pbEl = document.getElementById('price-bands');
+  if(pbEl) {
+    pbEl.innerHTML='';
+    const bands = Object.entries(P.priceBands).sort((a,b)=>b[1].median-a[1].median);
+    bands.forEach(([comm, b])=>{
+      const maxP = Math.max(...bands.map(x=>x[1].q3))||1;
+      const barW = (b.q3/maxP*100).toFixed(0);
+      const q1W  = (b.q1/maxP*100).toFixed(0);
+      pbEl.innerHTML+=`<div class="score-bar-row" style="margin-bottom:11px">
+        <div class="score-bar-lbl" style="width:120px">${comm}</div>
+        <div style="flex:1;position:relative;height:14px;background:#F0F0F4;border-radius:4px">
+          <div style="position:absolute;left:0;top:0;height:100%;width:${q1W}%;background:rgba(192,57,43,0.1);border-radius:4px 0 0 4px"></div>
+          <div style="position:absolute;left:${q1W}%;top:0;height:100%;width:${(b.q3-b.q1)/maxP*100}%;background:var(--red);border-radius:0;opacity:0.55"></div>
+          <div style="position:absolute;left:${(b.median/maxP*100).toFixed(0)}%;top:-2px;width:2px;height:18px;background:var(--red5);border-radius:1px"></div>
+        </div>
+        <div class="score-bar-val" style="width:170px;text-align:right;font-size:9.5px">
+          ${fM(b.q1)} – ${fM(b.q3)} <span style="color:var(--text3)">(median ${fM(b.median)})</span>
+        </div>
+      </div>`;
+    });
+    pbEl.innerHTML+=`<div style="font-size:9.5px;color:var(--text3);margin-top:8px">Bar = IQR (25th–75th percentile). Red line = median. Highest absorption zone for new unit pricing.</div>`;
+  }
 }
 
-/* ── Store analytics for predictive models ─────────── */
-// renderFromRows calls this so models always have fresh data
-let _lastAnalytics = null;
+/* ─── HOOK INTO EXISTING RENDER PIPELINE ────────────── */
+let _lastAllRows = null;
 
 /* =====================================================
    AUTO-REFRESH
@@ -1917,9 +2292,28 @@ let _lastAnalytics = null;
 setInterval(()=>loadData(false), 30 * 60 * 1000); // 30 minutes
 
 /* =====================================================
-   BOOT
+   BOOT — same pattern as index 29
+   window.onAuthGateReady is defined BEFORE the auth script loads.
+   dashboard-auth-28.js calls it immediately after a valid sign-in,
+   or when a persisted Firebase session fires onAuthStateChanged
+   synchronously on page load (which happens before window.onload).
    ===================================================== */
-loadData();
+window.onAuthGateReady = window.onAuthGateReady || function () {
+  // Dashboard data load — called once by dashboard-auth-28.js after sign-in
+  loadData(false);
+};
+
+// dashboard-auth-28.js and dashboard-analytics-28.js are loaded
+// as <script src="..."> tags at the end of <body> — they boot themselves.
 </script>
+
+<!-- Auth gate — self-contained, no dependency on inline scripts -->
+<!-- Mirrors the role of dashboard-auth.js in index 29             -->
+<script src="dashboard-auth-28.js"></script>
+
+<!-- Predictive analytics engine — runs models on idle thread     -->
+<!-- Mirrors the role of dashboard-pi-engine.js in index 29       -->
+<script src="dashboard-analytics-28.js"></script>
+
 </body>
 </html>
