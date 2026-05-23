@@ -171,6 +171,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .risk-medium{background:#FDF2E9;color:#E67E22}
 .risk-high{background:var(--red4);color:var(--red)}
 
+/* ── SO WHAT CALLOUTS ─────────────────────────────── */
+.sowhat{border-radius:12px;padding:14px 18px 14px 54px;margin-bottom:14px;position:relative;border:1px solid transparent}
+.sowhat::before{content:attr(data-ico);position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;line-height:1}
+.sowhat.sw-pos{background:linear-gradient(135deg,#EAFAF1 0%,rgba(255,255,255,0.7) 100%);border-color:#A9DFBF}
+.sowhat.sw-neg{background:linear-gradient(135deg,#FDECEA 0%,rgba(255,255,255,0.7) 100%);border-color:#F5B7B1}
+.sowhat.sw-med{background:linear-gradient(135deg,#FEF9E7 0%,rgba(255,255,255,0.7) 100%);border-color:#FAD7A0}
+.sowhat.sw-neu{background:linear-gradient(135deg,#EBF5FB 0%,rgba(255,255,255,0.7) 100%);border-color:#AED6F1}
+.sowhat-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.sowhat.sw-pos .sowhat-label{color:#1E8449}
+.sowhat.sw-neg .sowhat-label{color:#922B21}
+.sowhat.sw-med .sowhat-label{color:#D35400}
+.sowhat.sw-neu .sowhat-label{color:#1A5276}
+.sowhat-headline{font-size:13px;font-weight:600;color:var(--text);letter-spacing:-.2px;margin-bottom:3px}
+.sowhat-body{font-size:11.5px;color:var(--text2);line-height:1.6}
+.sowhat-body strong{color:var(--text);font-weight:600}
+
 /* ── RESPONSIVE ───────────────────────────────────── */
 @media(max-width:1200px){
   .kpi-strip{grid-template-columns:repeat(3,1fr)}
@@ -629,6 +645,43 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     </div>
     <div id="rec-waterfall"></div>
   </div>
+
+  <!-- ===== PRICING INTELLIGENCE — PRICE ELASTICITY ===== -->
+  <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin:22px 0 14px;display:flex;align-items:center;gap:10px">
+    Pricing Intelligence — Price vs Demand Elasticity
+    <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(192,57,43,0.15),transparent)"></div>
+  </div>
+
+  <div class="kpi-strip" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi"><div class="kpi-label">Price–Volume Correlation</div><div class="kpi-value" id="el-corr">—</div><div class="kpi-sub" id="el-corr-s">Pearson r · annual series</div></div>
+    <div class="kpi"><div class="kpi-label">Demand Signal</div><div class="kpi-value red" id="el-signal">—</div><div class="kpi-sub" id="el-signal-s">Buyer price sensitivity</div></div>
+    <div class="kpi"><div class="kpi-label">Highest-Median Community</div><div class="kpi-value" id="el-top-comm">—</div><div class="kpi-sub" id="el-top-comm-s">By median transaction price</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="cc">
+      <div class="ch">
+        <div><div class="ct">Price vs Volume Correlation</div><div class="cs">Each point = one year · avg unit price (₦M) vs units sold</div></div>
+        <span class="badge bg_" id="el-r-badge">r=—</span>
+      </div>
+      <div class="cw" style="height:260px"><canvas id="c-elasticity"></canvas></div>
+      <div id="el-note" style="font-size:10px;color:var(--text3);margin-top:8px;padding:6px 10px;background:#F7F7F9;border-radius:6px;border-left:3px solid var(--red3)">Loading model…</div>
+    </div>
+    <div class="cc">
+      <div class="ch">
+        <div><div class="ct">Optimal Price Range by Community</div><div class="cs">IQR band — 25th to 75th percentile absorption zone · red line = median</div></div>
+      </div>
+      <div id="el-price-bands"></div>
+    </div>
+  </div>
+
+  <!-- So What: Price Elasticity -->
+  <div class="sowhat sw-neu" id="sw-elasticity" data-ico="💡" style="display:none">
+    <div class="sowhat-label">So What — Pricing Intelligence</div>
+    <div class="sowhat-headline" id="sw-el-headline">—</div>
+    <div class="sowhat-body" id="sw-el-body">—</div>
+  </div>
+
 </div>
 
 </main>
@@ -1816,6 +1869,8 @@ function renderPredict(d, rows) {
   try { renderVelocity(d); } catch(e) { console.warn('[predict] velocity failed:', e); }
   // Recovery (needs raw rows for per-row _out and _ppct)
   try { renderRecovery(rows || []); } catch(e) { console.warn('[predict] recovery failed:', e); }
+  // Elasticity (uses analytics object + raw rows for price bands)
+  try { renderElasticity(d, rows || []); } catch(e) { console.warn('[predict] elasticity failed:', e); }
 }
 
 function renderForecast(d) {
@@ -2279,6 +2334,226 @@ function renderRecovery(rows) {
         Risk tiers derived from <b>% Paid</b>: 100%+ = Collected, 75–99% = Near Completion, 50–74% = Low Risk, 25–49% = Medium Risk, &lt;25% = High Risk. Recovery probabilities (99/92/78/52/22%) are defaults — refine in code once you have empirical collection-team data.
       </div>`;
   }
+}
+
+
+/* =====================================================
+   PRICING INTELLIGENCE — Price vs Demand Elasticity
+   Pearson correlation on annual (ΔPrice, ΔVolume) series.
+   IQR price bands per community from raw rows.
+   Follows the same self-contained module pattern as
+   renderVelocity and renderRecovery above.
+   ===================================================== */
+function pearsonCorr(xs, ys) {
+  const n = xs.length;
+  if (n < 2) return 0;
+  const xm = xs.reduce((s,v)=>s+v,0)/n;
+  const ym = ys.reduce((s,v)=>s+v,0)/n;
+  let num=0, dx=0, dy=0;
+  for (let i=0;i<n;i++) {
+    num += (xs[i]-xm)*(ys[i]-ym);
+    dx  += (xs[i]-xm)**2;
+    dy  += (ys[i]-ym)**2;
+  }
+  return (dx && dy) ? num / Math.sqrt(dx*dy) : 0;
+}
+
+function renderElasticity(d, rows) {
+  // Need at least 3 years with both price and unit data
+  if (!d || !d.years || d.years.length < 3 ||
+      !d.avgPriceByYear || !d.unitsByYear) {
+    setText('el-corr', '—');
+    setText('el-signal', '—');
+    const noteEl = document.getElementById('el-note');
+    if (noteEl) noteEl.textContent = 'Need at least 3 years of data to compute elasticity.';
+    return;
+  }
+
+  // Filter to years that have both price and unit data
+  const validIdx = d.avgPriceByYear
+    .map((p,i) => (p > 0 && d.unitsByYear[i] > 0) ? i : -1)
+    .filter(i => i >= 0);
+
+  if (validIdx.length < 3) {
+    setText('el-corr', '—');
+    setText('el-signal', 'Insufficient data');
+    return;
+  }
+
+  const priceArr = validIdx.map(i => d.avgPriceByYear[i]);
+  const unitArr  = validIdx.map(i => d.unitsByYear[i]);
+  const yearArr  = validIdx.map(i => d.years[i]);
+
+  // Pearson r between avg price and units sold (level correlation)
+  const r = pearsonCorr(priceArr, unitArr);
+  const rStr = r.toFixed(2);
+
+  // Classify the signal
+  const signalLabel = r < -0.5 ? 'Price-Sensitive'
+                    : r > 0.3  ? 'Aspirational'
+                    : 'Neutral';
+  const signalSub   = r < -0.5 ? 'Volume falls as price rises'
+                    : r > 0.3  ? 'Buyers move up with price'
+                    : 'No strong directional link';
+
+  // ── KPI cards ──────────────────────────────────────────────────────────
+  setText('el-corr', rStr);
+  setText('el-corr-s', 'Pearson r · ' + validIdx.length + ' data points');
+  setText('el-signal', signalLabel);
+  setText('el-signal-s', signalSub);
+
+  // ── r badge on chart ───────────────────────────────────────────────────
+  const rBadge = document.getElementById('el-r-badge');
+  if (rBadge) {
+    rBadge.textContent = 'r=' + rStr;
+    rBadge.className = 'badge ' +
+      (Math.abs(r) > 0.5 ? (r < 0 ? 'br' : 'bgrn') : 'bg_');
+  }
+
+  // ── OLS regression line for scatter ───────────────────────────────────
+  const priceMn = priceArr.map(v => +(v/1e6).toFixed(1));
+  const eOls    = olsRegression(priceMn, unitArr);
+  const xMin    = Math.min(...priceMn) * 0.95;
+  const xMax    = Math.max(...priceMn) * 1.05;
+
+  // ── Scatter chart ──────────────────────────────────────────────────────
+  mkChart('c-elasticity', {
+    type: 'scatter',
+    data: {
+      datasets: [
+        { label: 'Year (price vs units)',
+          data: priceMn.map((x,i) => ({ x, y: unitArr[i], label: yearArr[i] })),
+          backgroundColor: C.red, pointRadius: 6, pointHoverRadius: 8 },
+        { label: 'Correlation line',
+          data: [{ x: xMin, y: eOls.predict(xMin) }, { x: xMax, y: eOls.predict(xMax) }],
+          type: 'line', borderColor: 'rgba(41,128,185,0.5)', borderWidth: 2,
+          borderDash: [5,3], pointRadius: 0, fill: false },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'top',
+          labels: { font: { size: 10 }, boxWidth: 9, boxHeight: 9 } },
+        tooltip: { callbacks: { label: ctx => {
+          if (ctx.datasetIndex === 0)
+            return ctx.raw.label + ': ₦' + ctx.raw.x + 'M avg · ' + ctx.raw.y + ' units';
+          return 'Trend';
+        }}}
+      },
+      scales: {
+        x: { title: { display: true, text: 'Avg Unit Price (₦M)', font: { size: 10 } },
+             grid: { color: 'rgba(0,0,0,0.04)' } },
+        y: { title: { display: true, text: 'Units Sold', font: { size: 10 } },
+             grid: { color: 'rgba(0,0,0,0.04)' } }
+      }
+    }
+  });
+
+  // ── Footnote ───────────────────────────────────────────────────────────
+  const noteEl = document.getElementById('el-note');
+  if (noteEl) {
+    const strength = Math.abs(r) > 0.7 ? 'strong' : Math.abs(r) > 0.4 ? 'moderate' : 'weak';
+    const dir = r < -0.3 ? 'negative' : r > 0.3 ? 'positive' : 'near-zero';
+    noteEl.textContent = 'Pearson r=' + rStr + ' — ' + strength + ' ' + dir +
+      ' correlation between annual avg price and units sold. Regression line fitted on ' +
+      validIdx.length + ' data points.';
+  }
+
+  // ── Price bands per community (IQR from raw rows) ──────────────────────
+  const priceBands = {};
+  if (rows && rows.length) {
+    (d.communities || []).forEach(comm => {
+      const prices = rows
+        .filter(r => r.community === comm && r._sp > 0)
+        .map(r => r._sp)
+        .sort((a,b) => a-b);
+      if (prices.length < 4) return;
+      priceBands[comm] = {
+        q1:     prices[Math.floor(prices.length * 0.25)],
+        median: prices[Math.floor(prices.length * 0.50)],
+        q3:     prices[Math.floor(prices.length * 0.75)],
+        count:  prices.length,
+      };
+    });
+  }
+
+  const pbEl = document.getElementById('el-price-bands');
+  if (pbEl) {
+    const bands = Object.entries(priceBands).sort((a,b) => b[1].median - a[1].median);
+    if (!bands.length) {
+      pbEl.innerHTML = '<p style="color:var(--text3);font-size:11px;margin-top:8px">Not enough per-community price data to compute IQR bands.</p>';
+    } else {
+      pbEl.innerHTML = '';
+      const maxP = Math.max(...bands.map(([,b]) => b.q3)) || 1;
+
+      // Top community KPI
+      const topBand = bands[0];
+      setText('el-top-comm', topBand[0].length > 16 ? topBand[0].slice(0,15)+'…' : topBand[0]);
+      setText('el-top-comm-s', 'Median ' + fM(topBand[1].median));
+
+      bands.forEach(([comm, b]) => {
+        const q1W  = (b.q1    / maxP * 100).toFixed(0);
+        const iqrW = ((b.q3 - b.q1) / maxP * 100).toFixed(0);
+        const medW = (b.median / maxP * 100).toFixed(0);
+        pbEl.innerHTML += `
+          <div class="sl-row" style="margin-bottom:11px">
+            <div class="sl-lbl" style="width:120px">${comm}</div>
+            <div style="flex:1;position:relative;height:14px;background:#F0F0F4;border-radius:4px">
+              <div style="position:absolute;left:0;top:0;height:100%;width:${q1W}%;background:rgba(192,57,43,0.10);border-radius:4px 0 0 4px"></div>
+              <div style="position:absolute;left:${q1W}%;top:0;height:100%;width:${iqrW}%;background:var(--red);opacity:0.55"></div>
+              <div style="position:absolute;left:${medW}%;top:-2px;width:2px;height:18px;background:#922B21;border-radius:1px"></div>
+            </div>
+            <div class="sl-val" style="width:190px;font-size:9.5px">
+              ${fM(b.q1)}–${fM(b.q3)} <span style="color:var(--text3)">(med ${fM(b.median)})</span>
+            </div>
+          </div>`;
+      });
+      pbEl.innerHTML += `<div style="font-size:9.5px;color:var(--text3);margin-top:6px;padding:6px 10px;background:#F7F7F9;border-radius:6px;border-left:3px solid var(--red3)">Bar = IQR (25th–75th percentile). Red line = median. Use as guardrail when pricing new launches.</div>`;
+    }
+  }
+
+  // ── So What callout ────────────────────────────────────────────────────
+  const sw       = document.getElementById('sw-elasticity');
+  const headline = document.getElementById('sw-el-headline');
+  const body     = document.getElementById('sw-el-body');
+  if (!sw || !headline || !body) return;
+
+  const bands      = Object.entries(priceBands).sort((a,b) => b[1].median - a[1].median);
+  const topBand    = bands[0];
+  const topName    = topBand ? topBand[0] : '—';
+  const topMedian  = topBand ? fM(topBand[1].median) : '—';
+  const topRange   = topBand ? fM(topBand[1].q1) + '–' + fM(topBand[1].q3) : '—';
+
+  if (r < -0.5) {
+    sw.className = 'sowhat sw-neg'; sw.dataset.ico = '💹';
+    headline.textContent = 'Demand is price-sensitive (r=' + rStr + ') — when you raise prices, volume drops.';
+    body.innerHTML = 'The ' + (Math.abs(r)>0.7?'strong':'moderate') + ' negative correlation means ' +
+      'price increases have historically come at a cost in absorption. ' +
+      '<strong>Implication:</strong> Prioritise value-add over headline price increases — ' +
+      'amenity upgrades and flexible payment structures defend ASP without suppressing units. ' +
+      'In <strong>' + topName + '</strong>, the sweet spot sits at <strong>' + topMedian + '</strong> ' +
+      '(IQR: ' + topRange + '). Price above Q3 only with a clear justification.';
+  } else if (r > 0.3) {
+    sw.className = 'sowhat sw-pos'; sw.dataset.ico = '🎯';
+    headline.textContent = 'Aspirational demand signal (r=' + rStr + ') — buyers have historically moved up with price.';
+    body.innerHTML = 'A positive price-volume correlation means higher prices have not suppressed absorption — ' +
+      'premium positioning may even reinforce perceived quality in your buyer base. ' +
+      '<strong>Implication:</strong> You have room to test price uplifts, especially in high-velocity communities. ' +
+      'In <strong>' + topName + '</strong>, the median transaction is <strong>' + topMedian + '</strong> — ' +
+      'consider anchoring new launches above this to stretch ASP. ' +
+      'Monitor quarterly; this signal can reverse during macro tightening.';
+  } else {
+    sw.className = 'sowhat sw-med'; sw.dataset.ico = '⚖️';
+    headline.textContent = 'Price-volume relationship is weak (r=' + rStr + ') — demand is driven by factors beyond price alone.';
+    body.innerHTML = 'No strong directional link between price and absorption. ' +
+      'Buyer decisions appear shaped more by product type, payment plan structure, or channel reach than by headline price. ' +
+      '<strong>Implication:</strong> Don\'t over-index on price as a lever. ' +
+      'Investigate conversion quality — specifically, what separates units that close quickly from those that sit. ' +
+      'In <strong>' + topName + '</strong>, the current absorption band is <strong>' + topRange + '</strong> ' +
+      '(median ' + topMedian + '); use this as a guardrail, not a ceiling.';
+  }
+  sw.style.display = '';
 }
 
 
