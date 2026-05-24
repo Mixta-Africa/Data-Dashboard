@@ -970,6 +970,52 @@ let CLASSIFICATION_DATA = null;
 // Pricing intelligence enabled flag
 const PRICING_INTELLIGENCE_ENABLED = true;
 
+// ── Sheet-name resolver ─────────────────────────────────────────────────────
+// Google Sheets can publish tabs with trailing spaces, smart-quotes, or
+// slightly different capitalisation.  This normalises both sides before
+// comparing so a sheet named "Inflation rate " still resolves correctly.
+// Canonical names (keys) → list of acceptable aliases (lowercase, trimmed).
+const SHEET_NAME_ALIASES = {
+  'Inflation Rate':          ['inflation rate', 'inflation rates', 'inflationrate', 'cpi', 'inflation'],
+  'Price Sheet':             ['price sheet', 'pricesheet', 'prices', 'price list', 'pricelist', 'pricing sheet'],
+  'Property Classification': ['property classification', 'classification', 'property class', 'propertyclass'],
+};
+
+/**
+ * Finds the closest matching sheet in the workbook for a canonical name.
+ * Returns the wb.Sheets[matchedName] object or null.
+ * Also emits a diagnostic log listing all available sheet names so
+ * devs can spot mismatches without guessing.
+ */
+function resolveSheet(workbook, canonicalName) {
+  const aliases = SHEET_NAME_ALIASES[canonicalName] || [canonicalName.toLowerCase().trim()];
+  const available = workbook.SheetNames;
+
+  // Log once per load so console gives instant diagnosis
+  if (!resolveSheet._logged) {
+    console.log('[Pricing] Available sheets:', available.join(' | '));
+    resolveSheet._logged = true;
+  }
+
+  // 1. Exact match first
+  if (workbook.Sheets[canonicalName]) return workbook.Sheets[canonicalName];
+
+  // 2. Fuzzy: normalise both sides
+  for (const sheetName of available) {
+    const norm = sheetName.toLowerCase().trim();
+    if (aliases.some(alias => norm === alias || norm.includes(alias) || alias.includes(norm))) {
+      console.log(`[Pricing] Sheet "${canonicalName}" resolved via fuzzy match → "${sheetName}"`);
+      return workbook.Sheets[sheetName];
+    }
+  }
+
+  console.warn(`[Pricing] Sheet "${canonicalName}" not found. Available: ${available.join(', ')}`);
+  return null;
+}
+// Reset logged flag on each full data load so diagnostics re-emit on Sync
+function resetSheetResolver() { resolveSheet._logged = false; }
+// ─────────────────────────────────────────────────────────────────────────────
+
 
 /* =====================================================
    EXPANDED HEADER MAP
@@ -1230,10 +1276,13 @@ async function getLiveSheetData() {
   let rawHeaders = [];
 
   // 3. Loop through EVERY tab in the spreadsheet
+  // Use normalised comparison so tab name variations don't bleed into
+  // transaction data (e.g. "Price Sheet " with trailing space still excluded)
+  const PRICING_SKIP = ['price sheet','inflation rate','property classification'];
   wb.SheetNames.forEach(sheetName => {
-    // Skip pricing intelligence sheets
-    if (sheetName === 'Price Sheet' || sheetName === 'Inflation Rate' || sheetName === 'Property Classification') {
-      return; // Don't include these in transaction data
+    if (PRICING_SKIP.some(skip => sheetName.toLowerCase().trim() === skip ||
+                                   sheetName.toLowerCase().trim().includes(skip))) {
+      return; // Don't include pricing intelligence sheets in transaction data
     }
     
     const ws = wb.Sheets[sheetName];
@@ -1524,99 +1573,122 @@ function computeAnalytics(rows) {
 // Fetch and parse Inflation Rate sheet
 async function fetchInflationData(workbook) {
   try {
-    const inflationSheet = workbook.Sheets['Inflation Rate'];
+    const inflationSheet = resolveSheet(workbook, 'Inflation Rate');
     if (!inflationSheet) {
       console.warn('[Pricing] Inflation Rate sheet not found');
       return null;
     }
-    
+
     const inflationRaw = XLSX.utils.sheet_to_json(inflationSheet, { header: 1 });
-    
-    const inflation = {
-      byYear: {},
-      cpiIndex: {}
-    };
-    
-    // Parse rows (row 0 = empty, row 1 = headers, data starts row 2)
-    // Columns: A=empty, B=Year, C=Headline, D=Food, E=Core, I=Exchange/$
-    for (let i = 2; i < inflationRaw.length; i++) {
+
+    // ── Diagnostic dump (first 4 rows so we can see structure) ───────────────
+    console.log('[Pricing] Inflation sheet rows 0-4:', JSON.stringify(inflationRaw.slice(0, 5)));
+
+    const inflation = { byYear: {}, cpiIndex: {} };
+
+    // ── Universal % string → number converter ───────────────────────────────
+    // Handles: "13.20%", 0.132, 13.2, "~34.8% (old series)", "15–16%"
+    // Returns the value as a plain percentage number (e.g. 13.2 for 13.2%)
+    // Returns null if unparseable.
+    function parsePct(raw) {
+      if (raw === null || raw === undefined || raw === '' || raw === '—' || raw === '-') return null;
+      if (typeof raw === 'number') {
+        // Stored as decimal (0.132) or already as percentage (13.2) — detect by magnitude
+        // Values < 2 are almost certainly decimals for inflation (e.g. 0.132 = 13.2%)
+        // Values >= 2 are already percentage points (e.g. 13.2)
+        return raw < 2 ? raw * 100 : raw;
+      }
+      // String: strip everything except digits, dots, minus signs
+      const numStr = raw.toString().replace(/[^0-9.\-]/g, '');
+      if (!numStr) return null;
+      const val = parseFloat(numStr);
+      if (isNaN(val)) return null;
+      // If the original string contained '%' the value is already in percent form
+      if (raw.toString().includes('%')) return val;
+      // Otherwise treat like a number (same magnitude heuristic)
+      return val < 2 ? val * 100 : val;
+    }
+
+    // ── Find which column holds 4-digit years ────────────────────────────────
+    // Scan rows 1-6 to find which col has values matching /^\d{4}$/ or /^20\d\d/
+    const YEAR_RE = /^(20\d{2})/;
+    let yearCol = 1; // default: col B (index 1)
+    outerYearScan:
+    for (let r = 1; r < Math.min(inflationRaw.length, 8); r++) {
+      const row = inflationRaw[r] || [];
+      for (let c = 0; c < row.length; c++) {
+        const cell = row[c];
+        if (cell && YEAR_RE.test(cell.toString().trim())) {
+          yearCol = c;
+          console.log('[Pricing] Year column detected at index', yearCol, '(row', r, 'value:', cell, ')');
+          break outerYearScan;
+        }
+      }
+    }
+    // Headline inflation is expected in the column immediately after the year
+    // but we confirm by scanning the header row for "headline" keyword
+    let headlineCol = yearCol + 1;
+    for (let r = 0; r < Math.min(inflationRaw.length, 4); r++) {
+      const row = inflationRaw[r] || [];
+      for (let c = 0; c < row.length; c++) {
+        const cell = (row[c] || '').toString().toLowerCase();
+        if (cell.includes('headline') || cell.includes('cpi') || cell.includes('inflation')) {
+          if (c !== yearCol) { headlineCol = c; break; }
+        }
+      }
+    }
+    console.log('[Pricing] Year col:', yearCol, '| Headline col:', headlineCol);
+
+    // ── Parse every data row ─────────────────────────────────────────────────
+    for (let i = 0; i < inflationRaw.length; i++) {
       const row = inflationRaw[i];
-      if (!row || row.length < 3) continue;
-      
-      // Extract year (handle "2025 (Proj.)" format)
-      let year = row[1];
-      if (typeof year === 'string') {
-        const yearMatch = year.match(/(\d{4})/);
-        if (yearMatch) year = parseInt(yearMatch[1]);
-      } else {
-        year = parseInt(year);
-      }
-      if (isNaN(year)) continue;
-      
-      // Extract headline inflation
-      let headlineInflation = row[2];
-      
-      // Handle different formats:
-      // 1. Decimal (0.132 → 13.2%)
-      // 2. Text with % ("~34.8% (old series equivalent)" → 34.8)
-      // 3. Range ("15–16%" → 15.5 midpoint)
-      if (typeof headlineInflation === 'string') {
-        // Try to extract percentage
-        const percentMatch = headlineInflation.match(/(\d+\.?\d*)/);
-        if (percentMatch) {
-          headlineInflation = parseFloat(percentMatch[1]);
-          // If it's a range like "15–16", take the first number
-        } else {
-          continue;
-        }
-      } else {
-        headlineInflation = parseFloat(headlineInflation);
-        // Convert decimal to percentage (0.132 → 13.2)
-        if (headlineInflation < 1) {
-          headlineInflation = headlineInflation * 100;
-        }
-      }
-      
-      if (isNaN(headlineInflation)) continue;
-      
-      // Parse food and core inflation (same logic)
-      let foodInflation = row[3];
-      if (typeof foodInflation === 'string') {
-        const match = foodInflation.match(/(\d+\.?\d*)/);
-        foodInflation = match ? parseFloat(match[1]) : null;
-      } else {
-        foodInflation = parseFloat(foodInflation) || null;
-        if (foodInflation && foodInflation < 1) foodInflation = foodInflation * 100;
-      }
-      
-      let coreInflation = row[4];
-      if (typeof coreInflation === 'string') {
-        const match = coreInflation.match(/(\d+\.?\d*)/);
-        coreInflation = match ? parseFloat(match[1]) : null;
-      } else {
-        coreInflation = parseFloat(coreInflation) || null;
-        if (coreInflation && coreInflation < 1) coreInflation = coreInflation * 100;
-      }
-      
-      inflation.byYear[year] = {
-        headline: headlineInflation,
-        food: foodInflation,
-        core: coreInflation,
-        exchangeRate: row[8] ? row[8].toString() : null // Column I
-      };
+      if (!row || row.length <= yearCol) continue;
+
+      const rawYear = row[yearCol];
+      if (!rawYear) continue;
+      const yearMatch = rawYear.toString().match(/(\d{4})/);
+      if (!yearMatch) continue;
+      const year = parseInt(yearMatch[1]);
+      if (year < 2015 || year > 2030) continue; // sanity guard
+
+      const headline = parsePct(row[headlineCol]);
+      if (headline === null) continue; // no headline = skip row
+
+      const food = parsePct(row[headlineCol + 1]) ?? null;
+      const core = parsePct(row[headlineCol + 2]) ?? null;
+
+      inflation.byYear[year] = { headline, food, core };
+      console.log(`[Pricing] Parsed inflation year ${year}: headline=${headline}%`);
     }
-    
-    // Calculate cumulative CPI index (2020 = 100)
-    inflation.cpiIndex[2020] = 100;
-    for (let year = 2021; year <= 2026; year++) {
-      if (inflation.byYear[year]) {
-        inflation.cpiIndex[year] = inflation.cpiIndex[year - 1] * (1 + inflation.byYear[year].headline / 100);
-      }
+
+    // ── Build cumulative CPI index anchored at 2020 = 100 ───────────────────
+    const allYears = Object.keys(inflation.byYear).map(Number).sort();
+    if (allYears.length === 0) {
+      console.warn('[Pricing] No inflation years parsed — check sheet structure');
+      return null;
     }
-    
+
+    // Anchor: find the earliest available year >= 2020, or use whatever we have
+    const baseYear = allYears.includes(2020) ? 2020 : allYears[0];
+    inflation.cpiIndex[baseYear] = 100;
+    // Forward-fill
+    for (let y = baseYear + 1; y <= Math.max(...allYears, 2026); y++) {
+      const prev = inflation.cpiIndex[y - 1];
+      if (!prev) continue;
+      const rate = inflation.byYear[y] ? inflation.byYear[y].headline : null;
+      if (rate !== null) inflation.cpiIndex[y] = prev * (1 + rate / 100);
+    }
+    // Back-fill (for years before base if any)
+    for (let y = baseYear - 1; y >= Math.min(...allYears); y--) {
+      const next = inflation.cpiIndex[y + 1];
+      const rate = inflation.byYear[y + 1] ? inflation.byYear[y + 1].headline : null;
+      if (next && rate !== null) inflation.cpiIndex[y] = next / (1 + rate / 100);
+    }
+
     console.log('[Pricing] Inflation data loaded:', Object.keys(inflation.byYear).length, 'years');
+    console.log('[Pricing] CPI index:', JSON.stringify(inflation.cpiIndex));
     return inflation;
-    
+
   } catch (error) {
     console.error('[Pricing] Error loading inflation data:', error);
     return null;
@@ -1626,56 +1698,117 @@ async function fetchInflationData(workbook) {
 // Fetch and parse Property Classification sheet
 async function fetchClassificationData(workbook) {
   try {
-    const classSheet = workbook.Sheets['Property Classification'];
+    const classSheet = resolveSheet(workbook, 'Property Classification');
     if (!classSheet) {
       console.warn('[Pricing] Property Classification sheet not found');
       return null;
     }
-    
+
     const classRaw = XLSX.utils.sheet_to_json(classSheet, { header: 1 });
-    
-    const classification = {
-      homes: [],
-      plots: [],
-      lookup: {} // product name -> category
-    };
-    
-    // Start from row 4 (index 3 in zero-indexed array)
-    // Row 0 = empty, Row 1 = "Homes"/"Plots", Row 2 = "Class"/"Name", Row 3+ = data
-    for (let i = 3; i < classRaw.length; i++) {
-      const row = classRaw[i];
-      if (!row) continue;
-      
-      // Homes: columns B (1) = Class, C (2) = Name
-      if (row[1] && row[2]) {
-        const name = row[2].toString().trim();
-        if (name && name !== 'Name') { // Skip header repeats
-          classification.homes.push({
-            class: row[1].toString().trim(),
-            name: name
-          });
-          classification.lookup[name] = 'Home';
-          classification.lookup[name.toLowerCase()] = 'Home';
+    console.log('[Pricing] Classification sheet rows 0-5:', JSON.stringify(classRaw.slice(0, 6)));
+
+    const classification = { homes: [], plots: [], lookup: {} };
+
+    // ── Detect column layout by scanning for "Homes" / "Plots" header cells ──
+    // The sheet has "Homes" merged across some cols and "Plots" across others.
+    // We scan all rows up to row 5 to find which column each section starts in.
+    const SKIP_WORDS = new Set(['homes','plots','class','name','s/n','sn','#','type','category','']);
+
+    // Find the columns for: HomesClass, HomesName, PlotsClass, PlotsName
+    // by scanning for the "Class" / "Name" sub-headers under each section
+    let homesClassCol = 1, homesNameCol = 2;  // defaults from screenshot col B, C
+    let plotsClassCol = 4, plotsNameCol = 5;  // defaults from screenshot col E, F
+
+    // Scan for the row that has "Homes" and "Plots" labels to find column groups
+    let homesCol = -1, plotsCol = -1;
+    for (let r = 0; r < Math.min(classRaw.length, 6); r++) {
+      const row = classRaw[r] || [];
+      row.forEach((cell, c) => {
+        const s = (cell || '').toString().toLowerCase().trim();
+        if (s === 'homes' && homesCol < 0) homesCol = c;
+        if (s === 'plots' && plotsCol < 0) plotsCol = c;
+      });
+    }
+    // Now find the "Class" and "Name" sub-headers within each section
+    for (let r = 0; r < Math.min(classRaw.length, 6); r++) {
+      const row = classRaw[r] || [];
+      let foundHomesClass = false, foundHomesName = false;
+      let foundPlotsClass = false, foundPlotsName = false;
+      row.forEach((cell, c) => {
+        const s = (cell || '').toString().toLowerCase().trim();
+        if (s === 'class') {
+          if (homesCol >= 0 && c >= homesCol && c < (plotsCol >= 0 ? plotsCol : 999) && !foundHomesClass) {
+            homesClassCol = c; foundHomesClass = true;
+          } else if (plotsCol >= 0 && c >= plotsCol && !foundPlotsClass) {
+            plotsClassCol = c; foundPlotsClass = true;
+          }
         }
-      }
-      
-      // Plots: columns E (4) = Class, F (5) = Name
-      if (row[4] && row[5]) {
-        const name = row[5].toString().trim();
-        if (name && name !== 'Name') { // Skip header repeats
-          classification.plots.push({
-            class: row[4].toString().trim(),
-            name: name
-          });
-          classification.lookup[name] = 'Plot';
-          classification.lookup[name.toLowerCase()] = 'Plot';
+        if (s === 'name') {
+          if (homesCol >= 0 && c >= homesCol && c < (plotsCol >= 0 ? plotsCol : 999) && !foundHomesName) {
+            homesNameCol = c; foundHomesName = true;
+          } else if (plotsCol >= 0 && c >= plotsCol && !foundPlotsName) {
+            plotsNameCol = c; foundPlotsName = true;
+          }
         }
+      });
+    }
+    console.log('[Pricing] Classification cols — Homes:', homesClassCol, homesNameCol, '| Plots:', plotsClassCol, plotsNameCol);
+
+    // ── Find first data row ───────────────────────────────────────────────────
+    let dataStart = 3;
+    for (let r = 0; r < Math.min(classRaw.length, 10); r++) {
+      const row = classRaw[r] || [];
+      const nameCell = (row[homesNameCol] || row[plotsNameCol] || '').toString().trim();
+      if (nameCell && !SKIP_WORDS.has(nameCell.toLowerCase())) {
+        dataStart = r;
+        break;
       }
     }
-    
+    console.log('[Pricing] Classification data starts row index', dataStart);
+
+    // ── Parse rows, carrying forward merged Class values ─────────────────────
+    // Merged cells in XLSX.js only populate the TOP cell; subsequent rows in the
+    // merge are empty. We carry the last non-empty class value forward.
+    let lastHomesClass = '';
+    let lastPlotsClass = '';
+
+    for (let i = dataStart; i < classRaw.length; i++) {
+      const row = classRaw[i];
+      if (!row) continue;
+
+      // Update carried-forward class values
+      if (row[homesClassCol] && row[homesClassCol].toString().trim()) {
+        lastHomesClass = row[homesClassCol].toString().trim();
+      }
+      if (row[plotsClassCol] && row[plotsClassCol].toString().trim()) {
+        lastPlotsClass = row[plotsClassCol].toString().trim();
+      }
+
+      // Homes name column
+      const homeName = row[homesNameCol] ? row[homesNameCol].toString().trim() : '';
+      if (homeName && !SKIP_WORDS.has(homeName.toLowerCase())) {
+        classification.homes.push({ class: lastHomesClass, name: homeName });
+        // Register multiple lookup variants for fuzzy matching with Price Sheet
+        [homeName, homeName.toLowerCase(),
+         homeName.replace(/\s+/g, ' ').trim(),
+         homeName.replace(/[^a-z0-9]/gi, '').toLowerCase()
+        ].forEach(k => { if (k) classification.lookup[k] = 'Home'; });
+      }
+
+      // Plots name column
+      const plotName = row[plotsNameCol] ? row[plotsNameCol].toString().trim() : '';
+      if (plotName && !SKIP_WORDS.has(plotName.toLowerCase())) {
+        classification.plots.push({ class: lastPlotsClass, name: plotName });
+        [plotName, plotName.toLowerCase(),
+         plotName.replace(/\s+/g, ' ').trim(),
+         plotName.replace(/[^a-z0-9]/gi, '').toLowerCase()
+        ].forEach(k => { if (k) classification.lookup[k] = 'Plot'; });
+      }
+    }
+
     console.log('[Pricing] Classification loaded:', classification.homes.length, 'homes,', classification.plots.length, 'plots');
     return classification;
-    
+
   } catch (error) {
     console.error('[Pricing] Error loading classification:', error);
     return null;
@@ -1685,77 +1818,139 @@ async function fetchClassificationData(workbook) {
 // Fetch and parse Price Sheet
 async function fetchPriceSheet(workbook, classification) {
   try {
-    const priceSheet = workbook.Sheets['Price Sheet'];
+    const priceSheet = resolveSheet(workbook, 'Price Sheet');
     if (!priceSheet) {
       console.warn('[Pricing] Price Sheet not found');
       return null;
     }
-    
+
     const priceRaw = XLSX.utils.sheet_to_json(priceSheet, { header: 1 });
-    
-    // Extract quarter headers from row 8 (index 7)
-    const headerRow = priceRaw[7] || [];
-    const quarters = [];
-    for (let i = 4; i < headerRow.length; i++) {
-      const header = headerRow[i];
-      if (header && header.toString().includes('Q')) {
-        quarters.push(header.toString());
+    console.log('[Pricing] Price sheet rows 0-4:', JSON.stringify(priceRaw.slice(0, 5)));
+
+    // ── Detect quarter header row ─────────────────────────────────────────────
+    // Quarter labels look like "Q1 2020", "Q2 2020", etc.
+    const QTR_RE = /Q[1-4]\s*\d{4}/i;
+    let headerRowIdx = -1;
+    for (let r = 0; r < Math.min(priceRaw.length, 20); r++) {
+      const row = priceRaw[r] || [];
+      if (row.some(cell => cell && QTR_RE.test(cell.toString()))) {
+        headerRowIdx = r;
+        break;
       }
     }
-    
+    if (headerRowIdx < 0) {
+      console.warn('[Pricing] Could not find quarter header row in Price Sheet');
+      return null;
+    }
+    console.log('[Pricing] Quarter header at row index', headerRowIdx);
+
+    const headerRow = priceRaw[headerRowIdx] || [];
+
+    // ── Detect which column the quarter labels start in ───────────────────────
+    // Also detect S/N, Product Name, Unit Type column positions from the same row
+    let snCol = 0, nameCol = 1, unitCol = 2;
+    let firstQtrCol = 3; // default col D
+
+    headerRow.forEach((cell, c) => {
+      if (!cell) return;
+      const s = cell.toString().toLowerCase().trim();
+      if (s.includes('s/n') || s === 'sn' || s === '#') snCol = c;
+      else if (s.includes('product') || s.includes('name')) nameCol = c;
+      else if (s.includes('unit') || s.includes('type')) unitCol = c;
+      else if (QTR_RE.test(cell.toString()) && c < firstQtrCol) firstQtrCol = c;
+    });
+    // If header didn't have S/N/Name/Unit labels, infer from position
+    firstQtrCol = headerRow.findIndex((cell, c) => cell && QTR_RE.test(cell.toString()));
+    if (firstQtrCol < 0) firstQtrCol = 3;
+
+    // Collect all quarter labels (only cells matching QTR_RE)
+    const quarters = [];
+    const quarterCols = []; // parallel array of actual column indices
+    for (let c = firstQtrCol; c < headerRow.length; c++) {
+      const cell = headerRow[c];
+      if (cell && QTR_RE.test(cell.toString())) {
+        quarters.push(cell.toString().trim());
+        quarterCols.push(c);
+      }
+    }
+    console.log('[Pricing] Quarters found:', quarters.length, '| Cols:', firstQtrCol, '–', quarterCols[quarterCols.length - 1]);
+
+    // ── Skip rows between header and actual data ──────────────────────────────
+    // The sheet has a sub-header row like "Revised Gross Price (ex VAT)" directly
+    // below the quarter labels. We skip any row where the "name" column contains
+    // only non-product text (no numeric S/N and name looks like a descriptor).
+    const SUBHEADER_WORDS = ['revised','gross','price','vat','ex vat','net','note','remark','description','sub','header'];
+    function isSubHeader(row) {
+      if (!row) return true;
+      const sn  = (row[snCol] || '').toString().trim();
+      const nm  = (row[nameCol] || '').toString().trim().toLowerCase();
+      // Sub-header rows have no S/N value (or it's text) and name looks like a descriptor
+      if (!sn && SUBHEADER_WORDS.some(w => nm.includes(w))) return true;
+      // Also skip if ALL price columns are empty and name is a descriptor phrase
+      if (SUBHEADER_WORDS.some(w => nm.includes(w))) return true;
+      return false;
+    }
+
+    // Data starts one row after the header row; skip sub-header rows
     const prices = [];
-    
-    // Extract price data starting from row 11 (index 10)
-    for (let i = 10; i < priceRaw.length; i++) {
+    for (let i = headerRowIdx + 1; i < priceRaw.length; i++) {
       const row = priceRaw[i];
-      
-      // Skip empty rows
-      if (!row[1] || !row[2]) continue;
-      
-      const productName = row[2].toString().trim();
-      const unitType = row[3] ? row[3].toString().trim() : '';
-      
-      // Extract prices for each quarter
-      const priceValues = [];
-      for (let j = 4; j < Math.min(row.length, 4 + quarters.length); j++) {
-        const val = row[j];
-        
-        // Handle dashes, nulls, formulas
-        if (val === '-' || val === null || val === '' || val === undefined) {
-          priceValues.push(null);
-        } else if (typeof val === 'string' && val.startsWith('=')) {
-          priceValues.push(null); // Skip formula cells
-        } else {
-          try {
-            priceValues.push(parseFloat(val));
-          } catch {
-            priceValues.push(null);
+      if (!row) continue;
+      if (isSubHeader(row)) continue;
+
+      // Must have a product name
+      const productName = (row[nameCol] || '').toString().trim();
+      if (!productName) continue;
+      // Skip rows that are just section separators or totals
+      if (['total','subtotal','grand total','sum'].includes(productName.toLowerCase())) continue;
+
+      const unitType = (row[unitCol] || '').toString().trim();
+
+      // Extract prices using the discovered column positions
+      const priceValues = quarterCols.map(c => {
+        const val = row[c];
+        if (val === '-' || val === null || val === '' || val === undefined) return null;
+        if (typeof val === 'string' && val.startsWith('=')) return null;
+        if (typeof val === 'string' && val.trim() === '.') return null;
+        // Strip currency symbols and commas
+        const cleaned = val.toString().replace(/[₦,\s]/g, '');
+        const num = parseFloat(cleaned);
+        return isNaN(num) ? null : num;
+      });
+
+      // ── Fuzzy classification lookup ─────────────────────────────────────────
+      // Product names in the Price Sheet may not match Classification exactly
+      // (different spacing, extra words, etc.) so we try several normalisation forms.
+      let category = 'Unclassified';
+      if (classification) {
+        const lookupKeys = [
+          productName,
+          productName.toLowerCase(),
+          productName.replace(/\s+/g, ' ').trim(),
+          productName.replace(/[^a-z0-9\s]/gi, '').trim(),
+          productName.replace(/[^a-z0-9]/gi, '').toLowerCase(),
+        ];
+        for (const key of lookupKeys) {
+          if (classification.lookup[key]) { category = classification.lookup[key]; break; }
+        }
+        // Partial match fallback: check if any classification name is a substring
+        if (category === 'Unclassified') {
+          const nameLow = productName.toLowerCase();
+          for (const [key, cat] of Object.entries(classification.lookup)) {
+            if (key.length > 4 && (nameLow.includes(key.toLowerCase()) || key.toLowerCase().includes(nameLow))) {
+              category = cat; break;
+            }
           }
         }
       }
-      
-      // Classify as Home or Plot
-      let category = 'Unclassified';
-      if (classification) {
-        if (classification.lookup[productName]) {
-          category = classification.lookup[productName];
-        } else if (classification.lookup[productName.toLowerCase()]) {
-          category = classification.lookup[productName.toLowerCase()];
-        }
-      }
-      
-      prices.push({
-        product: productName,
-        unitType: unitType,
-        category: category,
-        quarters: quarters,
-        prices: priceValues
-      });
+
+      prices.push({ product: productName, unitType, category, quarters, prices: priceValues });
     }
-    
+
     console.log('[Pricing] Price sheet loaded:', prices.length, 'products,', quarters.length, 'quarters');
+    if (prices.length > 0) console.log('[Pricing] Sample product:', JSON.stringify(prices[0]));
     return { prices, quarters };
-    
+
   } catch (error) {
     console.error('[Pricing] Error loading price sheet:', error);
     return null;
@@ -1900,7 +2095,10 @@ async function loadPricingIntelligence(workbook) {
     console.log('[Pricing] Pricing intelligence disabled');
     return null;
   }
-  
+
+  // Reset fuzzy-resolver log flag so diagnostics re-emit on manual Sync
+  resetSheetResolver();
+
   try {
     console.log('[Pricing] Loading pricing intelligence...');
     
@@ -2596,34 +2794,33 @@ function olsRegression(xs, ys) {
    Injects business-relevant explanations after charts
    render, dynamically tailored to the actual data.
    ===================================================== */
+// ── MODULE-SCOPED helper ─────────────────────────────────────────────────────
+// Injects/replaces an interpretation block after any chart container.
+// Called by both addInterpretations() and renderPricingCharts() so it must
+// live outside either function's closure.
+function addAfter(targetId, html) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+
+  // Walk up to the nearest .cc wrapper; fall back to direct parent
+  let container = el.parentElement;
+  while (container && !container.classList.contains('cc')) {
+    container = container.parentElement;
+  }
+  if (!container) container = el.parentElement;
+
+  // Replace any pre-existing interpretation so re-renders stay clean
+  const existing = container.querySelector('.so-what, .chart-interp');
+  if (existing) existing.remove();
+
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  container.appendChild(div.firstChild);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function addInterpretations(d) {
   if (!d || !d.totalRev) return;
-
-  // Helper to inject interpretation block after an element
-  function addAfter(targetId, html) {
-    const el = document.getElementById(targetId);
-    if (!el) return;
-    
-    // Find the chart container (.cc) - go up parent chain
-    let container = el.parentElement;
-    while (container && !container.classList.contains('cc')) {
-      container = container.parentElement;
-    }
-    
-    if (!container) {
-      // Fallback: use direct parent if we can't find .cc
-      container = el.parentElement;
-    }
-    
-    // Remove existing interpretation in this container
-    const existing = container.querySelector('.so-what, .chart-interp');
-    if (existing) existing.remove();
-    
-    // Append interpretation to the container (not inside .cw)
-    const div = document.createElement('div');
-    div.innerHTML = html;
-    container.appendChild(div.firstChild);
-  }
 
   // Overview Tab - Revenue Recognition Trend
   const revTrend = d.years.length >= 3
@@ -2831,7 +3028,7 @@ function addInterpretations(d) {
   }
 
   // Agents Tab - Top Agents bars
-  const top1AgentPct = d.dealingAgentRev.length
+  const top1AgentPct = (d.dealingAgentRev && d.dealingAgentRev.length)
     ? (d.dealingAgentRev[0] / d.totalRev * 100).toFixed(0)
     : 0;
   addAfter('agent-bars',
@@ -2859,7 +3056,7 @@ function addInterpretations(d) {
 
   // Agents - Agent Trend Over Time - DATA-DRIVEN
   if (d.dealingAgentRev && d.dealingAgentRev.length >= 2) {
-    const top2 = d.dealingAgentNames.slice(0,2);
+    const top2 = (d.dealingAgents || []).slice(0,2);
     const top1Pct = (d.dealingAgentRev[0] / d.totalRev * 100).toFixed(0);
     const top2Pct = (d.dealingAgentRev[1] / d.totalRev * 100).toFixed(0);
     const gap = (top1Pct - top2Pct).toFixed(0);
@@ -2884,7 +3081,7 @@ function addInterpretations(d) {
   }
 
   // Buyers - Buyer State chart
-  const lagosShare = d.topStateCount / d.totalRows * 100;
+  const lagosShare = (d.totalRows && d.totalRows > 0) ? (d.topStateCount || 0) / d.totalRows * 100 : 0;
   addAfter('c-buyerstate',
     `<div class="chart-interp"><strong>${lagosShare.toFixed(0)}% of buyers are Lagos-based</strong>. ${
       lagosShare > 70
@@ -2937,14 +3134,25 @@ function renderPricingCharts() {
   const inflation = INFLATION_DATA;
   
   // Update KPI Cards
-  document.getElementById('pricing-nominal-cagr').textContent = metrics.portfolio.nominalCAGR.toFixed(1) + '%';
-  document.getElementById('pricing-real-cagr').textContent = metrics.portfolio.realCAGR.toFixed(1) + '%';
-  document.getElementById('pricing-erosion').textContent = '-' + metrics.portfolio.inflationErosion.toFixed(1) + 'pp';
-  
-  const totalInflation = ((inflation.cpiIndex[2026] / inflation.cpiIndex[2020]) - 1) * 100;
-  document.getElementById('pricing-total-inflation').textContent = '+' + totalInflation.toFixed(0) + '%';
+  // Guard all values against NaN/undefined before rendering
+  const fmtPct   = (v, decimals=1) => isFinite(v) ? v.toFixed(decimals) + '%' : '—';
+  const fmtPp    = (v, decimals=1) => isFinite(v) ? '-' + Math.abs(v).toFixed(decimals) + 'pp' : '—';
+  const fmtPlus  = (v, decimals=0) => isFinite(v) ? '+' + v.toFixed(decimals) + '%' : '—';
+
+  document.getElementById('pricing-nominal-cagr').textContent = fmtPct(metrics.portfolio.nominalCAGR);
+  document.getElementById('pricing-real-cagr').textContent    = fmtPct(metrics.portfolio.realCAGR);
+  document.getElementById('pricing-erosion').textContent      = fmtPp(metrics.portfolio.inflationErosion);
+
+  // Find the latest available CPI year for total inflation calculation
+  const cpiYears = Object.keys(inflation.cpiIndex).map(Number).sort();
+  const latestCpiYear = cpiYears[cpiYears.length - 1];
+  const baseYear = cpiYears[0] || 2020;
+  const totalInflation = (cpiYears.length >= 2 && inflation.cpiIndex[baseYear])
+    ? ((inflation.cpiIndex[latestCpiYear] / inflation.cpiIndex[baseYear]) - 1) * 100
+    : NaN;
+  document.getElementById('pricing-total-inflation').textContent = fmtPlus(totalInflation);
   document.getElementById('pricing-discount-rate').textContent = '—';
-  document.getElementById('pricing-product-count').textContent = metrics.byProduct.length;
+  document.getElementById('pricing-product-count').textContent = metrics.byProduct.length || '—';
   
   // CHART 1: Inflation Context
   const years = Object.keys(inflation.byYear).map(y => parseInt(y)).sort();
@@ -2990,7 +3198,9 @@ function renderPricingCharts() {
     }
   });
   
-  addAfter('c-inflation-context', `<div class="chart-interp">₦100 in 2020 = ₦${inflation.cpiIndex[2026].toFixed(0)} in 2026. <strong>Total inflation: ${totalInflation.toFixed(0)}%.</strong> Any product with nominal appreciation below ${totalInflation.toFixed(0)}% lost real value.</div>`);
+  addAfter('c-inflation-context', isFinite(totalInflation)
+    ? `<div class="chart-interp">₦100 in ${baseYear} = ₦${(inflation.cpiIndex[latestCpiYear] || 0).toFixed(0)} in ${latestCpiYear}. <strong>Total inflation: ${totalInflation.toFixed(0)}%.</strong> Any product with nominal appreciation below ${totalInflation.toFixed(0)}% lost real value.</div>`
+    : `<div class="chart-interp">Inflation context chart — CPI index anchored at ${baseYear}=100. Check Inflation Rate sheet has headline % values for each year.</div>`);
   
   // CHART 2: Nominal vs Real (Top 5)
   const top5 = metrics.byProduct.filter(p => p.dataPoints >= 10).sort((a,b) => b.realCAGR - a.realCAGR).slice(0, 5);
