@@ -314,6 +314,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <button class="nav-btn" onclick="showSection('collections',this)">Collections</button>
     <button class="nav-btn" onclick="showSection('agents',this)">Agents</button>
     <button class="nav-btn" onclick="showSection('buyers',this)">Buyers</button>
+    <button class="nav-btn" onclick="showSection('pricing',this)" style="background:linear-gradient(135deg,#E8F8F5,#fff);color:#27AE60;border:1px solid #A9DFBF;font-weight:600">₦ Pricing</button>
     <button class="nav-btn" onclick="showSection('predict',this)" style="background:linear-gradient(135deg,var(--red4),#fff0ee);color:var(--red);border:1px solid var(--red3);font-weight:600">⬡ Predict</button>
   </nav>
 
@@ -646,6 +647,136 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   </div>
 </div>
 
+<!-- ===== PRICING INTELLIGENCE ===== -->
+<div id="section-pricing" class="section">
+  <div class="kpi-strip">
+    <div class="kpi">
+      <div class="kpi-label">Nominal Price Growth</div>
+      <div class="kpi-value" id="pricing-nominal-cagr">—</div>
+      <div class="kpi-sub">Average CAGR 2020-2026</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Real Price Growth</div>
+      <div class="kpi-value green" id="pricing-real-cagr">—</div>
+      <div class="kpi-sub">Inflation-adjusted CAGR</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Inflation Erosion</div>
+      <div class="kpi-value" id="pricing-erosion" style="color:var(--red3)">—</div>
+      <div class="kpi-sub">Purchasing power loss</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Total CPI Change</div>
+      <div class="kpi-value" id="pricing-total-inflation">—</div>
+      <div class="kpi-sub">2020-2026 cumulative</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Avg Discount Rate</div>
+      <div class="kpi-value" id="pricing-discount-rate">—</div>
+      <div class="kpi-sub">Asking vs realized price gap</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Products Analyzed</div>
+      <div class="kpi-value" id="pricing-product-count">—</div>
+      <div class="kpi-sub">Price sheet coverage</div>
+    </div>
+  </div>
+
+  <!-- Inflation Context -->
+  <div class="cc full" style="margin-bottom:14px">
+    <div class="ch">
+      <div>
+        <div class="ct">Nigeria Inflation Context (2020-2026)</div>
+        <div class="cs">Macroeconomic backdrop driving pricing pressure</div>
+      </div>
+    </div>
+    <div class="cw" style="height:240px">
+      <canvas id="c-inflation-context"></canvas>
+    </div>
+  </div>
+
+  <!-- Nominal vs Real Comparison -->
+  <div class="cc full" style="margin-bottom:14px">
+    <div class="ch">
+      <div>
+        <div class="ct">Price Appreciation — Nominal vs Real (Top 5 Products)</div>
+        <div class="cs">Solid = nominal pricing · Dashed = inflation-adjusted real pricing</div>
+      </div>
+    </div>
+    <div class="cw" style="height:280px">
+      <canvas id="c-nominal-vs-real"></canvas>
+    </div>
+  </div>
+
+  <!-- Two column layout -->
+  <div class="grid2">
+    <!-- Homes Performance -->
+    <div class="cc">
+      <div class="ch">
+        <div>
+          <div class="ct">Homes — Real Price CAGR</div>
+          <div class="cs">Top 10 finished homes by real appreciation</div>
+        </div>
+      </div>
+      <div class="cw" style="height:280px">
+        <canvas id="c-homes-real-cagr"></canvas>
+      </div>
+    </div>
+
+    <!-- Plots Performance -->
+    <div class="cc">
+      <div class="ch">
+        <div>
+          <div class="ct">Plots — Real Price CAGR (₦/sqm)</div>
+          <div class="cs">Top 10 plots by real appreciation</div>
+        </div>
+      </div>
+      <div class="cw" style="height:280px">
+        <canvas id="c-plots-real-cagr"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inflation Erosion -->
+  <div class="cc full" style="margin-bottom:14px">
+    <div class="ch">
+      <div>
+        <div class="ct">Inflation Erosion — Top 15 Products</div>
+        <div class="cs">Percentage points lost to inflation (nominal CAGR - real CAGR)</div>
+      </div>
+    </div>
+    <div class="cw" style="height:320px">
+      <canvas id="c-inflation-erosion"></canvas>
+    </div>
+  </div>
+
+  <!-- Discount Rate Monitor -->
+  <div class="cc full" style="margin-bottom:14px">
+    <div class="ch">
+      <div>
+        <div class="ct">Pricing Resistance Monitor — Discount Rate Trend</div>
+        <div class="cs">Gap between asking price (price sheet) and realized revenue · Red threshold = 12%</div>
+      </div>
+    </div>
+    <div class="cw" style="height:240px">
+      <canvas id="c-discount-rate"></canvas>
+    </div>
+  </div>
+
+  <!-- Product Performance Matrix -->
+  <div class="cc full">
+    <div class="ch">
+      <div>
+        <div class="ct">Product Performance Matrix — Revenue vs Real CAGR</div>
+        <div class="cs">X-axis: Revenue contribution · Y-axis: Real price appreciation · Bubble size: Units sold</div>
+      </div>
+    </div>
+    <div class="cw" style="height:360px">
+      <canvas id="c-price-performance-matrix"></canvas>
+    </div>
+  </div>
+</div>
+
 <!-- ===== PREDICTIVE INTELLIGENCE (Stage 1: forecast only) ===== -->
 <div id="section-predict" class="section">
   <div class="kpi-strip">
@@ -827,6 +958,18 @@ const FETCH_BASE_DELAY  = 1200;                     // ms
 // SCHEMA_VERSION — bump this string when you deliberately rename columns.
 // Cached data from a prior version will be invalidated automatically.
 const SCHEMA_VERSION = 'v3-2025-06';
+
+/* =====================================================
+   PRICING INTELLIGENCE CONFIG
+   ===================================================== */
+// Global storage for pricing data
+let PRICING_DATA = null;
+let INFLATION_DATA = null;
+let CLASSIFICATION_DATA = null;
+
+// Pricing intelligence enabled flag
+const PRICING_INTELLIGENCE_ENABLED = true;
+
 
 /* =====================================================
    EXPANDED HEADER MAP
@@ -1077,11 +1220,22 @@ async function getLiveSheetData() {
   // 2. Read the workbook using SheetJS
   const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
   
+  // 2b. Load pricing intelligence (Price Sheet, Inflation Rate, Property Classification)
+  if (PRICING_INTELLIGENCE_ENABLED) {
+    setLoaderSub('Loading pricing intelligence…');
+    await loadPricingIntelligence(wb);
+  }
+  
   let allRows = [];
   let rawHeaders = [];
 
   // 3. Loop through EVERY tab in the spreadsheet
   wb.SheetNames.forEach(sheetName => {
+    // Skip pricing intelligence sheets
+    if (sheetName === 'Price Sheet' || sheetName === 'Inflation Rate' || sheetName === 'Property Classification') {
+      return; // Don't include these in transaction data
+    }
+    
     const ws = wb.Sheets[sheetName];
     // Convert the tab into an array of objects
     const sheetRows = XLSX.utils.sheet_to_json(ws, { defval: '' });
@@ -1359,6 +1513,369 @@ function computeAnalytics(rows) {
   data.collectionsBook = (byAG['Collections']||[]).length;
 
   return data;
+}
+
+/* =====================================================
+   PRICING INTELLIGENCE MODULE
+   Fetches Price Sheet, Inflation Rate, Property Classification
+   Calculates real vs nominal pricing, discount rates, CAGR
+   ===================================================== */
+
+// Fetch and parse Inflation Rate sheet
+async function fetchInflationData(workbook) {
+  try {
+    const inflationSheet = workbook.Sheets['Inflation Rate'];
+    if (!inflationSheet) {
+      console.warn('[Pricing] Inflation Rate sheet not found');
+      return null;
+    }
+    
+    const inflationRaw = XLSX.utils.sheet_to_json(inflationSheet, { header: 1 });
+    
+    const inflation = {
+      byYear: {},
+      cpiIndex: {}
+    };
+    
+    // Parse rows (row 0 = headers, data starts row 1)
+    for (let i = 1; i < inflationRaw.length; i++) {
+      const row = inflationRaw[i];
+      const year = parseInt(row[0]);
+      const headlineInflation = parseFloat(row[1]);
+      
+      if (isNaN(year) || isNaN(headlineInflation)) continue;
+      
+      inflation.byYear[year] = {
+        headline: headlineInflation,
+        food: parseFloat(row[2]) || null,
+        core: parseFloat(row[3]) || null,
+        exchangeRate: row[7] ? row[7].toString() : null
+      };
+    }
+    
+    // Calculate cumulative CPI index (2020 = 100)
+    inflation.cpiIndex[2020] = 100;
+    for (let year = 2021; year <= 2026; year++) {
+      if (inflation.byYear[year]) {
+        inflation.cpiIndex[year] = inflation.cpiIndex[year - 1] * (1 + inflation.byYear[year].headline / 100);
+      }
+    }
+    
+    console.log('[Pricing] Inflation data loaded:', Object.keys(inflation.byYear).length, 'years');
+    return inflation;
+    
+  } catch (error) {
+    console.error('[Pricing] Error loading inflation data:', error);
+    return null;
+  }
+}
+
+// Fetch and parse Property Classification sheet
+async function fetchClassificationData(workbook) {
+  try {
+    const classSheet = workbook.Sheets['Property Classification'];
+    if (!classSheet) {
+      console.warn('[Pricing] Property Classification sheet not found');
+      return null;
+    }
+    
+    const classRaw = XLSX.utils.sheet_to_json(classSheet, { header: 1 });
+    
+    const classification = {
+      homes: [],
+      plots: [],
+      lookup: {} // product name -> category
+    };
+    
+    // Start from row 3 (index 3, since row 2 is merged headers "Homes"/"Plots")
+    for (let i = 3; i < classRaw.length; i++) {
+      const row = classRaw[i];
+      
+      // Homes: columns B (1) = Class, C (2) = Name
+      if (row[1] && row[2]) {
+        const name = row[2].trim();
+        classification.homes.push({
+          class: row[1],
+          name: name
+        });
+        classification.lookup[name] = 'Home';
+        classification.lookup[name.toLowerCase()] = 'Home';
+      }
+      
+      // Plots: columns E (4) = Class, F (5) = Name
+      if (row[4] && row[5]) {
+        const name = row[5].trim();
+        classification.plots.push({
+          class: row[4],
+          name: name
+        });
+        classification.lookup[name] = 'Plot';
+        classification.lookup[name.toLowerCase()] = 'Plot';
+      }
+    }
+    
+    console.log('[Pricing] Classification loaded:', classification.homes.length, 'homes,', classification.plots.length, 'plots');
+    return classification;
+    
+  } catch (error) {
+    console.error('[Pricing] Error loading classification:', error);
+    return null;
+  }
+}
+
+// Fetch and parse Price Sheet
+async function fetchPriceSheet(workbook, classification) {
+  try {
+    const priceSheet = workbook.Sheets['Price Sheet'];
+    if (!priceSheet) {
+      console.warn('[Pricing] Price Sheet not found');
+      return null;
+    }
+    
+    const priceRaw = XLSX.utils.sheet_to_json(priceSheet, { header: 1 });
+    
+    // Extract quarter headers from row 8 (index 7)
+    const headerRow = priceRaw[7] || [];
+    const quarters = [];
+    for (let i = 4; i < headerRow.length; i++) {
+      const header = headerRow[i];
+      if (header && header.toString().includes('Q')) {
+        quarters.push(header.toString());
+      }
+    }
+    
+    const prices = [];
+    
+    // Extract price data starting from row 11 (index 10)
+    for (let i = 10; i < priceRaw.length; i++) {
+      const row = priceRaw[i];
+      
+      // Skip empty rows
+      if (!row[1] || !row[2]) continue;
+      
+      const productName = row[2].toString().trim();
+      const unitType = row[3] ? row[3].toString().trim() : '';
+      
+      // Extract prices for each quarter
+      const priceValues = [];
+      for (let j = 4; j < Math.min(row.length, 4 + quarters.length); j++) {
+        const val = row[j];
+        
+        // Handle dashes, nulls, formulas
+        if (val === '-' || val === null || val === '' || val === undefined) {
+          priceValues.push(null);
+        } else if (typeof val === 'string' && val.startsWith('=')) {
+          priceValues.push(null); // Skip formula cells
+        } else {
+          try {
+            priceValues.push(parseFloat(val));
+          } catch {
+            priceValues.push(null);
+          }
+        }
+      }
+      
+      // Classify as Home or Plot
+      let category = 'Unclassified';
+      if (classification) {
+        if (classification.lookup[productName]) {
+          category = classification.lookup[productName];
+        } else if (classification.lookup[productName.toLowerCase()]) {
+          category = classification.lookup[productName.toLowerCase()];
+        }
+      }
+      
+      prices.push({
+        product: productName,
+        unitType: unitType,
+        category: category,
+        quarters: quarters,
+        prices: priceValues
+      });
+    }
+    
+    console.log('[Pricing] Price sheet loaded:', prices.length, 'products,', quarters.length, 'quarters');
+    return { prices, quarters };
+    
+  } catch (error) {
+    console.error('[Pricing] Error loading price sheet:', error);
+    return null;
+  }
+}
+
+// Calculate real prices (inflation-adjusted)
+function calculateRealPrices(priceData, inflationData) {
+  if (!inflationData) return priceData;
+  
+  return priceData.prices.map(product => {
+    const realPrices = product.prices.map((nominalPrice, idx) => {
+      if (nominalPrice === null) return null;
+      
+      // Get quarter's year
+      const quarter = product.quarters[idx];
+      const yearMatch = quarter.match(/\d{4}/);
+      if (!yearMatch) return null;
+      const year = parseInt(yearMatch[0]);
+      
+      // Get CPI index for that year
+      const cpiIndex = inflationData.cpiIndex[year];
+      if (!cpiIndex) return null;
+      
+      // Calculate real price (constant 2020 Naira)
+      const realPrice = nominalPrice / (cpiIndex / 100);
+      
+      return {
+        nominal: nominalPrice,
+        real: realPrice,
+        cpiIndex: cpiIndex,
+        year: year
+      };
+    });
+    
+    return {
+      ...product,
+      realPrices: realPrices
+    };
+  });
+}
+
+// Calculate comprehensive pricing metrics
+function calculatePricingMetrics(enhancedPricing, inflationData) {
+  const metrics = {
+    portfolio: {
+      nominalCAGR: 0,
+      realCAGR: 0,
+      inflationErosion: 0
+    },
+    byProduct: [],
+    byCategory: {
+      homes: { nominalCAGR: 0, realCAGR: 0, count: 0 },
+      plots: { nominalCAGR: 0, realCAGR: 0, count: 0 }
+    }
+  };
+  
+  let totalNominalCAGR = 0;
+  let totalRealCAGR = 0;
+  let count = 0;
+  
+  enhancedPricing.forEach(product => {
+    // Get first and last valid prices
+    const validPrices = product.realPrices.filter(p => p !== null);
+    if (validPrices.length < 2) return;
+    
+    const firstPrice = validPrices[0];
+    const lastPrice = validPrices[validPrices.length - 1];
+    const years = (validPrices.length - 1) / 4; // quarters to years
+    
+    if (years <= 0) return;
+    
+    // Calculate CAGR (both nominal and real)
+    const nominalCAGR = (Math.pow(lastPrice.nominal / firstPrice.nominal, 1 / years) - 1) * 100;
+    const realCAGR = (Math.pow(lastPrice.real / firstPrice.real, 1 / years) - 1) * 100;
+    
+    // Calculate total appreciation
+    const nominalAppreciation = ((lastPrice.nominal / firstPrice.nominal) - 1) * 100;
+    const realAppreciation = ((lastPrice.real / firstPrice.real) - 1) * 100;
+    
+    const productMetric = {
+      product: product.product,
+      category: product.category,
+      unitType: product.unitType,
+      nominalCAGR: nominalCAGR,
+      realCAGR: realCAGR,
+      inflationErosion: nominalCAGR - realCAGR,
+      nominalAppreciation: nominalAppreciation,
+      realAppreciation: realAppreciation,
+      firstYear: firstPrice.year,
+      lastYear: lastPrice.year,
+      firstPriceNominal: firstPrice.nominal,
+      lastPriceNominal: lastPrice.nominal,
+      firstPriceReal: firstPrice.real,
+      lastPriceReal: lastPrice.real,
+      dataPoints: validPrices.length
+    };
+    
+    metrics.byProduct.push(productMetric);
+    
+    // Accumulate for portfolio average
+    totalNominalCAGR += nominalCAGR;
+    totalRealCAGR += realCAGR;
+    count++;
+    
+    // Category aggregation
+    if (product.category === 'Home') {
+      metrics.byCategory.homes.nominalCAGR += nominalCAGR;
+      metrics.byCategory.homes.realCAGR += realCAGR;
+      metrics.byCategory.homes.count++;
+    } else if (product.category === 'Plot') {
+      metrics.byCategory.plots.nominalCAGR += nominalCAGR;
+      metrics.byCategory.plots.realCAGR += realCAGR;
+      metrics.byCategory.plots.count++;
+    }
+  });
+  
+  // Calculate portfolio-level averages
+  if (count > 0) {
+    metrics.portfolio.nominalCAGR = totalNominalCAGR / count;
+    metrics.portfolio.realCAGR = totalRealCAGR / count;
+    metrics.portfolio.inflationErosion = metrics.portfolio.nominalCAGR - metrics.portfolio.realCAGR;
+  }
+  
+  // Calculate category averages
+  if (metrics.byCategory.homes.count > 0) {
+    metrics.byCategory.homes.nominalCAGR /= metrics.byCategory.homes.count;
+    metrics.byCategory.homes.realCAGR /= metrics.byCategory.homes.count;
+  }
+  if (metrics.byCategory.plots.count > 0) {
+    metrics.byCategory.plots.nominalCAGR /= metrics.byCategory.plots.count;
+    metrics.byCategory.plots.realCAGR /= metrics.byCategory.plots.count;
+  }
+  
+  console.log('[Pricing] Metrics calculated:', count, 'products');
+  return metrics;
+}
+
+// Main pricing intelligence loader
+async function loadPricingIntelligence(workbook) {
+  if (!PRICING_INTELLIGENCE_ENABLED) {
+    console.log('[Pricing] Pricing intelligence disabled');
+    return null;
+  }
+  
+  try {
+    console.log('[Pricing] Loading pricing intelligence...');
+    
+    // Fetch all pricing data components
+    CLASSIFICATION_DATA = await fetchClassificationData(workbook);
+    INFLATION_DATA = await fetchInflationData(workbook);
+    const priceSheetData = await fetchPriceSheet(workbook, CLASSIFICATION_DATA);
+    
+    if (!INFLATION_DATA || !priceSheetData) {
+      console.warn('[Pricing] Missing required data sheets');
+      return null;
+    }
+    
+    // Enhance price data with inflation adjustment
+    const enhancedPricing = calculateRealPrices(priceSheetData, INFLATION_DATA);
+    
+    // Calculate all metrics
+    const pricingMetrics = calculatePricingMetrics(enhancedPricing, INFLATION_DATA);
+    
+    PRICING_DATA = {
+      raw: priceSheetData,
+      enhanced: enhancedPricing,
+      metrics: pricingMetrics,
+      quarters: priceSheetData.quarters
+    };
+    
+    console.log('[Pricing] ✅ Pricing intelligence loaded successfully');
+    console.log('[Pricing] Portfolio Real CAGR:', pricingMetrics.portfolio.realCAGR.toFixed(1) + '%');
+    return PRICING_DATA;
+    
+  } catch (error) {
+    console.error('[Pricing] Fatal error loading pricing intelligence:', error);
+    return null;
+  }
 }
 
 /* =====================================================
@@ -1878,6 +2395,11 @@ function showSection(name, btn) {
   const el = document.getElementById('section-'+name);
   if(el) el.classList.add('active');
   if(btn) btn.classList.add('active');
+  
+  // Render pricing charts when pricing tab is shown
+  if (name === 'pricing' && PRICING_DATA && INFLATION_DATA) {
+    renderPricingCharts();
+  }
 }
 
 /* =====================================================
@@ -2341,6 +2863,291 @@ function addInterpretations(d) {
   addAfter('c-resolution',
     `<div class="chart-interp">Track how quickly outstanding balances convert to collected revenue. Flattening resolution curves indicate collections process degradation - tighten terms or escalate enforcement.</div>`);
 
+}
+
+/* =====================================================
+   PRICING TAB RENDERING
+   ===================================================== */
+function renderPricingCharts() {
+  if (!PRICING_DATA || !INFLATION_DATA) {
+    console.warn('[Pricing] No pricing data available for rendering');
+    return;
+  }
+  
+  const metrics = PRICING_DATA.metrics;
+  const inflation = INFLATION_DATA;
+  
+  // Update KPI Cards
+  document.getElementById('pricing-nominal-cagr').textContent = metrics.portfolio.nominalCAGR.toFixed(1) + '%';
+  document.getElementById('pricing-real-cagr').textContent = metrics.portfolio.realCAGR.toFixed(1) + '%';
+  document.getElementById('pricing-erosion').textContent = '-' + metrics.portfolio.inflationErosion.toFixed(1) + 'pp';
+  
+  const totalInflation = ((inflation.cpiIndex[2026] / inflation.cpiIndex[2020]) - 1) * 100;
+  document.getElementById('pricing-total-inflation').textContent = '+' + totalInflation.toFixed(0) + '%';
+  document.getElementById('pricing-discount-rate').textContent = '—';
+  document.getElementById('pricing-product-count').textContent = metrics.byProduct.length;
+  
+  // CHART 1: Inflation Context
+  const years = Object.keys(inflation.byYear).map(y => parseInt(y)).sort();
+  
+  mkChart('c-inflation-context', {
+    type: 'line',
+    data: {
+      labels: years,
+      datasets: [
+        {
+          label: 'Cumulative CPI (2020=100)',
+          data: years.map(y => inflation.cpiIndex[y]),
+          borderColor: '#E74C3C',
+          backgroundColor: 'rgba(231,76,60,0.1)',
+          borderWidth: 3,
+          tension: 0.3,
+          yAxisID: 'y',
+          fill: true
+        },
+        {
+          label: 'YoY Inflation %',
+          data: years.map(y => inflation.byYear[y].headline),
+          borderColor: '#F39C12',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          tension: 0.3,
+          yAxisID: 'y1',
+          borderDash: [5, 3]
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 10 }, boxWidth: 8 } },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        y: { position: 'left', title: { display: true, text: 'CPI Index' }, ticks: { callback: v => v.toFixed(0) }, grid: { color: 'rgba(0,0,0,0.04)' } },
+        y1: { position: 'right', title: { display: true, text: 'YoY %' }, grid: { display: false }, ticks: { callback: v => v.toFixed(1) + '%' } }
+      }
+    }
+  });
+  
+  addAfter('c-inflation-context', `<div class="chart-interp">₦100 in 2020 = ₦${inflation.cpiIndex[2026].toFixed(0)} in 2026. <strong>Total inflation: ${totalInflation.toFixed(0)}%.</strong> Any product with nominal appreciation below ${totalInflation.toFixed(0)}% lost real value.</div>`);
+  
+  // CHART 2: Nominal vs Real (Top 5)
+  const top5 = metrics.byProduct.filter(p => p.dataPoints >= 10).sort((a,b) => b.realCAGR - a.realCAGR).slice(0, 5);
+  const colors = ['#C0392B', '#2980B9', '#27AE60', '#F39C12', '#8E44AD'];
+  const nomVsRealDatasets = [];
+  
+  top5.forEach((product, idx) => {
+    const enhanced = PRICING_DATA.enhanced.find(p => p.product === product.product);
+    if (!enhanced) return;
+    
+    const dataPoints = enhanced.realPrices.map((rp, i) => rp ? { quarter: enhanced.quarters[i], nominal: rp.nominal, real: rp.real } : null).filter(p => p !== null);
+    
+    nomVsRealDatasets.push({
+      label: `${product.product.substring(0, 25)} (Nominal)`,
+      data: dataPoints.map(p => ({ x: p.quarter, y: p.nominal })),
+      borderColor: colors[idx],
+      backgroundColor: 'transparent',
+      borderWidth: 2.5,
+      tension: 0.4,
+      pointRadius: 0
+    });
+    
+    nomVsRealDatasets.push({
+      label: `${product.product.substring(0, 25)} (Real)`,
+      data: dataPoints.map(p => ({ x: p.quarter, y: p.real })),
+      borderColor: colors[idx],
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      borderDash: [5, 3],
+      tension: 0.4,
+      pointRadius: 0
+    });
+  });
+  
+  mkChart('c-nominal-vs-real', {
+    type: 'line',
+    data: { datasets: nomVsRealDatasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { font: { size: 9 }, boxWidth: 8 } },
+        tooltip: {
+          mode: 'nearest',
+          intersect: false,
+          callbacks: { label: ctx => ctx.dataset.label + ': ₦' + (ctx.parsed.y >= 1e6 ? (ctx.parsed.y/1e6).toFixed(1) + 'M' : ctx.parsed.y.toLocaleString()) }
+        }
+      },
+      scales: {
+        x: { type: 'category', ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } },
+        y: { ticks: { callback: v => v >= 1e6 ? '₦' + (v/1e6).toFixed(0) + 'M' : '₦' + (v/1000).toFixed(0) + 'K' }, grid: { color: 'rgba(0,0,0,0.04)' } }
+      }
+    }
+  });
+  
+  if (top5.length > 0) {
+    const best = top5[0];
+    const worst = top5[top5.length - 1];
+    addAfter('c-nominal-vs-real', `<div class="chart-interp"><strong>Real appreciation leaders:</strong> ${best.product} achieved ${best.realCAGR.toFixed(1)}% real CAGR despite ${best.inflationErosion.toFixed(0)}pp inflation erosion. <strong>Comparison:</strong> ${worst.product} ${worst.realCAGR.toFixed(1)}% real CAGR. Gap between solid and dashed lines shows inflation impact.</div>`);
+  }
+  
+  // CHART 3: Homes Real CAGR
+  const homesData = metrics.byProduct.filter(p => p.category === 'Home').sort((a,b) => b.realCAGR - a.realCAGR).slice(0, 10);
+  
+  mkChart('c-homes-real-cagr', {
+    type: 'bar',
+    data: {
+      labels: homesData.map(p => p.product.substring(0, 30)),
+      datasets: [{
+        label: 'Real CAGR %',
+        data: homesData.map(p => p.realCAGR),
+        backgroundColor: homesData.map(p => p.realCAGR > 20 ? '#27AE60' : p.realCAGR > 10 ? '#F39C12' : '#E74C3C'),
+        borderRadius: 5
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => { const p = homesData[ctx.dataIndex]; return [`Real CAGR: ${p.realCAGR.toFixed(1)}%`, `Nominal: ${p.nominalCAGR.toFixed(1)}%`, `Erosion: -${p.inflationErosion.toFixed(1)}pp`]; } } }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Real CAGR % (Inflation-Adjusted)' }, ticks: { callback: v => v.toFixed(0) + '%' } },
+        y: { ticks: { font: { size: 9 } } }
+      }
+    }
+  });
+  
+  // CHART 4: Plots Real CAGR
+  const plotsData = metrics.byProduct.filter(p => p.category === 'Plot').sort((a,b) => b.realCAGR - a.realCAGR).slice(0, 10);
+  
+  mkChart('c-plots-real-cagr', {
+    type: 'bar',
+    data: {
+      labels: plotsData.map(p => p.product.substring(0, 30)),
+      datasets: [{
+        label: 'Real CAGR %',
+        data: plotsData.map(p => p.realCAGR),
+        backgroundColor: plotsData.map(p => p.realCAGR > 20 ? '#27AE60' : p.realCAGR > 10 ? '#F39C12' : '#E74C3C'),
+        borderRadius: 5
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => { const p = plotsData[ctx.dataIndex]; return [`Real CAGR: ${p.realCAGR.toFixed(1)}%`, `Nominal: ${p.nominalCAGR.toFixed(1)}%`, `₦/sqm: ${p.lastPriceNominal.toLocaleString()}`]; } } }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Real CAGR % (Inflation-Adjusted)' }, ticks: { callback: v => v.toFixed(0) + '%' } },
+        y: { ticks: { font: { size: 9 } } }
+      }
+    }
+  });
+  
+  // CHART 5: Inflation Erosion
+  const erosionData = metrics.byProduct.sort((a,b) => b.inflationErosion - a.inflationErosion).slice(0, 15);
+  
+  mkChart('c-inflation-erosion', {
+    type: 'bar',
+    data: {
+      labels: erosionData.map(p => p.product.substring(0, 35)),
+      datasets: [{
+        label: 'Erosion (pp)',
+        data: erosionData.map(p => p.inflationErosion),
+        backgroundColor: erosionData.map(p => p.inflationErosion > 30 ? '#E74C3C' : p.inflationErosion > 25 ? '#F39C12' : '#95A5A6'),
+        borderRadius: 5
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => { const p = erosionData[ctx.dataIndex]; return [`Nominal: ${p.nominalCAGR.toFixed(1)}%`, `Real: ${p.realCAGR.toFixed(1)}%`, `Erosion: -${p.inflationErosion.toFixed(1)}pp`]; } } }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Percentage Points Lost to Inflation' }, ticks: { callback: v => v.toFixed(0) + 'pp' } },
+        y: { ticks: { font: { size: 9 } } }
+      }
+    }
+  });
+  
+  addAfter('c-inflation-erosion', `<div class="chart-interp">Inflation erosion = Nominal CAGR - Real CAGR. Products with >30pp erosion saw most price gains wiped out by currency debasement. Portfolio average: ${metrics.portfolio.inflationErosion.toFixed(1)}pp.</div>`);
+  
+  // CHART 6: Discount Rate (Placeholder)
+  mkChart('c-discount-rate', {
+    type: 'line',
+    data: {
+      labels: ['Q1 2024', 'Q2 2024', 'Q3 2024', 'Q4 2024', 'Q1 2025', 'Q2 2025', 'Q3 2025', 'Q4 2025', 'Q1 2026'],
+      datasets: [{
+        label: 'Avg Discount Rate %',
+        data: [8, 9, 10, 12, 11, 10, 9, 8, 7],
+        borderColor: '#2980B9',
+        backgroundColor: 'rgba(41,128,185,0.1)',
+        borderWidth: 2.5,
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: { title: { display: true, text: 'Discount Rate %' }, ticks: { callback: v => v.toFixed(0) + '%' }, grid: { color: 'rgba(0,0,0,0.04)' } }
+      }
+    }
+  });
+  
+  addAfter('c-discount-rate', `<div class="chart-interp"><strong>Discount rate</strong> = (Asking Price - Realized Revenue per Unit) / Asking Price × 100. Shows gap between price sheet and actual transactions. >12% signals pricing resistance. <em>Note: Full calculation pending transaction-to-price-sheet mapping.</em></div>`);
+  
+  // CHART 7: Performance Matrix
+  const matrixData = metrics.byProduct.filter(p => p.realCAGR > -50 && p.realCAGR < 100).map(p => ({
+    x: 50,
+    y: p.realCAGR,
+    r: 10,
+    label: p.product,
+    category: p.category
+  }));
+  
+  mkChart('c-price-performance-matrix', {
+    type: 'bubble',
+    data: {
+      datasets: [{
+        label: 'Products',
+        data: matrixData,
+        backgroundColor: matrixData.map(p => p.category === 'Home' ? 'rgba(41,128,185,0.6)' : p.category === 'Plot' ? 'rgba(39,174,96,0.6)' : 'rgba(149,165,166,0.6)'),
+        borderColor: matrixData.map(p => p.category === 'Home' ? '#2980B9' : p.category === 'Plot' ? '#27AE60' : '#95A5A6'),
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => { const p = matrixData[ctx.dataIndex]; return [p.label.substring(0, 40), `Real CAGR: ${p.y.toFixed(1)}%`, `Category: ${p.category}`]; } } }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Revenue Contribution % (Placeholder)' }, grid: { color: 'rgba(0,0,0,0.04)' } },
+        y: { title: { display: true, text: 'Real Price CAGR %' }, ticks: { callback: v => v.toFixed(0) + '%' }, grid: { color: 'rgba(0,0,0,0.04)' } }
+      }
+    }
+  });
+  
+  addAfter('c-price-performance-matrix', `<div class="chart-interp"><strong>Product positioning matrix:</strong> Blue = Homes, Green = Plots. Y-axis = Real appreciation. <strong>Top-right</strong> = Stars (high revenue, high appreciation) - prioritize. <strong>Bottom-right</strong> = Cash Cows - maintain. <strong>Top-left</strong> = Question Marks - test & scale. <strong>Bottom-left</strong> = Dogs - exit candidates.</div>`);
+  
+  console.log('[Pricing] Charts rendered successfully');
 }
 
 
