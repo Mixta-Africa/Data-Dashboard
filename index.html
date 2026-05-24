@@ -2070,13 +2070,33 @@ function addInterpretations(d) {
         : 'Revenue is reasonably distributed across properties - continue balanced allocation.'
     }</div>`);
 
-  // Overview - Sales Channel Performance
-  addAfter('c-agentgrp',
-    `<div class="chart-interp">3rd party agents typically command higher commissions (4-7%) vs in-house sales (2-3%). If 3rd party dominates, calculate the margin impact - you may be leaving 3-5% on the table.</div>`);
+  // Overview - Sales Channel Performance - DATA-DRIVEN
+  if (d.agentGroupRev && d.agentGroupRev.length > 0) {
+    const groups = d.agentGroups.map((g,i) => ({name:g, rev:d.agentGroupRev[i]})).sort((a,b)=>b.rev-a.rev);
+    const top = groups[0];
+    const topPct = (top.rev / d.totalRev * 100).toFixed(0);
+    const is3rdParty = top.name.toLowerCase().includes('3rd') || top.name.toLowerCase().includes('party');
+    addAfter('c-agentgrp',
+      `<div class="chart-interp"><strong>${top.name}</strong> dominates with ${topPct}% of revenue. ${
+        is3rdParty
+          ? '3rd party agents command 4-7% commissions vs in-house 2-3% - at this concentration, you may be leaving 3-5% margin on the table.'
+          : 'In-house sales lead - you are building internal capability and controlling commission costs.'
+      }</div>`);
+  }
 
-  // Overview - Finish Type
-  addAfter('c-finish',
-    `<div class="chart-interp">Finished units command premium pricing but tie up capital in construction. Shell/semi-finished reduce upfront cost but may limit buyer pool. Track absorption rate by finish type to optimize inventory mix.</div>`);
+  // Overview - Finish Type - DATA-DRIVEN
+  if (d.finishAvgPrice && d.finishAvgPrice.length > 0) {
+    const finishes = d.finishes.map((f,i) => ({name:f, price:d.finishAvgPrice[i]})).sort((a,b)=>b.price-a.price);
+    const highest = finishes[0];
+    const lowest = finishes[finishes.length-1];
+    const premium = ((highest.price - lowest.price) / lowest.price * 100).toFixed(0);
+    addAfter('c-finish',
+      `<div class="chart-interp"><strong>${highest.name}</strong> commands ${premium}% premium over <strong>${lowest.name}</strong>. ${
+        highest.name.toLowerCase().includes('finish') || highest.name.toLowerCase().includes('complete')
+          ? 'Premium pricing justifies the capital tied up in construction.'
+          : 'Track absorption rates - if premium units move slowly, capital is locked in inventory.'
+      }</div>`);
+  }
 
   // Revenue Tab - Stacked Community chart
   addAfter('c-stacked',
@@ -2167,9 +2187,18 @@ function addInterpretations(d) {
       }</div>`);
   }
 
-  // Portfolio - Phased vs Move-in-Ready
-  addAfter('c-phase',
-    `<div class="chart-interp">Move-in-Ready commands premium but requires upfront capital. Phased construction reduces risk but may slow absorption if buyers prefer turnkey. Track days-to-sale by delivery type to optimize capital allocation.</div>`);
+  // Portfolio - Phased vs Move-in-Ready - DATA-DRIVEN
+  if (d.phaseRevenue && d.phaseRevenue.length > 0) {
+    const phases = d.phases.map((p,i) => ({name:p, rev:d.phaseRevenue[i]})).sort((a,b)=>b.rev-a.rev);
+    const top = phases[0];
+    const topPct = (top.rev / d.totalRev * 100).toFixed(0);
+    addAfter('c-phase',
+      `<div class="chart-interp"><strong>${top.name}</strong> drives ${topPct}% of revenue. ${
+        top.name.toLowerCase().includes('ready') || top.name.toLowerCase().includes('complete')
+          ? 'Move-in-ready dominates - buyers prefer turnkey, but this ties up capital in construction.'
+          : 'Phased construction leads - you are reducing upfront capital risk, but ensure absorption keeps pace.'
+      }</div>`);
+  }
 
   // Collections Tab - Collected vs Outstanding chart
   const collRate = (d.totalPaid / d.totalRev * 100).toFixed(0);
@@ -2194,13 +2223,31 @@ function addInterpretations(d) {
       }</div>`);
   }
 
-  // Collections - Mortgage vs Cash
-  addAfter('c-mortgage',
-    `<div class="chart-interp">Mortgage-financed units de-risk buyer default (bank validates affordability) but add approval friction. Cash buyers close faster but carry higher default risk if on payment plans. High mortgage % = lower collection risk; high cash % = faster sales but watch arrears closely.</div>`);
+  // Collections - Mortgage vs Cash - DATA-DRIVEN
+  if (d.mortgageCount !== undefined && d.totalRows > 0) {
+    const mortgagePct = (d.mortgageCount / d.totalRows * 100).toFixed(0);
+    const cashPct = (100 - mortgagePct).toFixed(0);
+    addAfter('c-mortgage',
+      `<div class="chart-interp"><strong>${mortgagePct}% mortgage-financed</strong>, ${cashPct}% cash. ${
+        mortgagePct > 50
+          ? 'Bank validation de-risks buyer default - collection risk is lower, though approval friction slows sales.'
+          : 'Cash buyers dominate - sales close faster, but watch arrears closely as cash buyers on payment plans carry higher default risk.'
+      }</div>`);
+  }
 
-  // Collections - Payment Plan Distribution
-  addAfter('c-payplan',
-    `<div class="chart-interp">Extended plans (36+ months) improve affordability but increase default risk and tie up working capital longer. Shorter plans accelerate cash collection but may limit buyer pool. Optimize plan mix based on target buyer income levels and your cost of capital.</div>`);
+  // Collections - Payment Plan Distribution - DATA-DRIVEN
+  if (d.payPlanRevenue && d.payPlanRevenue.length > 0) {
+    const plans = d.payPlans.map((p,i) => ({name:p, rev:d.payPlanRevenue[i]})).sort((a,b)=>b.rev-a.rev);
+    const top = plans[0];
+    const topPct = (top.rev / d.totalRev * 100).toFixed(0);
+    const isExtended = parseInt(top.name) >= 36 || top.name.toLowerCase().includes('extended');
+    addAfter('c-payplan',
+      `<div class="chart-interp"><strong>${top.name}</strong> leads with ${topPct}% of revenue. ${
+        isExtended
+          ? 'Extended plans improve affordability but increase default risk and tie up working capital - monitor collection rates closely.'
+          : 'Shorter plans dominate - you are accelerating cash collection, though this may limit buyer pool.'
+      }</div>`);
+  }
 
   // Agents Tab - Top Agents bars
   const top1AgentPct = d.dealingAgentRev.length
@@ -2213,17 +2260,47 @@ function addInterpretations(d) {
         : 'Revenue is healthily distributed across agents - continue balanced channel investment.'
     }</div>`);
 
-  // Agents - Channel donut
-  addAfter('c-channel',
-    `<div class="chart-interp">Track channel mix shifts over time. If "Mixta Sales" share is growing, you are building internal capability. If "3rd Party" dominates, you are commission-dependent - consider the margin trade-off.</div>`);
+  // Agents - Channel donut - DATA-DRIVEN
+  if (d.agentGroupRev && d.agentGroupRev.length > 0) {
+    const groups = d.agentGroups.map((g,i) => ({name:g, rev:d.agentGroupRev[i], pct:(d.agentGroupRev[i]/d.totalRev*100).toFixed(0)}));
+    const mixtaSales = groups.find(g => g.name.toLowerCase().includes('mixta'));
+    const thirdParty = groups.find(g => g.name.toLowerCase().includes('3rd') || g.name.toLowerCase().includes('party'));
+    
+    if (mixtaSales && thirdParty) {
+      addAfter('c-channel',
+        `<div class="chart-interp"><strong>Mixta Sales:</strong> ${mixtaSales.pct}%, <strong>3rd Party:</strong> ${thirdParty.pct}%. ${
+          parseInt(mixtaSales.pct) > parseInt(thirdParty.pct)
+            ? 'Internal capability is growing - you are controlling commission costs.'
+            : 'Commission-dependent - consider the 2-5% margin trade-off of 3rd party reliance.'
+        }</div>`);
+    }
+  }
 
-  // Agents - Agent Trend Over Time
-  addAfter('c-agtrend',
-    `<div class="chart-interp">Rising agent revenue signals channel health; flat or declining trends indicate saturation or disengagement. If top agents are growing while others stagnate, you have concentration risk. Activate underperformers or reallocate inventory to proven channels.</div>`);
+  // Agents - Agent Trend Over Time - DATA-DRIVEN
+  if (d.dealingAgentRev && d.dealingAgentRev.length >= 2) {
+    const top2 = d.dealingAgentNames.slice(0,2);
+    const top1Pct = (d.dealingAgentRev[0] / d.totalRev * 100).toFixed(0);
+    const top2Pct = (d.dealingAgentRev[1] / d.totalRev * 100).toFixed(0);
+    const gap = (top1Pct - top2Pct).toFixed(0);
+    addAfter('c-agtrend',
+      `<div class="chart-interp"><strong>${top2[0]}</strong> leads with ${top1Pct}%, followed by <strong>${top2[1]}</strong> at ${top2Pct}%. ${
+        gap > 15
+          ? 'Wide gap signals concentration risk - diversify by activating underperformers.'
+          : 'Top agents are balanced - channel health is distributed.'
+      }</div>`);
+  }
 
-  // Buyers Tab - Buyer Type chart
-  addAfter('c-buyertype',
-    `<div class="chart-interp">Diaspora buyers often pay in full upfront but expect premium finishes. Local buyers lean on payment plans. Tailor product mix and financing to buyer archetype.</div>`);
+  // Buyers Tab - Buyer Type chart - DATA-DRIVEN
+  if (d.buyerTypeRevenue && d.buyerTypeRevenue.length > 0) {
+    const types = d.buyerTypes.map((t,i) => ({name:t, rev:d.buyerTypeRevenue[i], pct:(d.buyerTypeRevenue[i]/d.totalRev*100).toFixed(0)})).sort((a,b)=>b.rev-a.rev);
+    const top = types[0];
+    addAfter('c-buyertype',
+      `<div class="chart-interp"><strong>${top.name}</strong> buyers drive ${top.pct}% of revenue. ${
+        top.name.toLowerCase().includes('diaspora')
+          ? 'Diaspora buyers dominate - they often pay upfront but expect premium finishes. Prioritize finished units.'
+          : 'Local buyers lead - payment plans are critical. Optimize plan structure to balance affordability and collection risk.'
+      }</div>`);
+  }
 
   // Buyers - Buyer State chart
   const lagosShare = d.topStateCount / d.totalRows * 100;
@@ -2246,9 +2323,19 @@ function addInterpretations(d) {
   addAfter('c-elasticity',
     `<div class="chart-interp">Correlation between price changes and volume changes. Negative correlation (price up, volume down) = elastic demand; positive = inelastic or supply-constrained market. Use this to calibrate pricing power.</div>`);
 
-  // COLLECTIONS TAB - Outstanding by Community
-  addAfter('c-outstandcomm',
-    `<div class="chart-interp">Outstanding concentration by community. If one community dominates, collections risk is geographically concentrated. Diversify collections efforts or investigate community-specific payment friction.</div>`);
+  // COLLECTIONS TAB - Outstanding by Community - DATA-DRIVEN
+  if (d.commOutstanding && d.commOutstanding.length > 0) {
+    const comms = d.communities.map((c,i) => ({name:c, out:d.commOutstanding[i]})).sort((a,b)=>b.out-a.out);
+    const top = comms[0];
+    const topPct = (top.out / d.totalOut * 100).toFixed(0);
+    const fB = v => '₦' + (v/1e9).toFixed(1) + 'B';
+    addAfter('c-outstandcomm',
+      `<div class="chart-interp"><strong>${top.name}</strong> has ${fB(top.out)} outstanding (${topPct}% of total). ${
+        topPct > 50
+          ? 'High concentration - collections risk is geographically concentrated. Investigate community-specific payment friction.'
+          : 'Outstanding balances are distributed - collections risk is geographically diversified.'
+      }</div>`);
+  }
 
   // COLLECTIONS TAB - Resolution Trend
   addAfter('c-resolution',
