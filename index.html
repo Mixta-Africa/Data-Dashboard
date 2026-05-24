@@ -1537,19 +1537,72 @@ async function fetchInflationData(workbook) {
       cpiIndex: {}
     };
     
-    // Parse rows (row 0 = headers, data starts row 1)
-    for (let i = 1; i < inflationRaw.length; i++) {
+    // Parse rows (row 0 = empty, row 1 = headers, data starts row 2)
+    // Columns: A=empty, B=Year, C=Headline, D=Food, E=Core, I=Exchange/$
+    for (let i = 2; i < inflationRaw.length; i++) {
       const row = inflationRaw[i];
-      const year = parseInt(row[0]);
-      const headlineInflation = parseFloat(row[1]);
+      if (!row || row.length < 3) continue;
       
-      if (isNaN(year) || isNaN(headlineInflation)) continue;
+      // Extract year (handle "2025 (Proj.)" format)
+      let year = row[1];
+      if (typeof year === 'string') {
+        const yearMatch = year.match(/(\d{4})/);
+        if (yearMatch) year = parseInt(yearMatch[1]);
+      } else {
+        year = parseInt(year);
+      }
+      if (isNaN(year)) continue;
+      
+      // Extract headline inflation
+      let headlineInflation = row[2];
+      
+      // Handle different formats:
+      // 1. Decimal (0.132 → 13.2%)
+      // 2. Text with % ("~34.8% (old series equivalent)" → 34.8)
+      // 3. Range ("15–16%" → 15.5 midpoint)
+      if (typeof headlineInflation === 'string') {
+        // Try to extract percentage
+        const percentMatch = headlineInflation.match(/(\d+\.?\d*)/);
+        if (percentMatch) {
+          headlineInflation = parseFloat(percentMatch[1]);
+          // If it's a range like "15–16", take the first number
+        } else {
+          continue;
+        }
+      } else {
+        headlineInflation = parseFloat(headlineInflation);
+        // Convert decimal to percentage (0.132 → 13.2)
+        if (headlineInflation < 1) {
+          headlineInflation = headlineInflation * 100;
+        }
+      }
+      
+      if (isNaN(headlineInflation)) continue;
+      
+      // Parse food and core inflation (same logic)
+      let foodInflation = row[3];
+      if (typeof foodInflation === 'string') {
+        const match = foodInflation.match(/(\d+\.?\d*)/);
+        foodInflation = match ? parseFloat(match[1]) : null;
+      } else {
+        foodInflation = parseFloat(foodInflation) || null;
+        if (foodInflation && foodInflation < 1) foodInflation = foodInflation * 100;
+      }
+      
+      let coreInflation = row[4];
+      if (typeof coreInflation === 'string') {
+        const match = coreInflation.match(/(\d+\.?\d*)/);
+        coreInflation = match ? parseFloat(match[1]) : null;
+      } else {
+        coreInflation = parseFloat(coreInflation) || null;
+        if (coreInflation && coreInflation < 1) coreInflation = coreInflation * 100;
+      }
       
       inflation.byYear[year] = {
         headline: headlineInflation,
-        food: parseFloat(row[2]) || null,
-        core: parseFloat(row[3]) || null,
-        exchangeRate: row[7] ? row[7].toString() : null
+        food: foodInflation,
+        core: coreInflation,
+        exchangeRate: row[8] ? row[8].toString() : null // Column I
       };
     }
     
@@ -1587,30 +1640,36 @@ async function fetchClassificationData(workbook) {
       lookup: {} // product name -> category
     };
     
-    // Start from row 3 (index 3, since row 2 is merged headers "Homes"/"Plots")
+    // Start from row 4 (index 3 in zero-indexed array)
+    // Row 0 = empty, Row 1 = "Homes"/"Plots", Row 2 = "Class"/"Name", Row 3+ = data
     for (let i = 3; i < classRaw.length; i++) {
       const row = classRaw[i];
+      if (!row) continue;
       
       // Homes: columns B (1) = Class, C (2) = Name
       if (row[1] && row[2]) {
-        const name = row[2].trim();
-        classification.homes.push({
-          class: row[1],
-          name: name
-        });
-        classification.lookup[name] = 'Home';
-        classification.lookup[name.toLowerCase()] = 'Home';
+        const name = row[2].toString().trim();
+        if (name && name !== 'Name') { // Skip header repeats
+          classification.homes.push({
+            class: row[1].toString().trim(),
+            name: name
+          });
+          classification.lookup[name] = 'Home';
+          classification.lookup[name.toLowerCase()] = 'Home';
+        }
       }
       
       // Plots: columns E (4) = Class, F (5) = Name
       if (row[4] && row[5]) {
-        const name = row[5].trim();
-        classification.plots.push({
-          class: row[4],
-          name: name
-        });
-        classification.lookup[name] = 'Plot';
-        classification.lookup[name.toLowerCase()] = 'Plot';
+        const name = row[5].toString().trim();
+        if (name && name !== 'Name') { // Skip header repeats
+          classification.plots.push({
+            class: row[4].toString().trim(),
+            name: name
+          });
+          classification.lookup[name] = 'Plot';
+          classification.lookup[name.toLowerCase()] = 'Plot';
+        }
       }
     }
     
@@ -4187,21 +4246,7 @@ function renderInsightEngine(d, rows) {
     });
   }
 
-  // Show the Command Brief
-  if (cmdBrief && cmdFindings && findings.length) {
-    cmdBrief.style.display = '';
-    // Show max 3 findings in the grid
-    const shown = findings.slice(0, 3);
-    cmdFindings.style.gridTemplateColumns = `repeat(${shown.length},1fr)`;
-    cmdFindings.innerHTML = shown.map(f => `
-      <div class="cmd-finding ${f.type}">
-        <div class="cf-tag">${f.tag}</div>
-        <div class="cf-headline">${f.headline}</div>
-        <div class="cf-body">${f.body}</div>
-        <div><span class="cf-metric">${f.metric}</span></div>
-      </div>
-    `).join('');
-  }
+  // Command Brief removed - insights now inline with charts
 
   // ── Collections So What ──────────────────────────────────────────────────
   const swColl = document.getElementById('sw-collections');
