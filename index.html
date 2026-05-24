@@ -1741,6 +1741,8 @@ function renderFromRows(rows, fromCache) {
   populateFilters(rows); // Now filters will successfully see the years!
   
   const analytics = computeAnalytics(rows);
+  // Store globally for report generation
+  window.currentAnalytics = analytics;
 
   // BUG FIX: Explicitly tell the charts we are starting on 'All Years'
   // so they draw the line chart correctly on the initial load without crashing!
@@ -1855,22 +1857,24 @@ async function downloadAIReport() {
   btn.disabled = true;
 
   try {
+    // Get analytics data from global scope (set by renderData)
+    if (!window.currentAnalytics) {
+      throw new Error('No data loaded. Please wait for dashboard to finish loading.');
+    }
+    const d = window.currentAnalytics;
+
     const yr = document.getElementById('filterYear').value;
     const qtr = document.getElementById('filterQuarter').value;
     const periodStr = yr === 'all' ? 'All Years' : (qtr === 'all' ? yr : yr + ' ' + qtr);
 
-    // Read current metrics directly off the screen
-    const k_rev = document.getElementById('k-totalrev').textContent;
-    const k_units = document.getElementById('k-units').textContent;
-    const k_coll = document.getElementById('k-collected').textContent;
-    const k_out = document.getElementById('k-outstanding').textContent;
-    const k_props = document.getElementById('k-props').textContent;
-    
+    // Build comprehensive data summary for LLM
+    const dataContext = buildReportContext(d, periodStr);
+
     // SECURE API KEY HANDLING
     let groqKey = localStorage.getItem('GROQ_API_KEY');
     
     if (!groqKey || groqKey.trim() === '' || groqKey === 'null') {
-        groqKey = prompt("Please enter your Groq API Key:\n\n(It will be saved securely in your browser's local storage so you don't have to enter it again.)");
+        groqKey = prompt("Please enter your Groq API Key:\\n\\n(It will be saved securely in your browser's local storage so you don't have to enter it again.)");
         if (groqKey && groqKey.trim() !== "") {
             localStorage.setItem('GROQ_API_KEY', groqKey.trim());
         } else {
@@ -1878,17 +1882,37 @@ async function downloadAIReport() {
         }
     }
 
-    const promptText = `Act as a professional senior data analyst tasked with extracting key insights from each period currently under view linked to the "year" or "quarter" dropdowns, which dynamically populates the dashboard.
+    const promptText = `You are writing an executive performance report for Mixta Africa's real estate portfolio.
 
-PERIOD IN VIEW: ${periodStr}
-PORTFOLIO METRICS FOR THIS PERIOD:
-- Total Portfolio Revenue: ${k_rev}
-- Total Units: ${k_units}
-- Total Collected: ${k_coll}
-- Outstanding Balance: ${k_out}
-- Active Properties: ${k_props}
+PERIOD: ${periodStr}
 
-Please write a structured, executive-level Performance Report tailored exactly to what this period reveals. Highlight trends, identify risks regarding outstanding balances, and provide strategic recommendations. Keep formatting clean with professional headers and bullet points.`;
+DATA CONTEXT:
+${dataContext}
+
+Write a professional executive report with these sections:
+
+1. EXECUTIVE SUMMARY (3-5 bullet points highlighting the most critical insights)
+
+2. PORTFOLIO PERFORMANCE
+- Revenue trends with specific year-over-year changes
+- Unit sales volume analysis
+- Community performance breakdown
+
+3. COLLECTIONS & RISK ANALYSIS
+- Collection rate assessment
+- Outstanding balance concentration
+- High-risk accounts requiring immediate action
+
+4. CHANNEL & BUYER INSIGHTS
+- Agent/channel performance
+- Buyer demographics and geographic concentration
+- Product mix effectiveness
+
+5. STRATEGIC RECOMMENDATIONS (4-6 concrete actions with clear rationale)
+
+USE ACTUAL DATA FROM THE CONTEXT PROVIDED. Reference specific communities, properties, and numbers. Do not make up metrics or give generic advice. Be direct and actionable.
+
+Format with markdown headers (##) and bullets. Keep it under 1200 words.`;
 
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -1898,7 +1922,9 @@ Please write a structured, executive-level Performance Report tailored exactly t
       },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: promptText }]
+        messages: [{ role: 'user', content: promptText }],
+        temperature: 0.3,
+        max_tokens: 2500
       })
     });
 
@@ -1913,25 +1939,15 @@ Please write a structured, executive-level Performance Report tailored exactly t
     const data = await res.json();
     const reportText = data.choices[0].message.content;
 
-    // Convert AI markdown to a clean Microsoft Word Document (.doc)
-    const htmlContent = `
-      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head><meta charset='utf-8'><title>Performance Report</title></head>
-      <body style="font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.6;">
-        <h1 style="color:#C0392B;">Mixta Africa Performance Report</h1>
-        <h3>Period Evaluated: ${periodStr}</h3>
-        <hr style="border:1px solid #ccc;">
-        ${reportText.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/### (.*?)<br>/g, '<h3 style="color:#2C3E50; margin-top:20px;">$1</h3>')}
-      </body>
-      </html>
-    `;
+    // Convert to clean Word document with proper styling
+    const htmlContent = formatReportAsWord(reportText, periodStr, d);
 
     // Download the file
     const blob = new Blob([htmlContent], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Mixta_Report_${periodStr.replace(/\s+/g, '_')}.doc`;
+    a.download = `Mixta_Executive_Report_${periodStr.replace(/\s+/g, '_')}.doc`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1943,6 +1959,188 @@ Please write a structured, executive-level Performance Report tailored exactly t
     btn.innerHTML = originalText;
     btn.disabled = false;
   }
+}
+
+// Helper: Build comprehensive data context for the LLM
+function buildReportContext(d, period) {
+  const fB = v => '₦' + (v/1e9).toFixed(1) + 'B';
+  const fM = v => '₦' + (v/1e6).toFixed(1) + 'M';
+  const pct = (a,b) => b > 0 ? ((a/b)*100).toFixed(1) + '%' : '0%';
+
+  let ctx = `PORTFOLIO OVERVIEW:\n`;
+  ctx += `- Total Revenue: ${fB(d.totalRev)} across ${d.totalRows} units\n`;
+  ctx += `- Total Collected: ${fB(d.totalPaid)} (${pct(d.totalPaid, d.totalRev)} collection rate)\n`;
+  ctx += `- Outstanding: ${fB(d.totalOut)}\n`;
+  ctx += `- Active Properties: ${d.propCount} across ${d.commCount} communities\n\n`;
+
+  // Year-over-year trend
+  if (d.years.length >= 2) {
+    const lastIdx = d.years.length - 1;
+    const prevIdx = lastIdx - 1;
+    const lastRev = d.revByYear[lastIdx];
+    const prevRev = d.revByYear[prevIdx];
+    const yoyChange = prevRev > 0 ? ((lastRev - prevRev) / prevRev * 100).toFixed(1) : 0;
+    ctx += `YEAR-OVER-YEAR TREND:\n`;
+    ctx += `- ${d.years[lastIdx]}: ${fB(lastRev)}\n`;
+    ctx += `- ${d.years[prevIdx]}: ${fB(prevRev)}\n`;
+    ctx += `- Change: ${yoyChange > 0 ? '+' : ''}${yoyChange}%\n\n`;
+  }
+
+  // Top communities
+  ctx += `TOP COMMUNITIES BY REVENUE:\n`;
+  d.communities.slice(0, 5).forEach((comm, i) => {
+    const rev = d.commRevenue[i];
+    const share = pct(rev, d.totalRev);
+    ctx += `- ${comm}: ${fB(rev)} (${share} of total)\n`;
+  });
+  ctx += `\n`;
+
+  // Top properties
+  ctx += `TOP 5 PROPERTIES:\n`;
+  d.propRevenue.slice(0, 5).forEach(p => {
+    ctx += `- ${p.n} (${p.c}): ${fB(p.v)}\n`;
+  });
+  ctx += `\n`;
+
+  // Collections risk
+  const collRate = (d.totalPaid / d.totalRev * 100).toFixed(1);
+  ctx += `COLLECTIONS ANALYSIS:\n`;
+  ctx += `- Overall collection rate: ${collRate}%\n`;
+  ctx += `- Outstanding balance: ${fB(d.totalOut)} across ${d.totalRows - d.soldCount} units\n`;
+  if (collRate < 70) {
+    ctx += `- RISK FLAG: Collection rate below 70% indicates stress\n`;
+  }
+  ctx += `\n`;
+
+  // Agent/channel performance
+  if (d.dealingAgentRev && d.dealingAgentRev.length > 0) {
+    const topAgentShare = pct(d.dealingAgentRev[0], d.totalRev);
+    ctx += `CHANNEL PERFORMANCE:\n`;
+    ctx += `- Top agent drives ${topAgentShare} of revenue\n`;
+    if (parseFloat(topAgentShare) > 30) {
+      ctx += `- RISK FLAG: High concentration in single agent (key-person risk)\n`;
+    }
+    ctx += `\n`;
+  }
+
+  // Geographic concentration
+  if (d.topStateCount) {
+    const lagosShare = pct(d.topStateCount, d.totalRows);
+    ctx += `BUYER DEMOGRAPHICS:\n`;
+    ctx += `- ${lagosShare} of buyers are Lagos-based\n`;
+    if (parseFloat(lagosShare) > 75) {
+      ctx += `- RISK FLAG: High geographic concentration\n`;
+    }
+  }
+
+  return ctx;
+}
+
+// Helper: Format report as properly styled Word document
+function formatReportAsWord(markdown, period, analytics) {
+  const fB = v => '₦' + (v/1e9).toFixed(1) + 'B';
+  
+  // Convert markdown to HTML
+  let html = markdown
+    .replace(/## (.*?)(\n|$)/g, '<h2 style="color:#2C3E50; margin-top:24px; margin-bottom:10px; font-size:16pt;">$1</h2>')
+    .replace(/### (.*?)(\n|$)/g, '<h3 style="color:#34495E; margin-top:18px; margin-bottom:8px; font-size:14pt;">$1</h3>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/- (.*?)(\n|$)/g, '<div style="margin-left:20px; margin-bottom:4px;">• $1</div>')
+    .replace(/\n\n/g, '<p style="margin:10px 0;"></p>')
+    .replace(/\n/g, '<br>');
+
+  // Add data appendix
+  const appendix = `
+    <div style="page-break-before:always;"></div>
+    <h2 style="color:#2C3E50; margin-top:24px; margin-bottom:14px;">Data Appendix</h2>
+    <table style="border-collapse:collapse; width:100%; margin-top:12px; font-size:10pt;">
+      <tr style="background:#ECF0F1;">
+        <th style="border:1px solid #BDC3C7; padding:8px; text-align:left;">Metric</th>
+        <th style="border:1px solid #BDC3C7; padding:8px; text-align:right;">Value</th>
+      </tr>
+      <tr>
+        <td style="border:1px solid #BDC3C7; padding:6px;">Total Portfolio Revenue</td>
+        <td style="border:1px solid #BDC3C7; padding:6px; text-align:right; font-family:monospace;">${fB(analytics.totalRev)}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #BDC3C7; padding:6px;">Total Units</td>
+        <td style="border:1px solid #BDC3C7; padding:6px; text-align:right; font-family:monospace;">${analytics.totalRows.toLocaleString()}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #BDC3C7; padding:6px;">Total Collected</td>
+        <td style="border:1px solid #BDC3C7; padding:6px; text-align:right; font-family:monospace;">${fB(analytics.totalPaid)}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #BDC3C7; padding:6px;">Outstanding Balance</td>
+        <td style="border:1px solid #BDC3C7; padding:6px; text-align:right; font-family:monospace;">${fB(analytics.totalOut)}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #BDC3C7; padding:6px;">Collection Rate</td>
+        <td style="border:1px solid #BDC3C7; padding:6px; text-align:right; font-family:monospace;">${((analytics.totalPaid/analytics.totalRev)*100).toFixed(1)}%</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #BDC3C7; padding:6px;">Active Properties</td>
+        <td style="border:1px solid #BDC3C7; padding:6px; text-align:right; font-family:monospace;">${analytics.propCount}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #BDC3C7; padding:6px;">Active Communities</td>
+        <td style="border:1px solid #BDC3C7; padding:6px; text-align:right; font-family:monospace;">${analytics.commCount}</td>
+      </tr>
+    </table>
+    
+    <h3 style="color:#34495E; margin-top:20px; margin-bottom:10px;">Top 5 Communities by Revenue</h3>
+    <table style="border-collapse:collapse; width:100%; font-size:10pt;">
+      <tr style="background:#ECF0F1;">
+        <th style="border:1px solid #BDC3C7; padding:8px; text-align:left;">Community</th>
+        <th style="border:1px solid #BDC3C7; padding:8px; text-align:right;">Revenue</th>
+        <th style="border:1px solid #BDC3C7; padding:8px; text-align:right;">% of Total</th>
+      </tr>
+      ${analytics.communities.slice(0,5).map((comm, i) => {
+        const rev = analytics.commRevenue[i];
+        const pct = ((rev / analytics.totalRev) * 100).toFixed(1);
+        return `
+          <tr>
+            <td style="border:1px solid #BDC3C7; padding:6px;">${comm}</td>
+            <td style="border:1px solid #BDC3C7; padding:6px; text-align:right; font-family:monospace;">${fB(rev)}</td>
+            <td style="border:1px solid #BDC3C7; padding:6px; text-align:right; font-family:monospace;">${pct}%</td>
+          </tr>`;
+      }).join('')}
+    </table>
+  `;
+
+  return `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+      <meta charset='utf-8'>
+      <title>Mixta Africa Executive Report</title>
+      <style>
+        body { font-family: 'Calibri', 'Arial', sans-serif; font-size: 11pt; line-height: 1.6; margin: 40px; }
+        h1 { color: #C0392B; font-size: 20pt; margin-bottom: 8px; }
+        h2 { color: #2C3E50; font-size: 16pt; margin-top: 24px; margin-bottom: 10px; border-bottom: 2px solid #E74C3C; padding-bottom: 4px; }
+        h3 { color: #34495E; font-size: 14pt; margin-top: 18px; margin-bottom: 8px; }
+        strong { color: #2C3E50; font-weight: 600; }
+        .report-meta { color: #7F8C8D; font-size: 10pt; margin-bottom: 20px; }
+      </style>
+    </head>
+    <body>
+      <h1>Mixta Africa — Executive Performance Report</h1>
+      <div class="report-meta">
+        Period Evaluated: <strong>${period}</strong><br>
+        Generated: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+      </div>
+      <hr style="border: none; border-top: 1px solid #BDC3C7; margin: 20px 0;">
+      
+      ${html}
+      
+      ${appendix}
+      
+      <div style="margin-top:40px; padding-top:20px; border-top:1px solid #BDC3C7; font-size:9pt; color:#95A5A6;">
+        <em>This report was generated by the Mixta Africa Portfolio Intelligence Hub. Data is current as of the selected period filter.</em>
+      </div>
+    </body>
+    </html>
+  `;
 }
 
 /* =====================================================
