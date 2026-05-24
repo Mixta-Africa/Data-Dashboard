@@ -2049,9 +2049,9 @@ function addInterpretations(d) {
     ? (d.revByYear[d.revByYear.length-1] > d.revByYear[d.revByYear.length-2] ? 'growing' : 'declining')
     : 'variable';
   addAfter('c-revyear',
-    `<div class="chart-interp">Your portfolio shows a <strong>${revTrend}</strong> revenue trajectory. ${
+    `<div class="chart-interp">Portfolio shows a <strong>${revTrend}</strong> revenue trajectory. ${
       revTrend === 'growing'
-        ? 'This momentum supports pipeline acceleration - prioritize inventory allocation to high-velocity communities.'
+        ? 'This momentum supports pipeline acceleration - Prioritize inventory allocation to high-velocity communities.'
         : 'Recent softness suggests reviewing pricing strategy, channel mix, or product pipeline to restore growth.'
     }</div>`);
 
@@ -2064,9 +2064,9 @@ function addInterpretations(d) {
   // Overview - Top Properties bars
   const top3Share = d.propRevenue.slice(0,3).reduce((s,p)=>s+p.v,0) / d.totalRev * 100;
   addAfter('top-props-bars',
-    `<div class="chart-interp">Your top 3 properties account for <strong>${top3Share.toFixed(0)}%</strong> of portfolio revenue. ${
+    `<div class="chart-interp">Top 3 properties account for <strong>${top3Share.toFixed(0)}%</strong> of portfolio revenue. ${
       top3Share > 60
-        ? 'This concentration is high - diversify the pipeline to reduce single-project risk.'
+        ? 'This concentration is high - Diversify the pipeline to reduce single-project risk.'
         : 'Revenue is reasonably distributed across properties - continue balanced allocation.'
     }</div>`);
 
@@ -2079,8 +2079,8 @@ function addInterpretations(d) {
     addAfter('c-agentgrp',
       `<div class="chart-interp"><strong>${top.name}</strong> dominates with ${topPct}% of revenue. ${
         is3rdParty
-          ? '3rd party agents command 4-7% commissions vs in-house 2-3% - at this concentration, you may be leaving 3-5% margin on the table.'
-          : 'In-house sales lead - you are building internal capability and controlling commission costs.'
+          ? '3rd party agents command 4-7% commissions vs in-house 2-3% - at this concentration, this leaves 3-5% margin on the table.'
+          : 'In-house sales lead - This builds internal capability and controlling commission costs.'
       }</div>`);
   }
 
@@ -2114,7 +2114,7 @@ function addInterpretations(d) {
         : priceUp && !volUp
         ? '<strong>Price resistance detected:</strong> Prices rising but volume falling. Consider value-add over further price increases to maintain absorption.'
         : !priceUp && volUp
-        ? '<strong>Volume-driven growth:</strong> Units rising despite flat/falling prices. You are capturing market share - watch margin erosion.'
+        ? '<strong>Volume-driven growth:</strong> Units rising despite flat/falling prices. This captures market share - watch margin erosion.'
         : 'Both price and volume declining - urgent review needed on product-market fit and competitive positioning.'
     }</div>`);
 
@@ -2126,8 +2126,8 @@ function addInterpretations(d) {
     addAfter('c-unittype',
       `<div class="chart-interp"><strong>${topType.n}</strong> drives ${topTypePct}% of revenue. ${
         isConcentrated
-          ? 'High concentration - your pipeline is heavily specialized. If demand shifts, revenue exposure is significant.'
-          : 'Revenue is distributed across unit types - you are serving multiple buyer segments, which reduces market risk.'
+          ? 'High concentration - the pipeline is heavily specialized. If demand shifts, revenue exposure is significant.'
+          : 'Revenue is distributed across unit types - This serves multiple buyer segments, which reduces market risk.'
       }</div>`);
   }
 
@@ -2139,19 +2139,19 @@ function addInterpretations(d) {
     addAfter('c-bedroom',
       `<div class="chart-interp"><strong>${topBed.n}</strong> dominates with ${topBedPct}% of revenue. ${
         parseInt(bedCount) >= 3
-          ? 'Family-oriented product mix - you are capturing the mid-market family segment.'
-          : 'Smaller units dominate - you are targeting young professionals, investors, or starter buyers.'
+          ? 'Family-oriented product mix - This captures the mid-market family segment.'
+          : 'Smaller units dominate - This targets young professionals, investors, or starter buyers.'
       } Monitor absorption rates to confirm this mix aligns with demand.</div>`);
   }
 
   // Portfolio Tab - Property Ranking chart
   addAfter('c-proprank',
-    `<div class="chart-interp">Use this to identify your cash-generating core. Properties consistently in the top 5 deserve priority allocation; those that never crack top 10 may need repositioning or exit.</div>`);
+    `<div class="chart-interp">This identifies the cash-generating core. Properties consistently in the top 5 deserve priority allocation; those that never crack top 10 may need repositioning or exit.</div>`);
 
   // Portfolio - Status pie
   const soldPct = (d.soldCount / d.totalRows * 100).toFixed(0);
   addAfter('c-status',
-    `<div class="chart-interp"><strong>${soldPct}% of units are Sold</strong> (vs Reserved). High Sold % indicates strong conversion - if under 60%, investigate reservation-to-sale friction.</div>`);
+    `<div class="chart-interp"><strong>${soldPct}% of units are Sold</strong> (vs Reserved). High Sold % indicates strong conversion - if under 60%, Investigate reservation-to-sale friction.</div>`);
 
   // Portfolio - Heatmap - DATA-DRIVEN
   // Find most consistent community (appeared in most years with revenue)
@@ -2168,8 +2168,8 @@ function addInterpretations(d) {
     addAfter('heatmap-wrap',
       `<div class="chart-interp"><strong>${topConsistent.comm}</strong> shows the most consistent performance (${topConsistent.activeYears} active years). ${
         bottomConsistent.activeYears < 3
-          ? topConsistent.comm + ' is your sustained performer - deserves continued investment. Meanwhile, ' + bottomConsistent.comm + ' (' + bottomConsistent.activeYears + ' active years) needs pipeline refresh or repositioning.'
-          : 'Your communities show relatively balanced activity - no one-hit wonders flagged.'
+          ? topConsistent.comm + ' is the sustained performer - deserves continued investment. Meanwhile, ' + bottomConsistent.comm + ' (' + bottomConsistent.activeYears + ' active years) needs pipeline refresh or repositioning.'
+          : 'Communities show relatively balanced activity - no one-hit wonders flagged.'
       }</div>`);
   }
 
@@ -2182,8 +2182,8 @@ function addInterpretations(d) {
     addAfter('c-finishmix',
       `<div class="chart-interp"><strong>${topByRev.n}</strong> leads revenue (${topRevPct}%); <strong>${topByVol.n}</strong> leads volume (${topByVol.cnt} units). ${
         sameLeader
-          ? 'Revenue and volume align - your dominant finish type delivers both throughput and margin.'
-          : 'Revenue leader differs from volume leader - you are trading throughput for margin in your finish mix. Evaluate if this aligns with cash flow priorities.'
+          ? 'Revenue and volume align - the dominant finish type delivers both throughput and margin.'
+          : 'Revenue leader differs from volume leader - This trades throughput for margin in the finish mix. Evaluate if this aligns with cash flow priorities.'
       }</div>`);
   }
 
@@ -2196,18 +2196,18 @@ function addInterpretations(d) {
       `<div class="chart-interp"><strong>${top.name}</strong> drives ${topPct}% of revenue. ${
         top.name.toLowerCase().includes('ready') || top.name.toLowerCase().includes('complete')
           ? 'Move-in-ready dominates - buyers prefer turnkey, but this ties up capital in construction.'
-          : 'Phased construction leads - you are reducing upfront capital risk, but ensure absorption keeps pace.'
+          : 'Phased construction leads - This reduces upfront capital risk, but ensure absorption keeps pace.'
       }</div>`);
   }
 
   // Collections Tab - Collected vs Outstanding chart
   const collRate = (d.totalPaid / d.totalRev * 100).toFixed(0);
   addAfter('c-collstack',
-    `<div class="chart-interp">Your portfolio collection rate is <strong>${collRate}%</strong>. ${
+    `<div class="chart-interp">the portfolio collection rate is <strong>${collRate}%</strong>. ${
       collRate > 70
         ? 'This is solid - maintain current collections processes.'
         : collRate > 50
-        ? 'Moderate performance - consider tightening payment plan terms or activating a dedicated collections team.'
+        ? 'Moderate performance - Consider tightening payment plan terms or activating a dedicated collections team.'
         : 'This is critically low. Outstanding balances are piling up - urgent escalation needed.'
     }</div>`);
 
@@ -2218,8 +2218,8 @@ function addInterpretations(d) {
     addAfter('c-collrate',
       `<div class="chart-interp"><strong>${zeroTo25} units</strong> (${highRiskPct}% of portfolio) are in the 0-25% paid bracket - highest risk of default. ${
         highRiskPct > 10
-          ? 'This is a significant concentration - prioritize immediate escalation before these age beyond recovery.'
-          : 'Risk concentration is manageable, but monitor this bracket closely.'
+          ? 'This is a significant concentration - Prioritize immediate escalation before these age beyond recovery.'
+          : 'Risk concentration is manageable, but Monitor this bracket closely.'
       }</div>`);
   }
 
@@ -2244,8 +2244,8 @@ function addInterpretations(d) {
     addAfter('c-payplan',
       `<div class="chart-interp"><strong>${top.name}</strong> leads with ${topPct}% of revenue. ${
         isExtended
-          ? 'Extended plans improve affordability but increase default risk and tie up working capital - monitor collection rates closely.'
-          : 'Shorter plans dominate - you are accelerating cash collection, though this may limit buyer pool.'
+          ? 'Extended plans improve affordability but increase default risk and tie up working capital - Monitor collection rates closely.'
+          : 'Shorter plans dominate - This accelerates cash collection, though this may limit buyer pool.'
       }</div>`);
   }
 
@@ -2254,7 +2254,7 @@ function addInterpretations(d) {
     ? (d.dealingAgentRev[0] / d.totalRev * 100).toFixed(0)
     : 0;
   addAfter('agent-bars',
-    `<div class="chart-interp">Your top agent drives <strong>${top1AgentPct}%</strong> of revenue. ${
+    `<div class="chart-interp">The top agent drives <strong>${top1AgentPct}%</strong> of revenue. ${
       top1AgentPct > 30
         ? 'This concentration creates key-person risk. Diversify by activating underperforming channels.'
         : 'Revenue is healthily distributed across agents - continue balanced channel investment.'
@@ -2270,8 +2270,8 @@ function addInterpretations(d) {
       addAfter('c-channel',
         `<div class="chart-interp"><strong>Mixta Sales:</strong> ${mixtaSales.pct}%, <strong>3rd Party:</strong> ${thirdParty.pct}%. ${
           parseInt(mixtaSales.pct) > parseInt(thirdParty.pct)
-            ? 'Internal capability is growing - you are controlling commission costs.'
-            : 'Commission-dependent - consider the 2-5% margin trade-off of 3rd party reliance.'
+            ? 'Internal capability is growing - This controls commission costs.'
+            : 'Commission-dependent - Consider the 2-5% margin trade-off of 3rd party reliance.'
         }</div>`);
     }
   }
@@ -2285,7 +2285,7 @@ function addInterpretations(d) {
     addAfter('c-agtrend',
       `<div class="chart-interp"><strong>${top2[0]}</strong> leads with ${top1Pct}%, followed by <strong>${top2[1]}</strong> at ${top2Pct}%. ${
         gap > 15
-          ? 'Wide gap signals concentration risk - diversify by activating underperformers.'
+          ? 'Wide gap signals concentration risk - Diversify by activating underperformers.'
           : 'Top agents are balanced - channel health is distributed.'
       }</div>`);
   }
@@ -2317,7 +2317,7 @@ function addInterpretations(d) {
 
   // PREDICT TAB - Collection Recovery Expected vs At-Risk
   addAfter('c-recovery',
-    `<div class="chart-interp">Green bars show expected recovery based on risk tier probabilities. Red shows capital at risk of write-off. The wider the gap, the more aggressive your collections strategy needs to be.</div>`);
+    `<div class="chart-interp">Green bars show expected recovery based on risk tier probabilities. Red shows capital at risk of write-off. The wider the gap, the more aggressive collections strategy should be.</div>`);
 
   // PREDICT TAB - Pricing Elasticity
   addAfter('c-elasticity',
@@ -2725,7 +2725,7 @@ function renderVelocity(d) {
       <span class="so-what-icon">!</span>
       <strong>Resource allocation signal:</strong> Prioritize inventory and marketing spend to <strong>${topVel.comm}</strong> (score ${topVel.score}, ${topVel.score > 110 ? 'accelerating' : 'stable'}). ${
         botVel.score < 80
-          ? 'Meanwhile, <strong>' + botVel.comm + '</strong> (score ' + botVel.score + ') is slowing - investigate pricing, product mix, or channel activation before writing it off.'
+          ? 'Meanwhile, <strong>' + botVel.comm + '</strong> (score ' + botVel.score + ') is slowing - Investigate pricing, product mix, or channel activation before writing it off.'
           : 'Other communities show stable momentum - maintain current allocation.'
       }
     </div>`;
@@ -2908,7 +2908,7 @@ function renderRecovery(rows) {
   if (derivedRiskCol > realRiskCol) {
     wEl.innerHTML += `
       <div style="font-size:10px;color:var(--text3);margin-top:10px;padding:8px 12px;background:#F7F7F9;border-radius:6px;border-left:3px solid var(--red3)">
-        Risk tiers derived from <b>% Paid</b>: 100%+ = Collected, 75–99% = Near Completion, 50–74% = Low Risk, 25–49% = Medium Risk, &lt;25% = High Risk. Recovery probabilities (99/92/78/52/22%) are defaults - refine in code once you have empirical collection-team data.
+        Risk tiers derived from <b>% Paid</b>: 100%+ = Collected, 75–99% = Near Completion, 50–74% = Low Risk, 25–49% = Medium Risk, &lt;25% = High Risk. Recovery probabilities (99/92/78/52/22%) are defaults - refine in code once there is empirical collection-team data.
       </div>`;
   }
 
@@ -2920,7 +2920,7 @@ function renderRecovery(rows) {
   wEl.innerHTML += `
     <div class="so-what" style="margin-top:12px">
       <span class="so-what-icon">!</span>
-      <strong>Collections priority:</strong> You have <strong>${fB(atRiskTotal)}</strong> in Medium+High risk tiers (${hrData.cnt + mrData.cnt} units). Model predicts only <strong>${fB(recoverable)}</strong> is recoverable (${(recoverable/totalOut*100).toFixed(0)}%). ${
+      <strong>Collections priority:</strong> there is <strong>${fB(atRiskTotal)}</strong> in Medium+High risk tiers (${hrData.cnt + mrData.cnt} units). Model predicts only <strong>${fB(recoverable)}</strong> is recoverable (${(recoverable/totalOut*100).toFixed(0)}%). ${
         hrData.out > totalOut * 0.3
           ? 'High Risk alone is ' + (hrData.out/totalOut*100).toFixed(0) + '% of total outstanding - these ' + hrData.cnt + ' units need <strong>immediate escalation</strong> before they age beyond recovery. Activate legal notices, payment restructuring, or third-party collections now.'
           : 'Risk is manageable but watch the High Risk tier closely - once units drop below 25% paid, recovery probability falls sharply.'
@@ -3131,9 +3131,9 @@ function renderElasticity(d, rows) {
     headline.textContent = 'Aspirational demand signal (r=' + rStr + ') — buyers have historically moved up with price.';
     body.innerHTML = 'A positive price-volume correlation means higher prices have not suppressed absorption — ' +
       'premium positioning may even reinforce perceived quality in your buyer base. ' +
-      '<strong>Implication:</strong> You have room to test price uplifts, especially in high-velocity communities. ' +
+      '<strong>Implication:</strong> there is room to test price uplifts, especially in high-velocity communities. ' +
       'In <strong>' + topName + '</strong>, the median transaction is <strong>' + topMedian + '</strong> — ' +
-      'consider anchoring new launches above this to stretch ASP. ' +
+      'Consider anchoring new launches above this to stretch ASP. ' +
       'Monitor quarterly; this signal can reverse during macro tightening.';
   } else {
     sw.className = 'sowhat sw-med'; sw.dataset.ico = '⚖️';
@@ -3326,7 +3326,7 @@ function renderInsightEngine(d, rows) {
       type: 'cf-info',
       tag: '🤝 Channel Health',
       headline: `Channel mix is reasonably diversified — ${d.topChannel} leads`,
-      body: `<strong>${d.topChannel}</strong> accounts for <strong>${pct(d.agentGrpRev[0], d.totalRev)}</strong> of revenue. The remaining ${pct(d.totalRev - d.agentGrpRev[0], d.totalRev)} is distributed across ${d.agentGroups.length - 1} other channels. Monitor for trend shifts — if third-party share is growing, consider co-investing in those relationships.`,
+      body: `<strong>${d.topChannel}</strong> accounts for <strong>${pct(d.agentGrpRev[0], d.totalRev)}</strong> of revenue. The remaining ${pct(d.totalRev - d.agentGrpRev[0], d.totalRev)} is distributed across ${d.agentGroups.length - 1} other channels. Monitor for trend shifts — if third-party share is growing, Consider co-investing in those relationships.`,
       metric: d.agentGroups.length + ' active channels'
     });
   }
@@ -3478,8 +3478,8 @@ function renderInsightEngine(d, rows) {
       ];
     } else if (topChRevPct >= 0.50) {
       agClass = 'sowhat sw-med'; agIco = '🤝';
-      agHed = `${d.topChannel} leads at ${topChPct} — healthy dominance, but monitor diversity trend`;
-      agBod = `<strong>${d.topChannel}</strong> drives <strong>${topChPct}</strong> of portfolio revenue. This is a comfortable leadership position, not yet a concentration risk. The question is trajectory: is the top channel's share growing (consolidating risk) or shrinking (natural diversification)? Check the Agent Group Volume Trend chart. ${mixta ? `Mixta Sales contributes <strong>${mixta}</strong> of revenue — direct sales strength is a margin-positive signal.` : ''} ${thirdP ? `Third-party agents generate <strong>${thirdP}</strong> — these are likely commission-heavy; monitor per-unit economics.` : ''}`;
+      agHed = `${d.topChannel} leads at ${topChPct} — healthy dominance, but Monitor diversity trend`;
+      agBod = `<strong>${d.topChannel}</strong> drives <strong>${topChPct}</strong> of portfolio revenue. This is a comfortable leadership position, not yet a concentration risk. The question is trajectory: is the top channel's share growing (consolidating risk) or shrinking (natural diversification)? Check the Agent Group Volume Trend chart. ${mixta ? `Mixta Sales contributes <strong>${mixta}</strong> of revenue — direct sales strength is a margin-positive signal.` : ''} ${thirdP ? `Third-party agents generate <strong>${thirdP}</strong> — these are likely commission-heavy; Monitor per-unit economics.` : ''}`;
       agActions = [
         `Review commission structures across channels — ensure third-party cost is justified by the units they sell`,
         `Identify your top 3 individual agents by revenue and volume — these people are key-person risk`,
