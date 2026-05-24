@@ -393,17 +393,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <div id="section-overview" class="section active">
 
   <!-- COMMAND BRIEF — populated by renderInsightEngine() -->
-  <div class="cmd-brief" id="cmd-brief" style="display:none">
-    <div class="cmd-brief-header">
-      <div class="cmd-brief-title">Portfolio Command Brief</div>
-      <div class="cmd-brief-score">
-        <div style="font-size:10px;color:rgba(255,255,255,0.35)">Health Score</div>
-        <div class="health-score-badge" id="hs-badge">—</div>
-      </div>
-    </div>
-    <div class="cmd-brief-findings" id="cmd-findings"></div>
-  </div>
-
   <div class="kpi-strip">
     <div class="kpi"><div class="kpi-label">Total Portfolio Revenue</div><div class="kpi-value red" id="k-totalrev">—</div><div class="kpi-sub" id="k-totalrev-sub">loading…</div></div>
     <div class="kpi"><div class="kpi-label">Total Units</div><div class="kpi-value" id="k-units">—</div><div class="kpi-sub" id="k-units-sub">—</div></div>
@@ -3235,8 +3224,6 @@ function renderInsightEngine(d, rows) {
   }
 
   // Show the Command Brief
-  const cmdBrief = document.getElementById('cmd-brief');
-  const cmdFindings = document.getElementById('cmd-findings');
   if (cmdBrief && cmdFindings && findings.length) {
     cmdBrief.style.display = '';
     // Show max 3 findings in the grid
