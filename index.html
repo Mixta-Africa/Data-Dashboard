@@ -109,7 +109,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .full{margin-bottom:14px}
 
 /* ── CHART CARD ───────────────────────────────────── */
-.cc{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.92);border-radius:var(--r);box-shadow:var(--shadow-sm);padding:20px 22px;transition:box-shadow 0.2s;overflow:visible;display:flex;flex-direction:column}
+.cc{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.92);border-radius:var(--r);box-shadow:var(--shadow-sm);padding:20px 22px 24px 22px;transition:box-shadow 0.2s;overflow:visible;display:flex;flex-direction:column;min-height:fit-content}
 .cc:hover{box-shadow:var(--shadow-md)}
 .ch{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:8px}
 .ct{font-size:13.5px;font-weight:600;color:var(--text);letter-spacing:-.2px}
@@ -191,7 +191,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .so-what{font-size:11px;color:var(--text2);margin-top:10px;padding:10px 14px;background:linear-gradient(135deg,#FEF9E7,#FFFBF0);border-left:3px solid #F39C12;border-radius:6px;line-height:1.6}
 .so-what strong{color:var(--text);font-weight:600}
 .so-what-icon{display:inline-block;width:18px;height:18px;background:#F39C12;color:white;border-radius:50%;text-align:center;line-height:18px;font-size:11px;font-weight:700;margin-right:6px;vertical-align:middle}
-.chart-interp{font-size:10.5px;color:var(--text2);margin-top:8px;padding:8px 12px;background:#F7F9FC;border-radius:6px;line-height:1.5;border-left:3px solid #2980B9}
+.chart-interp{font-size:10.5px;color:var(--text2);margin-top:12px;padding:8px 12px;background:#F7F9FC;border-radius:6px;line-height:1.5;border-left:3px solid #2980B9}
 .chart-interp::before{content:'📊';margin-right:6px}
 
 /* ── FORECAST SCENARIO TOGGLE ─────────────────────── */
@@ -2174,6 +2174,27 @@ function addInterpretations(d) {
         ? 'Heavy Lagos concentration - geographic risk if the Lagos market softens. Consider activating diaspora or cross-state campaigns.'
         : 'Buyer base is geographically diverse - lower regional exposure risk.'
     }</div>`);
+
+  // PREDICT TAB - Demand Velocity Moving Average
+  addAfter('c-mavg',
+    `<div class="chart-interp">The moving average smooths out year-to-year noise to reveal true demand trajectory. 3-year MA shows medium-term trend; 2-year MA is more reactive. Divergence between the two signals momentum shift.</div>`);
+
+  // PREDICT TAB - Collection Recovery Expected vs At-Risk
+  addAfter('c-recovery',
+    `<div class="chart-interp">Green bars show expected recovery based on risk tier probabilities. Red shows capital at risk of write-off. The wider the gap, the more aggressive your collections strategy needs to be.</div>`);
+
+  // PREDICT TAB - Pricing Elasticity
+  addAfter('c-elasticity',
+    `<div class="chart-interp">Correlation between price changes and volume changes. Negative correlation (price up, volume down) = elastic demand; positive = inelastic or supply-constrained market. Use this to calibrate pricing power.</div>`);
+
+  // COLLECTIONS TAB - Outstanding by Community
+  addAfter('c-outstandcomm',
+    `<div class="chart-interp">Outstanding concentration by community. If one community dominates, collections risk is geographically concentrated. Diversify collections efforts or investigate community-specific payment friction.</div>`);
+
+  // COLLECTIONS TAB - Resolution Trend
+  addAfter('c-resolution',
+    `<div class="chart-interp">Track how quickly outstanding balances convert to collected revenue. Flattening resolution curves indicate collections process degradation - tighten terms or escalate enforcement.</div>`);
+
 }
 
 
@@ -2549,6 +2570,19 @@ function renderVelocity(d) {
         <div class="sl-val">${score} <span style="color:${col};font-size:9px">${label}</span></div>
       </div>`;
   });
+
+  // Add interpretation after velocity bars
+  const topVel = velScores[0];
+  const botVel = velScores[velScores.length - 1];
+  velEl.innerHTML += `
+    <div class="so-what" style="margin-top:12px">
+      <span class="so-what-icon">!</span>
+      <strong>Resource allocation signal:</strong> Prioritize inventory and marketing spend to <strong>${topVel.comm}</strong> (score ${topVel.score}, ${topVel.score > 110 ? 'accelerating' : 'stable'}). ${
+        botVel.score < 80
+          ? 'Meanwhile, <strong>' + botVel.comm + '</strong> (score ' + botVel.score + ') is slowing - investigate pricing, product mix, or channel activation before writing it off.'
+          : 'Other communities show stable momentum - maintain current allocation.'
+      }
+    </div>`;
 }
 
 
@@ -2728,9 +2762,24 @@ function renderRecovery(rows) {
   if (derivedRiskCol > realRiskCol) {
     wEl.innerHTML += `
       <div style="font-size:10px;color:var(--text3);margin-top:10px;padding:8px 12px;background:#F7F7F9;border-radius:6px;border-left:3px solid var(--red3)">
-        Risk tiers derived from <b>% Paid</b>: 100%+ = Collected, 75–99% = Near Completion, 50–74% = Low Risk, 25–49% = Medium Risk, &lt;25% = High Risk. Recovery probabilities (99/92/78/52/22%) are defaults — refine in code once you have empirical collection-team data.
+        Risk tiers derived from <b>% Paid</b>: 100%+ = Collected, 75–99% = Near Completion, 50–74% = Low Risk, 25–49% = Medium Risk, &lt;25% = High Risk. Recovery probabilities (99/92/78/52/22%) are defaults - refine in code once you have empirical collection-team data.
       </div>`;
   }
+
+  // Add strategic interpretation
+  const hrData = tierData['High Risk'] || { out: 0, exp: 0, cnt: 0 };
+  const mrData = tierData['Medium Risk'] || { out: 0, exp: 0, cnt: 0 };
+  const atRiskTotal = hrData.out + mrData.out;
+  const recoverable = totalExp;
+  wEl.innerHTML += `
+    <div class="so-what" style="margin-top:12px">
+      <span class="so-what-icon">!</span>
+      <strong>Collections priority:</strong> You have <strong>${fB(atRiskTotal)}</strong> in Medium+High risk tiers (${hrData.cnt + mrData.cnt} units). Model predicts only <strong>${fB(recoverable)}</strong> is recoverable (${(recoverable/totalOut*100).toFixed(0)}%). ${
+        hrData.out > totalOut * 0.3
+          ? 'High Risk alone is ' + (hrData.out/totalOut*100).toFixed(0) + '% of total outstanding - these ' + hrData.cnt + ' units need <strong>immediate escalation</strong> before they age beyond recovery. Activate legal notices, payment restructuring, or third-party collections now.'
+          : 'Risk is manageable but watch the High Risk tier closely - once units drop below 25% paid, recovery probability falls sharply.'
+      }
+    </div>`;
 }
 
 
