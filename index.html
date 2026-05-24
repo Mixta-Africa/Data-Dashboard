@@ -2098,13 +2098,31 @@ function addInterpretations(d) {
         : 'Both price and volume declining - urgent review needed on product-market fit and competitive positioning.'
     }</div>`);
 
-  // Revenue - Unit Type Breakdown
-  addAfter('c-unittype',
-    `<div class="chart-interp">Revenue concentration in specific unit types signals demand patterns. If one type dominates, you are capturing that segment well - but diversification reduces market risk. If distribution is even, you are serving multiple buyer archetypes.</div>`);
+  // Revenue - Unit Type Breakdown - DATA-DRIVEN
+  if (d.unitTypeRevenue && d.unitTypeRevenue.length > 0) {
+    const topType = d.unitTypeRevenue[0];
+    const topTypePct = (topType.v / d.totalRev * 100).toFixed(0);
+    const isConcentrated = topTypePct > 50;
+    addAfter('c-unittype',
+      `<div class="chart-interp"><strong>${topType.n}</strong> drives ${topTypePct}% of revenue. ${
+        isConcentrated
+          ? 'High concentration - your pipeline is heavily specialized. If demand shifts, revenue exposure is significant.'
+          : 'Revenue is distributed across unit types - you are serving multiple buyer segments, which reduces market risk.'
+      }</div>`);
+  }
 
-  // Revenue - Bedroom Mix
-  addAfter('c-bedroom',
-    `<div class="chart-interp">Bedroom count drives buyer demographics. 3-4 bed units attract families; 1-2 bed appeal to young professionals and investors. Track which bedroom counts convert fastest to align future pipeline with proven demand.</div>`);
+  // Revenue - Bedroom Mix - DATA-DRIVEN
+  if (d.bedroomRevenue && d.bedroomRevenue.length > 0) {
+    const topBed = d.bedroomRevenue[0];
+    const topBedPct = (topBed.v / d.totalRev * 100).toFixed(0);
+    const bedCount = topBed.n.replace(/[^0-9]/g, '');
+    addAfter('c-bedroom',
+      `<div class="chart-interp"><strong>${topBed.n}</strong> dominates with ${topBedPct}% of revenue. ${
+        parseInt(bedCount) >= 3
+          ? 'Family-oriented product mix - you are capturing the mid-market family segment.'
+          : 'Smaller units dominate - you are targeting young professionals, investors, or starter buyers.'
+      } Monitor absorption rates to confirm this mix aligns with demand.</div>`);
+  }
 
   // Portfolio Tab - Property Ranking chart
   addAfter('c-proprank',
@@ -2115,13 +2133,39 @@ function addInterpretations(d) {
   addAfter('c-status',
     `<div class="chart-interp"><strong>${soldPct}% of units are Sold</strong> (vs Reserved). High Sold % indicates strong conversion - if under 60%, investigate reservation-to-sale friction.</div>`);
 
-  // Portfolio - Heatmap
-  addAfter('heatmap-wrap',
-    `<div class="chart-interp">Dark cells = high revenue years for that community. Look for <strong>vertical dark streaks</strong> (consistent performers across years) vs isolated bright cells (one-year wonders). Consistent performers deserve sustained investment; one-hit communities need pipeline refresh or repositioning.</div>`);
+  // Portfolio - Heatmap - DATA-DRIVEN
+  // Find most consistent community (appeared in most years with revenue)
+  if (d.communities && d.commYearMatrix) {
+    const consistency = d.communities.map((comm, i) => {
+      const years = d.commYearMatrix[i] || [];
+      const activeYears = years.filter(v => v > 0).length;
+      return { comm, activeYears, totalRev: d.commRevenue[i] };
+    }).sort((a,b) => b.activeYears - a.activeYears);
+    
+    const topConsistent = consistency[0];
+    const bottomConsistent = consistency[consistency.length - 1];
+    
+    addAfter('heatmap-wrap',
+      `<div class="chart-interp"><strong>${topConsistent.comm}</strong> shows the most consistent performance (${topConsistent.activeYears} active years). ${
+        bottomConsistent.activeYears < 3
+          ? topConsistent.comm + ' is your sustained performer - deserves continued investment. Meanwhile, ' + bottomConsistent.comm + ' (' + bottomConsistent.activeYears + ' active years) needs pipeline refresh or repositioning.'
+          : 'Your communities show relatively balanced activity - no one-hit wonders flagged.'
+      }</div>`);
+  }
 
-  // Portfolio - Finish Type Volume & Revenue
-  addAfter('c-finishmix',
-    `<div class="chart-interp">Volume bars show unit count; revenue shows margin contribution. If Finished units have low volume but high revenue, you are trading throughput for margin. If Shell units have high volume but low revenue, you are chasing volume over profit. Balance based on cash flow needs.</div>`);
+  // Portfolio - Finish Type Volume & Revenue - DATA-DRIVEN
+  if (d.finishRevenue && d.finishRevenue.length > 0) {
+    const topByRev = d.finishRevenue[0];
+    const topRevPct = (topByRev.v / d.totalRev * 100).toFixed(0);
+    const topByVol = d.finishCounts.map((c,i) => ({n:d.finishes[i], cnt:c})).sort((a,b)=>b.cnt-a.cnt)[0];
+    const sameLeader = topByRev.n === topByVol.n;
+    addAfter('c-finishmix',
+      `<div class="chart-interp"><strong>${topByRev.n}</strong> leads revenue (${topRevPct}%); <strong>${topByVol.n}</strong> leads volume (${topByVol.cnt} units). ${
+        sameLeader
+          ? 'Revenue and volume align - your dominant finish type delivers both throughput and margin.'
+          : 'Revenue leader differs from volume leader - you are trading throughput for margin in your finish mix. Evaluate if this aligns with cash flow priorities.'
+      }</div>`);
+  }
 
   // Portfolio - Phased vs Move-in-Ready
   addAfter('c-phase',
@@ -2138,9 +2182,17 @@ function addInterpretations(d) {
         : 'This is critically low. Outstanding balances are piling up - urgent escalation needed.'
     }</div>`);
 
-  // Collections - Collection Rate Distribution
-  addAfter('c-collrate',
-    `<div class="chart-interp">Units clustered in the 0-25% bracket are at <strong>highest risk of default</strong>. Prioritize these for immediate follow-up before they age beyond recovery.</div>`);
+  // Collections - Collection Rate Distribution - DATA-DRIVEN
+  if (d.collBracketCounts && d.collBracketCounts.length > 0) {
+    const zeroTo25 = d.collBracketCounts[0] || 0; // First bracket is typically 0-25%
+    const highRiskPct = (zeroTo25 / d.totalRows * 100).toFixed(0);
+    addAfter('c-collrate',
+      `<div class="chart-interp"><strong>${zeroTo25} units</strong> (${highRiskPct}% of portfolio) are in the 0-25% paid bracket - highest risk of default. ${
+        highRiskPct > 10
+          ? 'This is a significant concentration - prioritize immediate escalation before these age beyond recovery.'
+          : 'Risk concentration is manageable, but monitor this bracket closely.'
+      }</div>`);
+  }
 
   // Collections - Mortgage vs Cash
   addAfter('c-mortgage',
