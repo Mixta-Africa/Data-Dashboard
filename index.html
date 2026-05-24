@@ -2021,12 +2021,27 @@ function addInterpretations(d) {
   // Helper to inject interpretation block after an element
   function addAfter(targetId, html) {
     const el = document.getElementById(targetId);
-    if (!el || !el.parentElement) return;
-    const existing = el.parentElement.querySelector('.so-what, .chart-interp');
+    if (!el) return;
+    
+    // Find the chart container (.cc) - go up parent chain
+    let container = el.parentElement;
+    while (container && !container.classList.contains('cc')) {
+      container = container.parentElement;
+    }
+    
+    if (!container) {
+      // Fallback: use direct parent if we can't find .cc
+      container = el.parentElement;
+    }
+    
+    // Remove existing interpretation in this container
+    const existing = container.querySelector('.so-what, .chart-interp');
     if (existing) existing.remove();
+    
+    // Append interpretation to the container (not inside .cw)
     const div = document.createElement('div');
     div.innerHTML = html;
-    el.parentElement.appendChild(div.firstChild);
+    container.appendChild(div.firstChild);
   }
 
   // Overview Tab - Revenue Recognition Trend
