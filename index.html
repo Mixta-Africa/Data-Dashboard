@@ -109,7 +109,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .full{margin-bottom:14px}
 
 /* ── CHART CARD ───────────────────────────────────── */
-.cc{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.92);border-radius:var(--r);box-shadow:var(--shadow-sm);padding:20px 22px;transition:box-shadow 0.2s}
+.cc{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.92);border-radius:var(--r);box-shadow:var(--shadow-sm);padding:20px 22px;transition:box-shadow 0.2s;overflow:visible;display:flex;flex-direction:column}
 .cc:hover{box-shadow:var(--shadow-md)}
 .ch{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:8px}
 .ct{font-size:13.5px;font-weight:600;color:var(--text);letter-spacing:-.2px}
@@ -118,7 +118,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .br{background:var(--red4);color:var(--red);border:1px solid var(--red3)}
 .bg_{background:#F0F0F4;color:var(--text2);border:1px solid #E0E0E8}
 .bgrn{background:#EAFAF1;color:#1E8449;border:1px solid #A9DFBF}
-.cw{position:relative;width:100%}
+.cw{position:relative;width:100%;flex:0 0 auto}
 
 /* ── SPARKLINE BARS ───────────────────────────────── */
 .sl-row{display:flex;align-items:center;gap:8px;margin-bottom:9px}
@@ -226,6 +226,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   .g2,.g3,.g21,.g32{grid-template-columns:1fr}
   .ins-strip{grid-template-columns:1fr}.nav{display:none}
 }
+/* ── FORECAST SCENARIO TOGGLE ─────────────────────── */
+.scenario-btn:hover{background:rgba(255,255,255,0.6)!important;color:var(--text)!important}
+.scenario-btn.active{background:white!important;color:var(--text)!important;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
 </style>
 </head>
 <body>
@@ -619,10 +622,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <div class="cc full" style="margin-bottom:14px">
     <div class="ch">
       <div>
-        <div class="ct">Revenue Forecast — OLS Regression with ±1σ Confidence Band</div>
+        <div class="ct">Revenue Forecast - OLS Regression with ±1σ Confidence Band</div>
         <div class="cs">Historical actuals · linear trend · 3-year projection</div>
       </div>
-      <span class="badge br" id="pr-r2-badge">R²=—</span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span class="badge br" id="pr-r2-badge">R²=-</span>
+        <div style="display:flex;gap:4px;background:rgba(0,0,0,0.04);padding:3px;border-radius:8px">
+          <button class="scenario-btn active" data-mode="all" onclick="setForecastMode('all')" style="padding:4px 10px;border:none;background:white;border-radius:6px;font-size:10px;font-weight:600;color:var(--text);cursor:pointer;font-family:var(--font);transition:all 0.15s">All</button>
+          <button class="scenario-btn" data-mode="base" onclick="setForecastMode('base')" style="padding:4px 10px;border:none;background:transparent;border-radius:6px;font-size:10px;font-weight:600;color:var(--text3);cursor:pointer;font-family:var(--font);transition:all 0.15s">Base</button>
+          <button class="scenario-btn" data-mode="bull" onclick="setForecastMode('bull')" style="padding:4px 10px;border:none;background:transparent;border-radius:6px;font-size:10px;font-weight:600;color:var(--text3);cursor:pointer;font-family:var(--font);transition:all 0.15s">Bull</button>
+          <button class="scenario-btn" data-mode="bear" onclick="setForecastMode('bear')" style="padding:4px 10px;border:none;background:transparent;border-radius:6px;font-size:10px;font-weight:600;color:var(--text3);cursor:pointer;font-family:var(--font);transition:all 0.15s">Bear</button>
+        </div>
+      </div>
     </div>
     <div class="cw" style="height:300px"><canvas id="c-forecast"></canvas></div>
     <div id="forecast-note" style="font-size:10px;color:var(--text3);margin-top:8px;padding:6px 10px;background:#F7F7F9;border-radius:6px;border-left:3px solid var(--red3)">Loading model…</div>
@@ -1519,7 +1530,51 @@ function renderCharts(d) {
   // ── COLLECTIONS ──
   mkChart('c-collstack',{type:'bar',data:{labels:d.years,datasets:[{label:'Collected ₦B',data:d.paidByYear.map(v=>+(v/1e9).toFixed(2)),backgroundColor:C.green,borderRadius:4,borderSkipped:false},{label:'Outstanding ₦B',data:d.outByYear.map(v=>+(v/1e9).toFixed(2)),backgroundColor:C.red3,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
 
-  mkChart('c-collrate',{type:'bar',data:{labels:d.collBrackets,datasets:[{label:'Units',data:d.collBracketCounts,backgroundColor:[C.red,C.red2,'#F39C12','#E67E22',C.green,C.blue,'#1ABC9C'],borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>c.parsed.y+' units'}}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'}}}}});
+  mkChart('c-collrate', {
+    type: 'bar',
+    data: {
+      labels: d.collBrackets,
+      datasets: [{
+        label: 'Units',
+        data: d.collBracketCounts,
+        backgroundColor: [C.red, C.red2, '#F39C12', '#E67E22', C.green, C.blue, '#1ABC9C'],
+        borderRadius: 5,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        tooltip: { callbacks: { label: c => c.parsed.y + ' units' } }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { grid: { color: 'rgba(0,0,0,0.04)' } }
+      }
+    },
+    plugins: [{
+      id: 'barLabels',
+      afterDatasetsDraw: (chart) => {
+        const ctx = chart.ctx;
+        chart.data.datasets.forEach((dataset, i) => {
+          const meta = chart.getDatasetMeta(i);
+          meta.data.forEach((bar, index) => {
+            const value = dataset.data[index];
+            if (value > 0) {
+              ctx.save();
+              ctx.font = '600 11px DM Sans';
+              ctx.fillStyle = '#1A1A2E';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'bottom';
+              ctx.fillText(value, bar.x, bar.y - 4);
+              ctx.restore();
+            }
+          });
+        });
+      }
+    }]
+  });
 
   mkChart('c-mortgage',{type:'bar',data:{labels:d.years,datasets:[{label:'Cash/Plan',data:d.cashByYear,backgroundColor:C.red3,borderRadius:4,borderSkipped:false},{label:'Mortgage',data:d.mortgageByYear,backgroundColor:C.red,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'}}}}});
 
@@ -2055,7 +2110,53 @@ function addInterpretations(d) {
         ? 'Heavy Lagos concentration - geographic risk if the Lagos market softens. Consider activating diaspora or cross-state campaigns.'
         : 'Buyer base is geographically diverse - lower regional exposure risk.'
     }</div>`);
+
+  // ADDITIONAL CHARTS - Overview Tab
+  // Sales Channel Performance (Agent Group)
+  addAfter('c-agentgrp',
+    `<div class="chart-interp">3rd party agents typically command higher commissions (4-7%) vs in-house sales (2-3%). If 3rd party dominates, calculate the margin impact - you may be leaving 3-5% on the table.</div>`);
+
+  // Finish Type - Avg Unit Price (Overview)
+  addAfter('c-finish',
+    `<div class="chart-interp">Finished units command premium pricing but tie up capital in construction. Shell/semi-finished reduce upfront cost but may limit buyer pool. Track absorption rate by finish type to optimize inventory mix.</div>`);
+
+  // REVENUE TAB - Additional Charts
+  // Unit Type Revenue Breakdown
+  addAfter('c-unittype',
+    `<div class="chart-interp">Revenue concentration in specific unit types signals demand patterns. If one type dominates, you are capturing that segment well - but diversification reduces market risk. If distribution is even, you are serving multiple buyer archetypes.</div>`);
+
+  // Bedroom Mix
+  addAfter('c-bedroom',
+    `<div class="chart-interp">Bedroom count drives buyer demographics. 3-4 bed units attract families; 1-2 bed appeal to young professionals and investors. Track which bedroom counts convert fastest to align future pipeline with proven demand.</div>`);
+
+  // PORTFOLIO TAB - Additional Charts  
+  // Revenue Heatmap
+  addAfter('heatmap-wrap',
+    `<div class="chart-interp">Dark cells = high revenue years for that community. Look for <strong>vertical dark streaks</strong> (consistent performers across years) vs isolated bright cells (one-year wonders). Consistent performers deserve sustained investment; one-hit communities need pipeline refresh or repositioning.</div>`);
+
+  // Finish Type Volume & Revenue (Portfolio detail)
+  addAfter('c-finishmix',
+    `<div class="chart-interp">Volume bars show unit count; revenue shows margin contribution. If Finished units have low volume but high revenue, you are trading throughput for margin. If Shell units have high volume but low revenue, you are chasing volume over profit. Balance based on cash flow needs.</div>`);
+
+  // Phased vs Move-in-Ready
+  addAfter('c-phase',
+    `<div class="chart-interp">Move-in-Ready commands premium but requires upfront capital. Phased construction reduces risk but may slow absorption if buyers prefer turnkey. Track days-to-sale by delivery type to optimize capital allocation.</div>`);
+
+  // COLLECTIONS TAB - Additional Charts
+  // Mortgage vs Cash
+  addAfter('c-mortgage',
+    `<div class="chart-interp">Mortgage-financed units de-risk buyer default (bank validates affordability) but add approval friction. Cash buyers close faster but carry higher default risk if on payment plans. High mortgage % = lower collection risk; high cash % = faster sales but watch arrears closely.</div>`);
+
+  // Payment Plan Distribution  
+  addAfter('c-payplan',
+    `<div class="chart-interp">Extended plans (36+ months) improve affordability but increase default risk and tie up working capital longer. Shorter plans accelerate cash collection but may limit buyer pool. Optimize plan mix based on target buyer income levels and your cost of capital.</div>`);
+
+  // AGENTS TAB - Additional Charts (agent-bars already covered above)
+  // Agent Trend Over Time
+  addAfter('c-agtrend',
+    `<div class="chart-interp">Rising agent revenue signals channel health; flat or declining trends indicate saturation or disengagement. If top agents are growing while others stagnate, you have concentration risk. Activate underperformers or reallocate inventory to proven channels.</div>`);
 }
+
 
 
 function renderPredict(d, rows) {
@@ -2067,6 +2168,80 @@ function renderPredict(d, rows) {
   try { renderRecovery(rows || []); } catch(e) { console.warn('[predict] recovery failed:', e); }
   // Elasticity (uses analytics object + raw rows for price bands)
   try { renderElasticity(d, rows || []); } catch(e) { console.warn('[predict] elasticity failed:', e); }
+}
+
+// Global forecast data storage for scenario switching
+let forecastData = null;
+let forecastChart = null;
+
+function setForecastMode(mode) {
+  // Update button states
+  document.querySelectorAll('.scenario-btn').forEach(btn => {
+    if (btn.dataset.mode === mode) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  // Redraw chart with selected mode
+  if (forecastChart && forecastData) {
+    const datasets = [];
+    const years = forecastData.years;
+    const hist = forecastData.hist;
+    const proj = forecastData.proj;
+
+    // Always show historical actuals
+    datasets.push({
+      label: 'Actuals',
+      data: years.slice(0, hist.length).map((y, i) => ({ x: y, y: hist[i] })),
+      borderColor: '#C0392B',
+      backgroundColor: 'rgba(192,57,43,0.1)',
+      borderWidth: 2.5,
+      pointRadius: 4,
+      pointHoverRadius: 6
+    });
+
+    // Show projections based on mode
+    if (mode === 'all' || mode === 'base') {
+      datasets.push({
+        label: 'Base Case',
+        data: years.slice(hist.length - 1).map((y, i) => ({ x: y, y: i === 0 ? hist[hist.length - 1] : proj[i - 1].base })),
+        borderColor: '#2980B9',
+        backgroundColor: 'rgba(41,128,185,0.1)',
+        borderWidth: 2,
+        borderDash: [5, 3],
+        pointRadius: 3
+      });
+    }
+
+    if (mode === 'all' || mode === 'bull') {
+      datasets.push({
+        label: 'Bull Case',
+        data: years.slice(hist.length - 1).map((y, i) => ({ x: y, y: i === 0 ? hist[hist.length - 1] : proj[i - 1].bull })),
+        borderColor: '#27AE60',
+        backgroundColor: 'rgba(39,174,96,0.08)',
+        borderWidth: 1.5,
+        borderDash: [3, 3],
+        pointRadius: 2
+      });
+    }
+
+    if (mode === 'all' || mode === 'bear') {
+      datasets.push({
+        label: 'Bear Case',
+        data: years.slice(hist.length - 1).map((y, i) => ({ x: y, y: i === 0 ? hist[hist.length - 1] : proj[i - 1].bear })),
+        borderColor: '#E67E22',
+        backgroundColor: 'rgba(230,126,34,0.08)',
+        borderWidth: 1.5,
+        borderDash: [3, 3],
+        pointRadius: 2
+      });
+    }
+
+    forecastChart.data.datasets = datasets;
+    forecastChart.update();
+  }
 }
 
 function renderForecast(d) {
@@ -2167,6 +2342,14 @@ function renderForecast(d) {
       }
     }
   });
+
+  // Store forecast data and chart reference for scenario switching
+  forecastChart = chartRegistry['c-forecast'];
+  forecastData = {
+    years: allLabels,
+    hist: histRev,
+    proj: projections
+  };
 
   const noteEl = document.getElementById('forecast-note');
   if (noteEl) {
