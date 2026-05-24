@@ -3798,13 +3798,10 @@ function renderPricingCharts() {
 
 
 function renderPredict(d, rows) {
-  // Forecast (uses analytics object only)
-  renderForecast(d);
-  // Velocity (uses analytics object only)
-  try { renderVelocity(d); } catch(e) { console.warn('[predict] velocity failed:', e); }
-  // Recovery (needs raw rows for per-row _out and _ppct)
-  try { renderRecovery(rows || []); } catch(e) { console.warn('[predict] recovery failed:', e); }
-  // Elasticity (uses analytics object + raw rows for price bands)
+  // Each sub-renderer is isolated so one failure never silences the others
+  try { renderForecast(d); }   catch(e) { console.warn('[predict] forecast failed:', e); }
+  try { renderVelocity(d); }   catch(e) { console.warn('[predict] velocity failed:', e); }
+  try { renderRecovery(rows || []); }  catch(e) { console.warn('[predict] recovery failed:', e); }
   try { renderElasticity(d, rows || []); } catch(e) { console.warn('[predict] elasticity failed:', e); }
 }
 
@@ -4015,11 +4012,13 @@ function renderForecast(d) {
   }
 
   // ── Insights panel ─────────────────────────────────────────────────────
-  const insights = [];
+  const lastRev    = histRev[histRev.length - 1];   // ← was missing, caused ReferenceError
+  const insights   = [];
   const nextRev    = projections[0].base;
   const growthPct  = lastRev > 0 ? ((nextRev - lastRev) / lastRev * 100) : 0;
-  const growthStr  = growthPct.toFixed(0);
+  const growthStr  = (growthPct >= 0 ? '+' : '') + growthPct.toFixed(0);
 
+  // ── Forecast insight 1: revenue trajectory ─────────────────────────────
   if (growthPct > 15) {
     insights.push({ ico: '📈', type: 'high',
       title: 'Strong revenue growth projected',
@@ -4037,26 +4036,67 @@ function renderForecast(d) {
            'Focus on margin optimisation rather than volume expansion.' });
   }
 
+  // ── Forecast insight 2: model confidence ───────────────────────────────
   if (model.r2 > 0.7) {
     insights.push({ ico: '🎯', type: 'high',
-      title: 'High-confidence forecast',
-      sub: 'R²=' + (model.r2 * 100).toFixed(0) +
-           '%. The linear trend explains most of the variance — projection is dependable for short-term planning.' });
+      title: 'High-confidence forecast (R²=' + (model.r2*100).toFixed(0) + '%)',
+      sub: 'The linear trend explains most of the revenue variance — this projection is dependable for short-term budgeting. Re-run after each full year of new actuals.' });
   } else if (model.r2 < 0.4) {
     insights.push({ ico: '🌀', type: 'med',
-      title: 'Forecast confidence is limited',
-      sub: 'R²=' + (model.r2 * 100).toFixed(0) +
-           '%. Historical revenue is volatile relative to the trend — treat projections as one of several scenarios, not as a single point estimate.' });
+      title: 'Forecast confidence is limited (R²=' + (model.r2*100).toFixed(0) + '%)',
+      sub: 'Revenue is volatile relative to trend — treat projections as one of several scenarios. Increase data quality by resolving date gaps in the source sheet.' });
   }
 
-  // Bull vs bear spread as an uncertainty signal
+  // ── Forecast insight 3: bull/bear spread ───────────────────────────────
   const spread    = projections[0].bull - projections[0].bear;
   const spreadPct = nextRev > 0 ? (spread / nextRev * 100).toFixed(0) : 0;
   if (spreadPct > 60) {
     insights.push({ ico: '🌊', type: 'med',
-      title: 'Wide forecast band',
-      sub: 'Bull/bear spread is ' + spreadPct + '% of base projection. ' +
-           'Plan for scenarios rather than a single number — secure the bear-case downside before committing to bull-case spend.' });
+      title: 'Wide forecast band (' + spreadPct + '% of base)',
+      sub: 'Bull/bear spread is ' + fB(spread) + '. Plan for both scenarios rather than a single number — secure bear-case downside before committing to bull-case spend.' });
+  }
+
+  // ── Forecast insight 4: pricing intelligence overlay ───────────────────
+  // This is the cross-tab enrichment: pricing real CAGR feeds into
+  // the forecast interpretation, making it richer than pure OLS.
+  if (pxForecast !== null && isFinite(pxForecast)) {
+    const pxAbs = Math.abs(pxForecast);
+    if (pxForecast > 5) {
+      insights.push({ ico: '💰', type: 'high',
+        title: 'Pricing power is lifting the forecast',
+        sub: 'Price sheet shows ' + pxForecast.toFixed(1) + '% real CAGR — prices are genuinely outpacing inflation. ' +
+             'The base forecast applies a +' + ((pxMult - 1)*100).toFixed(1) + '% pricing uplift to the OLS projection. ' +
+             'If sales volume holds, revenue should compound faster than the transaction trend alone implies.' });
+    } else if (pxForecast < -2) {
+      insights.push({ ico: '🔻', type: 'low',
+        title: 'Pricing erosion is a drag on the forecast',
+        sub: 'Price sheet shows ' + pxForecast.toFixed(1) + '% real CAGR — prices are falling behind inflation. ' +
+             'The base forecast applies a ' + ((pxMult - 1)*100).toFixed(1) + '% pricing drag. ' +
+             'Even if unit volume grows, revenue per unit is shrinking in real terms. Urgent price review needed.' });
+    } else {
+      insights.push({ ico: '⚖️', type: 'med',
+        title: 'Prices keeping pace with inflation (real CAGR: ' + pxForecast.toFixed(1) + '%)',
+        sub: 'Pricing is neutral on the forecast — neither a tailwind nor a headwind. ' +
+             'Revenue growth will track volume growth. To lift revenue per unit, pricing increases need to accelerate above Nigeria\'s CPI.' });
+    }
+
+    // Identify specific products dragging or lifting the portfolio
+    const pxProducts = PRICING_DATA.metrics.byProduct.filter(p => p.dataPoints >= 4 && isFinite(p.realCAGR));
+    const topProduct  = pxProducts.sort((a,b) => b.realCAGR - a.realCAGR)[0];
+    const worstProduct = pxProducts.sort((a,b) => a.realCAGR - b.realCAGR)[0];
+    if (topProduct && worstProduct && topProduct.product !== worstProduct.product) {
+      insights.push({ ico: '📐', type: 'med',
+        title: 'Product-level pricing divergence is wide',
+        sub: '<strong>' + topProduct.product.substring(0,40) + '</strong> is the pricing leader at ' +
+             topProduct.realCAGR.toFixed(1) + '% real CAGR. ' +
+             '<strong>' + worstProduct.product.substring(0,40) + '</strong> is the laggard at ' +
+             worstProduct.realCAGR.toFixed(1) + '% — dragging the portfolio average down. ' +
+             'Shifting launch mix toward top performers would lift the portfolio CAGR without any price increase.' });
+    }
+  } else {
+    insights.push({ ico: '🔗', type: 'med',
+      title: 'Load Price Sheet for richer forecast context',
+      sub: 'Connect the Price Sheet tab to get pricing-adjusted forecasts, product-level CAGR context, and real vs nominal revenue projections. The forecast currently uses transaction history only.' });
   }
 
   const insEl = document.getElementById('strategy-insights');
@@ -4615,6 +4655,51 @@ function renderElasticity(d, rows) {
       '(median ' + topMedian + '); use this as a guardrail, not a ceiling.';
   }
   sw.style.display = '';
+
+  // ── Pricing intelligence cross-reference ────────────────────────────────
+  // Compare price sheet current asking prices against transaction IQR
+  // to reveal whether the price sheet is priced above or within the
+  // absorption zone for each community.
+  if (PRICING_DATA && PRICING_DATA.metrics && PRICING_DATA.metrics.byProduct.length > 0 && bands.length > 0) {
+    const px = PRICING_DATA.metrics;
+    const pxProducts = px.byProduct.filter(p => p.dataPoints >= 4 && isFinite(p.lastPriceNominal));
+
+    // For each community with a price band, find matching price-sheet products
+    const pxVsBand = [];
+    bands.forEach(([comm, band]) => {
+      const matches = pxProducts.filter(p =>
+        p.product.toLowerCase().includes(comm.toLowerCase().substring(0, 6)) ||
+        comm.toLowerCase().includes(p.product.toLowerCase().substring(0, 6))
+      );
+      if (!matches.length) return;
+      const avgSheetPrice = matches.reduce((s, p) => s + p.lastPriceNominal, 0) / matches.length;
+      const position = avgSheetPrice > band.q3 ? 'ABOVE IQR'
+                     : avgSheetPrice < band.q1 ? 'BELOW IQR'
+                     : 'WITHIN IQR';
+      pxVsBand.push({ comm, position, avgSheetPrice, q1: band.q1, q3: band.q3, median: band.median, count: matches.length });
+    });
+
+    if (pxVsBand.length > 0) {
+      const aboveZone = pxVsBand.filter(x => x.position === 'ABOVE IQR');
+      const belowZone = pxVsBand.filter(x => x.position === 'BELOW IQR');
+      const withinZone = pxVsBand.filter(x => x.position === 'WITHIN IQR');
+
+      let pxNote = '<div style="margin-top:12px;padding:10px 14px;background:#EBF5FB;border-radius:8px;border-left:3px solid #2980B9;font-size:11px;line-height:1.6">';
+      pxNote += '<strong>💡 Price Sheet vs Transaction IQR:</strong><br>';
+
+      if (aboveZone.length > 0) {
+        pxNote += `<span style="color:#922B21">▲ Asking price ABOVE absorption zone in ${aboveZone.length} community(s): <strong>${aboveZone.map(x=>x.comm).join(', ')}</strong></span>. Price sheet may be outpacing what buyers are actually transacting — monitor absorption carefully.<br>`;
+      }
+      if (withinZone.length > 0) {
+        pxNote += `<span style="color:#1E8449">✓ Asking price WITHIN absorption zone in ${withinZone.length} community(s): <strong>${withinZone.map(x=>x.comm).join(', ')}</strong></span>. Price sheet is aligned with market. Safe to push toward Q3.<br>`;
+      }
+      if (belowZone.length > 0) {
+        pxNote += `<span style="color:#D68910">▼ Asking price BELOW absorption zone in ${belowZone.length} community(s): <strong>${belowZone.map(x=>x.comm).join(', ')}</strong></span>. Price sheet is leaving money on the table — buyers are transacting higher than the ask.`;
+      }
+      pxNote += '</div>';
+      body.innerHTML += pxNote;
+    }
+  }
 }
 
 
