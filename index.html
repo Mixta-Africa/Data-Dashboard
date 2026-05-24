@@ -2000,7 +2000,7 @@ function calculateRealPrices(priceData, inflationData) {
   
   return priceData.prices.map(product => {
     const realPrices = product.prices.map((nominalPrice, idx) => {
-      if (nominalPrice === null) return null;
+      if (nominalPrice === null || nominalPrice <= 0) return null;
       
       // Get quarter's year
       const quarter = product.quarters[idx];
@@ -2008,25 +2008,28 @@ function calculateRealPrices(priceData, inflationData) {
       if (!yearMatch) return null;
       const year = parseInt(yearMatch[0]);
       
-      // Get CPI index for that year
+      // Get CPI index for that year — MUST be a positive finite number
       const cpiIndex = inflationData.cpiIndex[year];
-      if (!cpiIndex) return null;
+      if (!cpiIndex || !isFinite(cpiIndex) || cpiIndex <= 0) return null;
       
-      // Calculate real price (constant 2020 Naira)
+      // Calculate real price (constant base-year Naira)
+      // realPrice = nominalPrice / (cpiIndex / 100)
+      // e.g. if CPI is 200 (prices doubled since base), real value is half nominal
       const realPrice = nominalPrice / (cpiIndex / 100);
+
+      // Sanity check: real price should be within 2 orders of magnitude of nominal
+      if (!isFinite(realPrice) || realPrice <= 0) return null;
+      if (realPrice > nominalPrice * 100 || realPrice < nominalPrice / 100) return null;
       
       return {
-        nominal: nominalPrice,
-        real: realPrice,
+        nominal:  nominalPrice,
+        real:     realPrice,
         cpiIndex: cpiIndex,
-        year: year
+        year:     year
       };
     });
     
-    return {
-      ...product,
-      realPrices: realPrices
-    };
+    return { ...product, realPrices };
   });
 }
 
@@ -2055,14 +2058,41 @@ function calculatePricingMetrics(enhancedPricing, inflationData) {
     if (validPrices.length < 2) return;
     
     const firstPrice = validPrices[0];
-    const lastPrice = validPrices[validPrices.length - 1];
-    const years = (validPrices.length - 1) / 4; // quarters to years
+    const lastPrice  = validPrices[validPrices.length - 1];
+
+    // ── Years elapsed: use actual year span, not data point count ────────────
+    // Using (count-1)/4 is wrong for sparse products — a product with 3 data
+    // points spread over 4 years would give 0.5 years instead of 4.
+    // Instead we use the year embedded in each price object (set at parse time).
+    // We also factor in quarter position for sub-year precision.
+    const quarterToFrac = (q) => {
+      if (!q) return 0;
+      const m = (q || '').toString().match(/Q([1-4])/i);
+      return m ? (parseInt(m[1]) - 1) / 4 : 0;
+    };
+    const firstQuarter = product.quarters[product.realPrices.indexOf(firstPrice)];
+    const lastQuarter  = product.quarters[product.realPrices.lastIndexOf(lastPrice)];
+    const years = Math.max(0.25,
+      (lastPrice.year + quarterToFrac(lastQuarter)) -
+      (firstPrice.year + quarterToFrac(firstQuarter))
+    );
     
     if (years <= 0) return;
     
+    // Sanity-check: nominal price ratio shouldn't be astronomically large
+    // (would indicate a data entry error, e.g. ₦10M vs ₦10B)
+    const nomRatio = lastPrice.nominal / firstPrice.nominal;
+    const realRatio = lastPrice.real   / firstPrice.real;
+    if (!isFinite(nomRatio) || nomRatio <= 0 || nomRatio > 500) return;
+    if (!isFinite(realRatio) || realRatio <= 0) return;
+    
     // Calculate CAGR (both nominal and real)
-    const nominalCAGR = (Math.pow(lastPrice.nominal / firstPrice.nominal, 1 / years) - 1) * 100;
-    const realCAGR = (Math.pow(lastPrice.real / firstPrice.real, 1 / years) - 1) * 100;
+    const nominalCAGR = (Math.pow(nomRatio, 1 / years) - 1) * 100;
+    const realCAGR    = (Math.pow(realRatio, 1 / years) - 1) * 100;
+
+    // Guard against absurd CAGR values (data errors produce these)
+    if (!isFinite(nominalCAGR) || Math.abs(nominalCAGR) > 200) return;
+    if (!isFinite(realCAGR)    || Math.abs(realCAGR)    > 200) return;
     
     // Calculate total appreciation
     const nominalAppreciation = ((lastPrice.nominal / firstPrice.nominal) - 1) * 100;
@@ -3283,39 +3313,69 @@ function renderPriceTrendExplorer() {
 
   const baseCpi      = validPoints[0].cpi;
   const baseNominal  = validPoints[0].nominal;
-  const breakeven    = validPoints.map(p => baseNominal * (p.cpi / baseCpi));
-  const labels       = validPoints.map(p => p.q);
-  const nominal      = validPoints.map(p => p.nominal);
-  const real         = validPoints.map(p => p.real);
+
+  // Breakeven line: what asking price *should* be to just keep real value constant
+  // Guard: if any CPI is missing or baseCpi is bad, skip that point (return null)
+  const breakeven = validPoints.map(p => {
+    if (!baseCpi || baseCpi <= 0 || !p.cpi || p.cpi <= 0) return null;
+    const val = baseNominal * (p.cpi / baseCpi);
+    // Sanity: breakeven shouldn't exceed 20× the base price (would indicate CPI error)
+    return (isFinite(val) && val <= baseNominal * 20) ? val : null;
+  });
+
+  const labels  = validPoints.map(p => p.q);
+  const nominal = validPoints.map(p => p.nominal);
+  const real    = validPoints.map(p => p.real);
+
+  // ── Compute outlier-resistant Y-axis bounds ───────────────────────────────
+  // Take all non-null values, find median, then cap max at 5× median
+  // so a single bad data point can't collapse the scale
+  const allVals = [...nominal, ...real, ...breakeven].filter(v => v !== null && isFinite(v) && v > 0);
+  const sortedVals = [...allVals].sort((a,b) => a - b);
+  const medianVal  = sortedVals[Math.floor(sortedVals.length / 2)] || 1;
+  const capMax     = medianVal * 8;   // allow up to 8× median before capping
+  const capMin     = medianVal * 0.1; // don't go below 10% of median
+  const clamp = arr => arr.map(v => (v === null || !isFinite(v)) ? null : Math.min(v, capMax));
+
+  const nominalClamped  = clamp(nominal);
+  const realClamped     = clamp(real);
+  const breakevenClamped = clamp(breakeven);
 
   const datasets = [{
-    label: 'Inflation breakeven',
-    data: breakeven,
-    borderColor: 'rgba(231,76,60,0.4)',
+    label: 'Inflation breakeven (price needed to preserve value)',
+    data: breakevenClamped,
+    borderColor: 'rgba(231,76,60,0.45)',
     backgroundColor: 'rgba(231,76,60,0.06)',
     borderWidth: 1.5, borderDash: [4,4], tension: 0.3,
-    pointRadius: 0, fill: false, order: 3
+    pointRadius: 0, fill: false, order: 3,
+    spanGaps: true
   }];
 
   if (_pxMode === 'both' || _pxMode === 'nominal') {
     datasets.push({
-      label: 'Nominal asking price',
-      data: nominal,
+      label: 'Nominal asking price (price sheet)',
+      data: nominalClamped,
       borderColor: '#2980B9', backgroundColor: 'rgba(41,128,185,0.06)',
       borderWidth: 2.5, tension: 0.3, pointRadius: 3, pointHoverRadius: 6,
-      fill: false, order: 1
+      fill: false, order: 1, spanGaps: true
     });
   }
   if (_pxMode === 'both' || _pxMode === 'real') {
     datasets.push({
-      label: 'Real value (2020 ₦)',
-      data: real,
+      label: 'Real value in constant ' + (validPoints[0]?.q?.match(/\d{4}/)?.[0] || '') + ' ₦',
+      data: realClamped,
       borderColor: '#27AE60', backgroundColor: 'rgba(39,174,96,0.06)',
       borderWidth: 2, borderDash: _pxMode === 'real' ? [] : [6,3],
       tension: 0.3, pointRadius: 2, pointHoverRadius: 5,
-      fill: false, order: 2
+      fill: false, order: 2, spanGaps: true
     });
   }
+
+  // Flag clamped points (data was truncated due to outlier values)
+  const hasClamped = [...nominal, ...real, ...breakeven].some((v, i) => {
+    const a = [nominalClamped, realClamped, breakevenClamped];
+    return false; // just informational
+  });
 
   mkChart('c-price-trend-explorer', {
     type: 'line',
@@ -3324,29 +3384,41 @@ function renderPriceTrendExplorer() {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { position: 'top', labels: { font: { size: 10 }, boxWidth: 10, padding: 16 } },
+        legend: {
+          position: 'bottom',
+          labels: { font: { size: 10 }, boxWidth: 12, padding: 14, usePointStyle: true }
+        },
         tooltip: {
           callbacks: {
             label: ctx => {
               const v = ctx.parsed.y;
-              return ' ' + ctx.dataset.label + ': ' + (v >= 1e6 ? '₦' + (v/1e6).toFixed(2) + 'M' : '₦' + Math.round(v).toLocaleString());
+              if (v === null || v === undefined) return null;
+              return ' ' + ctx.dataset.label.split('(')[0].trim() + ': ' + (v >= 1e6 ? '₦' + (v/1e6).toFixed(2) + 'M' : '₦' + Math.round(v).toLocaleString());
             },
             afterBody: items => {
-              const nomDs = datasets.findIndex(d => d.label === 'Nominal asking price');
-              const realDs = datasets.findIndex(d => d.label === 'Real value (2020 ₦)');
+              const nomDs = datasets.findIndex(d => d.label.startsWith('Nominal'));
+              const realDs = datasets.findIndex(d => d.label.startsWith('Real'));
               if (nomDs < 0 || realDs < 0) return [];
               const n = items.find(i => i.datasetIndex === nomDs);
               const r = items.find(i => i.datasetIndex === realDs);
-              if (!n || !r) return [];
+              if (!n || !r || !n.parsed.y || !r.parsed.y) return [];
               const gap = ((n.parsed.y - r.parsed.y) / n.parsed.y * 100).toFixed(1);
-              return ['', '  Inflation ate: ' + gap + '% of this price'];
+              return ['', '  Inflation consumed: ' + gap + '% of this quarter\'s asking price'];
             }
           }
         }
       },
       scales: {
-        x: { ticks: { font:{size:9}, maxRotation:45, callback: (v,i) => i%4===0 ? labels[i] : '' }, grid: { color:'rgba(0,0,0,0.04)' } },
-        y: { ticks: { callback: v => v >= 1e6 ? '₦'+(v/1e6).toFixed(0)+'M' : '₦'+(v/1000).toFixed(0)+'K' }, grid: { color:'rgba(0,0,0,0.04)' } }
+        x: {
+          ticks: { font:{size:9}, maxRotation:45, callback: (v,i) => i%4===0 ? labels[i] : '' },
+          grid: { color:'rgba(0,0,0,0.04)' }
+        },
+        y: {
+          min: Math.max(0, capMin * 0.8),
+          ticks: { callback: v => v >= 1e6 ? '₦'+(v/1e6).toFixed(0)+'M' : '₦'+(v/1000).toFixed(0)+'K' },
+          grid: { color:'rgba(0,0,0,0.04)' },
+          title: { display: true, text: 'Price (₦)', font: { size: 10 } }
+        }
       }
     }
   });
@@ -3488,50 +3560,96 @@ function renderPricingCharts() {
   );
 
   // ACT 3: Homes & Plots real CAGR bars
-  const homesData = metrics.byProduct.filter(p => p.category==='Home' && p.dataPoints>=4).sort((a,b)=>b.realCAGR-a.realCAGR).slice(0,12);
-  const plotsData = metrics.byProduct.filter(p => p.category==='Plot' && p.dataPoints>=4).sort((a,b)=>b.realCAGR-a.realCAGR).slice(0,12);
+  const homesData = metrics.byProduct.filter(p => p.category==='Home' && p.dataPoints>=4 && isFinite(p.realCAGR) && Math.abs(p.realCAGR)<200).sort((a,b)=>b.realCAGR-a.realCAGR).slice(0,12);
+  const plotsData = metrics.byProduct.filter(p => p.category==='Plot' && p.dataPoints>=4 && isFinite(p.realCAGR) && Math.abs(p.realCAGR)<200).sort((a,b)=>b.realCAGR-a.realCAGR).slice(0,12);
   const barCol = v => v>10 ? '#27AE60' : v>0 ? '#F39C12' : '#E74C3C';
 
-  const makeBar = (data, label) => ({
-    type: 'bar',
-    data: {
-      labels: data.map(p => p.product.length>34 ? p.product.substring(0,32)+'…' : p.product),
-      datasets: [{
-        label,
-        data: data.map(p => +p.realCAGR.toFixed(1)),
-        backgroundColor: data.map(p => barCol(p.realCAGR)+'BB'),
-        borderColor: data.map(p => barCol(p.realCAGR)),
-        borderWidth: 1, borderRadius: 4
-      }]
-    },
-    options: {
-      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: ctx => {
-          const p = data[ctx.dataIndex];
-          const verdict = p.realCAGR>10 ? '✅ Beat inflation well' : p.realCAGR>0 ? '⚠️ Marginal' : '🔴 Lost to inflation';
-          return [' Real CAGR: '+p.realCAGR.toFixed(1)+'%  '+verdict, ' Nominal CAGR: '+p.nominalCAGR.toFixed(1)+'%', ' Inflation ate: '+p.inflationErosion.toFixed(1)+'pp'];
-        } } }
-      },
-      scales: {
-        x: {
-          title: { display:true, text:'Real CAGR % (inflation-adjusted)' },
-          ticks: { callback: v => v+'%' }, grid: { color:'rgba(0,0,0,0.04)' },
-          afterDraw: chart => {
-            const {ctx:c, scales:{x,y}} = chart;
-            const zero = x.getPixelForValue(0);
-            c.save(); c.beginPath(); c.moveTo(zero,y.top); c.lineTo(zero,y.bottom);
-            c.strokeStyle='rgba(231,76,60,0.5)'; c.lineWidth=1.5; c.setLineDash([4,4]); c.stroke(); c.restore();
-          }
-        },
-        y: { ticks:{font:{size:9}}, grid:{display:false} }
-      }
+  // Proper Chart.js v4 plugin for drawing a zero-reference line
+  const zeroLinePlugin = {
+    id: 'pxZeroLine',
+    afterDraw(chart) {
+      const xScale = chart.scales.x;
+      const yScale = chart.scales.y;
+      if (!xScale || !yScale) return;
+      const zero = xScale.getPixelForValue(0);
+      if (!isFinite(zero)) return;
+      const c = chart.ctx;
+      c.save();
+      c.beginPath();
+      c.moveTo(zero, yScale.top);
+      c.lineTo(zero, yScale.bottom);
+      c.strokeStyle = 'rgba(231,76,60,0.6)';
+      c.lineWidth = 1.5;
+      c.setLineDash([4, 4]);
+      c.stroke();
+      c.font = '700 9px sans-serif';
+      c.fillStyle = 'rgba(231,76,60,0.7)';
+      c.fillText('← Inflation wins  |  Beats inflation →', zero - 115, yScale.top + 12);
+      c.restore();
     }
-  });
+  };
 
-  mkChart('c-homes-real-cagr', makeBar(homesData, 'Homes Real CAGR'));
-  mkChart('c-plots-real-cagr', makeBar(plotsData, 'Plots Real CAGR'));
+  // Outlier-resistant axis bounds
+  const cagrBounds = data => {
+    const vals = data.map(p => p.realCAGR).filter(isFinite);
+    if (!vals.length) return { min: -30, max: 30 };
+    const sorted = [...vals].sort((a,b)=>a-b);
+    const p5  = sorted[Math.max(0, Math.floor(sorted.length * 0.05))];
+    const p95 = sorted[Math.min(sorted.length-1, Math.floor(sorted.length * 0.95))];
+    const pad = Math.max(5, (p95 - p5) * 0.2);
+    return { min: Math.floor(p5 - pad), max: Math.ceil(p95 + pad) };
+  };
+
+  const makeBar = (data, label) => {
+    const { min, max } = cagrBounds(data);
+    return {
+      type: 'bar',
+      data: {
+        labels: data.map(p => p.product.length>34 ? p.product.substring(0,32)+'…' : p.product),
+        datasets: [{
+          label,
+          data: data.map(p => +p.realCAGR.toFixed(1)),
+          backgroundColor: data.map(p => barCol(p.realCAGR)+'BB'),
+          borderColor:     data.map(p => barCol(p.realCAGR)),
+          borderWidth: 1, borderRadius: 4
+        }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true, position: 'top',
+            labels: {
+              generateLabels: () => [
+                { text: '>10%  Beat inflation',   fillStyle:'#27AE60BB', strokeStyle:'#27AE60', lineWidth:1, pointStyle:'rect' },
+                { text: '0–10%  Marginal',        fillStyle:'#F39C12BB', strokeStyle:'#F39C12', lineWidth:1, pointStyle:'rect' },
+                { text: '<0%   Lost to inflation', fillStyle:'#E74C3CBB', strokeStyle:'#E74C3C', lineWidth:1, pointStyle:'rect' }
+              ],
+              font:{size:10}, boxWidth:12, usePointStyle:false, padding:12
+            }
+          },
+          tooltip: { callbacks: { label: ctx => {
+            const p = data[ctx.dataIndex];
+            const verdict = p.realCAGR>10 ? '✅ Beat inflation' : p.realCAGR>0 ? '⚠️ Marginal' : '🔴 Lost to inflation';
+            return [
+              ' Real CAGR: '+p.realCAGR.toFixed(1)+'%  '+verdict,
+              ' Nominal CAGR: '+p.nominalCAGR.toFixed(1)+'%',
+              ' Inflation eroded: '+p.inflationErosion.toFixed(1)+'pp',
+              ' Span: '+p.firstYear+'→'+p.lastYear+' ('+p.dataPoints+' data points)'
+            ];
+          } } }
+        },
+        scales: {
+          x: { min, max, title:{display:true,text:'Real CAGR % (inflation-adjusted)'}, ticks:{callback:v=>v+'%'}, grid:{color:'rgba(0,0,0,0.04)'} },
+          y: { ticks:{font:{size:9}}, grid:{display:false} }
+        }
+      },
+      plugins: [zeroLinePlugin]
+    };
+  };
+
+  mkChart('c-homes-real-cagr', makeBar(homesData, 'Homes — Real Price CAGR'));
+  mkChart('c-plots-real-cagr', makeBar(plotsData, 'Plots — Real Price CAGR'));
 
   const topH = homesData[0], botH = homesData[homesData.length-1];
   const topP = plotsData[0], botP = plotsData[plotsData.length-1];
@@ -3539,7 +3657,9 @@ function renderPricingCharts() {
   addAfter('c-plots-real-cagr', topP ? '<div class="chart-interp">Best plot: <strong>'+topP.product.substring(0,35)+'</strong> at <strong style="color:#27AE60">'+topP.realCAGR.toFixed(1)+'%</strong> real. Weakest: <strong>'+botP.product.substring(0,35)+'</strong> at <strong style="color:var(--red)">'+botP.realCAGR.toFixed(1)+'%</strong>. Plots tend to be more volatile — land value swings can compress or amplify price appreciation quickly. Select any plot in the Product Explorer to see its inflation-adjusted journey.</div>' : '');
 
   // ACT 4: Erosion — stacked bar (real kept + inflation eaten)
-  const erosionData = metrics.byProduct.filter(p => p.dataPoints>=4 && isFinite(p.inflationErosion)).sort((a,b)=>b.inflationErosion-a.inflationErosion).slice(0,15);
+  const erosionData = metrics.byProduct
+    .filter(p => p.dataPoints>=4 && isFinite(p.inflationErosion) && isFinite(p.realCAGR) && Math.abs(p.realCAGR)<200 && Math.abs(p.inflationErosion)<200)
+    .sort((a,b)=>b.inflationErosion-a.inflationErosion).slice(0,15);
   mkChart('c-inflation-erosion', {
     type: 'bar',
     data: {
