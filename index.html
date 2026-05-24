@@ -109,7 +109,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .full{margin-bottom:14px}
 
 /* ── CHART CARD ───────────────────────────────────── */
-.cc{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.92);border-radius:var(--r);box-shadow:var(--shadow-sm);padding:20px 22px 24px 22px;transition:box-shadow 0.2s;overflow:visible;display:flex;flex-direction:column;min-height:fit-content}
+.cc{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.92);border-radius:var(--r);box-shadow:var(--shadow-sm);padding:20px 22px 24px 22px;transition:box-shadow 0.2s;overflow:visible;display:flex;flex-direction:column;height:auto;min-height:auto}
 .cc:hover{box-shadow:var(--shadow-md)}
 .ch{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:8px}
 .ct{font-size:13.5px;font-weight:600;color:var(--text);letter-spacing:-.2px}
@@ -262,6 +262,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   .g2,.g3,.g21,.g32{grid-template-columns:1fr}
   .ins-strip{grid-template-columns:1fr}.nav{display:none}
 }
+/* Ensure chart wrappers don't clip interpretation blocks */
+.cw{overflow:visible!important}
+.cc>.cw+*{margin-top:0}
 </style>
 </head>
 <body>
@@ -422,22 +425,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <div class="g32">
     <div class="cc">
       <div class="ch"><div><div class="ct">Revenue Recognition Trend</div><div class="cs">Annual total selling price · ₦ Billions</div></div><span class="badge br" id="ov-years-badge">—</span></div>
-      <div class="cw" style="height:230px"><canvas id="c-revyear"></canvas></div>
+      <div class="cw" style="height:230px;overflow:visible"><canvas id="c-revyear"></canvas></div>
     </div>
     <div class="cc">
       <div class="ch"><div><div class="ct">Revenue by Community</div><div class="cs">Share of total portfolio</div></div></div>
-      <div class="cw" style="height:160px"><canvas id="c-commdonut"></canvas></div>
+      <div class="cw" style="height:160px;overflow:visible"><canvas id="c-commdonut"></canvas></div>
       <div class="legend" id="leg-comm"></div>
     </div>
   </div>
   <div class="g2">
     <div class="cc">
       <div class="ch"><div><div class="ct">Sales Channel Performance</div><div class="cs">Revenue by agent group · ₦ Billions</div></div></div>
-      <div class="cw" style="height:210px"><canvas id="c-agentgrp"></canvas></div>
+      <div class="cw" style="height:210px;overflow:visible"><canvas id="c-agentgrp"></canvas></div>
     </div>
     <div class="cc">
       <div class="ch"><div><div class="ct">Finish Type — Avg Unit Price</div><div class="cs">Specification grade vs price</div></div></div>
-      <div class="cw" style="height:210px"><canvas id="c-finish"></canvas></div>
+      <div class="cw" style="height:210px;overflow:visible"><canvas id="c-finish"></canvas></div>
     </div>
   </div>
   <div class="cc full">
@@ -458,27 +461,27 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   </div>
   <div class="cc full">
     <div class="ch"><div><div class="ct">Community Revenue — Stacked Annual View</div><div class="cs">Shapati vs Lakowe vs Others · ₦ Billions</div></div></div>
-    <div class="cw" style="height:300px"><canvas id="c-stacked"></canvas></div>
+    <div class="cw" style="height:300px;overflow:visible"><canvas id="c-stacked"></canvas></div>
   </div>
   <div class="g2">
     <div class="cc">
       <div class="ch"><div><div class="ct">Unit Volume vs Avg Price per Year</div><div class="cs">Dual axis — count and price trajectory</div></div></div>
-      <div class="cw" style="height:250px"><canvas id="c-volprice"></canvas></div>
+      <div class="cw" style="height:250px;overflow:visible"><canvas id="c-volprice"></canvas></div>
     </div>
     <div class="cc">
       <div class="ch"><div><div class="ct">Unit Type Revenue Breakdown</div><div class="cs">Cumulative by product category</div></div></div>
-      <div class="cw" style="height:250px"><canvas id="c-unittype"></canvas></div>
+      <div class="cw" style="height:250px;overflow:visible"><canvas id="c-unittype"></canvas></div>
     </div>
   </div>
   <div class="g2">
     <div class="cc">
       <div class="ch"><div><div class="ct">Bedroom Mix — Revenue Share</div><div class="cs">Total revenue contribution by bedroom count</div></div></div>
-      <div class="cw" style="height:220px"><canvas id="c-bedroom"></canvas></div>
+      <div class="cw" style="height:220px;overflow:visible"><canvas id="c-bedroom"></canvas></div>
       <div class="legend" id="leg-bedroom"></div>
     </div>
     <div class="cc">
       <div class="ch"><div><div class="ct">Payment Plan Distribution</div><div class="cs">Top plan types by unit count</div></div></div>
-      <div class="cw" style="height:220px"><canvas id="c-payplan"></canvas></div>
+      <div class="cw" style="height:220px;overflow:visible"><canvas id="c-payplan"></canvas></div>
     </div>
   </div>
 </div>
@@ -496,18 +499,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <div class="g21">
     <div class="cc">
       <div class="ch"><div><div class="ct">Portfolio Properties — Revenue Ranking</div><div class="cs">Top 20 properties by cumulative selling price</div></div></div>
-      <div class="cw" style="height:360px"><canvas id="c-proprank"></canvas></div>
+      <div class="cw" style="height:360px;overflow:visible"><canvas id="c-proprank"></canvas></div>
     </div>
     <div class="cc">
       <div class="ch"><div><div class="ct">Unit Status Split</div><div class="cs">Reserved vs Sold</div></div></div>
-      <div class="cw" style="height:160px"><canvas id="c-status"></canvas></div>
+      <div class="cw" style="height:160px;overflow:visible"><canvas id="c-status"></canvas></div>
       <div style="margin-top:18px"><div class="ct" style="font-size:12px;margin-bottom:9px;color:var(--text2)">Community Unit Volumes</div><div id="comm-simple-bars"></div></div>
     </div>
   </div>
   <div class="g2">
     <div class="cc">
       <div class="ch"><div><div class="ct">Finish Type — Volume & Revenue</div><div class="cs">Units and cumulative ₦ by specification</div></div></div>
-      <div class="cw" style="height:230px"><canvas id="c-finishmix"></canvas></div>
+      <div class="cw" style="height:230px;overflow:visible"><canvas id="c-finishmix"></canvas></div>
     </div>
     <div class="cc">
       <div class="ch"><div><div class="ct">Revenue Heatmap — Community × Year</div><div class="cs">Intensity = ₦B recognized (darker = higher)</div></div></div>
@@ -518,7 +521,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <div class="g2">
     <div class="cc">
       <div class="ch"><div><div class="ct">Phase Distribution</div><div class="cs">Units and revenue by development phase</div></div></div>
-      <div class="cw" style="height:230px"><canvas id="c-phase"></canvas></div>
+      <div class="cw" style="height:230px;overflow:visible"><canvas id="c-phase"></canvas></div>
     </div>
     <div class="cc">
       <div class="ch"><div><div class="ct">Collection Risk Tier</div><div class="cs">Portfolio segmented by payment completion risk</div></div></div>
@@ -542,21 +545,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <div class="g2">
     <div class="cc">
       <div class="ch"><div><div class="ct">Collected vs Outstanding by Year</div><div class="cs">Payments received vs receivables · ₦B</div></div></div>
-      <div class="cw" style="height:270px"><canvas id="c-collstack"></canvas></div>
+      <div class="cw" style="height:270px;overflow:visible"><canvas id="c-collstack"></canvas></div>
     </div>
     <div class="cc">
       <div class="ch"><div><div class="ct">Collection Rate Distribution</div><div class="cs">Units by payment completion bracket</div></div></div>
-      <div class="cw" style="height:270px"><canvas id="c-collrate"></canvas></div>
+      <div class="cw" style="height:270px;overflow:visible"><canvas id="c-collrate"></canvas></div>
     </div>
   </div>
   <div class="g2">
     <div class="cc">
       <div class="ch"><div><div class="ct">Mortgage vs Cash Transactions by Year</div><div class="cs">Financed vs direct payment split</div></div></div>
-      <div class="cw" style="height:230px"><canvas id="c-mortgage"></canvas></div>
+      <div class="cw" style="height:230px;overflow:visible"><canvas id="c-mortgage"></canvas></div>
     </div>
     <div class="cc">
       <div class="ch"><div><div class="ct">Outstanding by Community</div><div class="cs">Receivables risk concentration</div></div></div>
-      <div class="cw" style="height:230px"><canvas id="c-outstandcomm"></canvas></div>
+      <div class="cw" style="height:230px;overflow:visible"><canvas id="c-outstandcomm"></canvas></div>
     </div>
   </div>
   <!-- So What: Collections — populated by insight engine -->
@@ -590,13 +593,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     </div>
     <div class="cc">
       <div class="ch"><div><div class="ct">Channel Revenue Mix</div><div class="cs">Revenue by agent group</div></div></div>
-      <div class="cw" style="height:190px"><canvas id="c-channel"></canvas></div>
+      <div class="cw" style="height:190px;overflow:visible"><canvas id="c-channel"></canvas></div>
       <div class="legend" id="leg-channel"></div>
     </div>
   </div>
   <div class="cc full">
     <div class="ch"><div><div class="ct">Agent Group — Volume Trend</div><div class="cs">Unit count by channel per year</div></div></div>
-    <div class="cw" style="height:250px"><canvas id="c-agtrend"></canvas></div>
+    <div class="cw" style="height:250px;overflow:visible"><canvas id="c-agtrend"></canvas></div>
   </div>
   <!-- So What: Channel — populated by insight engine -->
   <div class="sowhat sw-neu" id="sw-agents" data-ico="🤝" style="display:none">
@@ -624,17 +627,17 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <div class="g2">
     <div class="cc">
       <div class="ch"><div><div class="ct">Buyer Type Breakdown</div><div class="cs">Local vs Diaspora vs Staff vs Corporate</div></div></div>
-      <div class="cw" style="height:240px"><canvas id="c-buyertype"></canvas></div>
+      <div class="cw" style="height:240px;overflow:visible"><canvas id="c-buyertype"></canvas></div>
     </div>
     <div class="cc">
       <div class="ch"><div><div class="ct">Buyer State Distribution</div><div class="cs">Top states by buyer count</div></div></div>
-      <div class="cw" style="height:240px"><canvas id="c-buyerstate"></canvas></div>
+      <div class="cw" style="height:240px;overflow:visible"><canvas id="c-buyerstate"></canvas></div>
     </div>
   </div>
   <div class="g2">
     <div class="cc">
       <div class="ch"><div><div class="ct">Buyer Salutation Profile</div><div class="cs">Title breakdown indicating buyer archetype</div></div></div>
-      <div class="cw" style="height:240px"><canvas id="c-salutation"></canvas></div>
+      <div class="cw" style="height:240px;overflow:visible"><canvas id="c-salutation"></canvas></div>
     </div>
     <div class="cc">
       <div class="ch"><div><div class="ct">Buyer Geography — State Demand</div><div class="cs">Unit count per known state of residence</div></div></div>
@@ -667,7 +670,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         </div>
       </div>
     </div>
-    <div class="cw" style="height:300px"><canvas id="c-forecast"></canvas></div>
+    <div class="cw" style="height:300px;overflow:visible"><canvas id="c-forecast"></canvas></div>
     <div id="forecast-note" style="font-size:10px;color:var(--text3);margin-top:8px;padding:6px 10px;background:#F7F7F9;border-radius:6px;border-left:3px solid var(--red3)">Loading model…</div>
   </div>
 
@@ -698,7 +701,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       <div class="ch">
         <div><div class="ct">3-Year Moving Average — Unit Sales</div><div class="cs">Smoothed demand trend with annual bars</div></div>
       </div>
-      <div class="cw" style="height:260px"><canvas id="c-mavg"></canvas></div>
+      <div class="cw" style="height:260px;overflow:visible"><canvas id="c-mavg"></canvas></div>
     </div>
     <div class="cc">
       <div class="ch">
@@ -726,13 +729,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <div><div class="ct">Recovery by Risk Tier</div><div class="cs">Expected recovery vs at-risk balance · ₦B</div></div>
         <span class="badge bg_" id="rec-tier-source">Tiers from % Paid</span>
       </div>
-      <div class="cw" style="height:260px"><canvas id="c-recovery"></canvas></div>
+      <div class="cw" style="height:260px;overflow:visible"><canvas id="c-recovery"></canvas></div>
     </div>
     <div class="cc">
       <div class="ch">
         <div><div class="ct">Cumulative Recovery Timeline</div><div class="cs">Projected over 24 months by tier maturity</div></div>
       </div>
-      <div class="cw" style="height:260px"><canvas id="c-resolution"></canvas></div>
+      <div class="cw" style="height:260px;overflow:visible"><canvas id="c-resolution"></canvas></div>
     </div>
   </div>
 
@@ -761,7 +764,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <div><div class="ct">Price vs Volume Correlation</div><div class="cs">Each point = one year · avg unit price (₦M) vs units sold</div></div>
         <span class="badge bg_" id="el-r-badge">r=—</span>
       </div>
-      <div class="cw" style="height:260px"><canvas id="c-elasticity"></canvas></div>
+      <div class="cw" style="height:260px;overflow:visible"><canvas id="c-elasticity"></canvas></div>
       <div id="el-note" style="font-size:10px;color:var(--text3);margin-top:8px;padding:6px 10px;background:#F7F7F9;border-radius:6px;border-left:3px solid var(--red3)">Loading model…</div>
     </div>
     <div class="cc">
