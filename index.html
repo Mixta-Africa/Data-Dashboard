@@ -649,132 +649,169 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
 <!-- ===== PRICING INTELLIGENCE ===== -->
 <div id="section-pricing" class="section">
-  <div class="kpi-strip">
+
+  <!-- ── NARRATIVE HEADER ─────────────────────────────────────────────── -->
+  <div style="margin-bottom:18px;padding:18px 22px;background:linear-gradient(135deg,#1C2833 0%,#2C3E50 100%);border-radius:14px;color:white">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:0.55;margin-bottom:6px">Pricing Intelligence · 5-Part Analysis</div>
+    <div style="font-size:17px;font-weight:700;letter-spacing:-.3px;margin-bottom:6px">Nigeria's inflation ran at an average of <span id="px-headline-avg-inflation" style="color:#F39C12">—</span>/yr between 2020–2026. Did Mixta's prices keep up?</div>
+    <div style="font-size:12px;opacity:0.7;line-height:1.6">Each chart below answers one part of that question. Read them in order — together they form a complete pricing story from macro context to individual product decisions.</div>
+    <div style="display:flex;gap:20px;margin-top:14px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;background:rgba(231,76,60,0.3);border:1px solid rgba(231,76,60,0.5);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px">①</div><span style="font-size:11px;opacity:0.8">The Pressure</span></div>
+      <div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;background:rgba(41,128,185,0.3);border:1px solid rgba(41,128,185,0.5);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px">②</div><span style="font-size:11px;opacity:0.8">Product Explorer</span></div>
+      <div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;background:rgba(39,174,96,0.3);border:1px solid rgba(39,174,96,0.5);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px">③</div><span style="font-size:11px;opacity:0.8">Who Won</span></div>
+      <div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;background:rgba(243,156,18,0.3);border:1px solid rgba(243,156,18,0.5);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px">④</div><span style="font-size:11px;opacity:0.8">The Hidden Tax</span></div>
+      <div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;background:rgba(142,68,173,0.3);border:1px solid rgba(142,68,173,0.5);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px">⑤</div><span style="font-size:11px;opacity:0.8">Where to Invest Next</span></div>
+    </div>
+  </div>
+
+  <!-- ── KPI STRIP ──────────────────────────────────────────────────────── -->
+  <div class="kpi-strip" style="margin-bottom:18px">
     <div class="kpi">
       <div class="kpi-label">Nominal Price Growth</div>
       <div class="kpi-value" id="pricing-nominal-cagr">—</div>
-      <div class="kpi-sub">Average CAGR 2020-2026</div>
+      <div class="kpi-sub">Avg CAGR across all products</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Real Price Growth</div>
       <div class="kpi-value green" id="pricing-real-cagr">—</div>
-      <div class="kpi-sub">Inflation-adjusted CAGR</div>
+      <div class="kpi-sub">After stripping out inflation</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Inflation Erosion</div>
+      <div class="kpi-label">Inflation Ate</div>
       <div class="kpi-value" id="pricing-erosion" style="color:var(--red3)">—</div>
-      <div class="kpi-sub">Purchasing power loss</div>
+      <div class="kpi-sub">Of every % of nominal gain</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Total CPI Change</div>
+      <div class="kpi-label">Cumulative CPI Rise</div>
       <div class="kpi-value" id="pricing-total-inflation">—</div>
-      <div class="kpi-sub">2020-2026 cumulative</div>
+      <div class="kpi-sub">Total inflation since base year</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Products Beating Inflation</div>
+      <div class="kpi-value" id="pricing-winners-count" style="color:#27AE60">—</div>
+      <div class="kpi-sub">Real CAGR > 0% · of <span id="pricing-product-count">—</span> analyzed</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Avg Discount Rate</div>
       <div class="kpi-value" id="pricing-discount-rate">—</div>
       <div class="kpi-sub">Asking vs realized price gap</div>
     </div>
-    <div class="kpi">
-      <div class="kpi-label">Products Analyzed</div>
-      <div class="kpi-value" id="pricing-product-count">—</div>
-      <div class="kpi-sub">Price sheet coverage</div>
-    </div>
   </div>
 
-  <!-- Inflation Context -->
-  <div class="cc full" style="margin-bottom:14px">
+  <!-- ── ACT 1: THE PRESSURE ───────────────────────────────────────────── -->
+  <div style="margin-bottom:6px" class="sdiv">① The Pressure — Nigeria's Inflation 2020–2026</div>
+  <div class="cc full" style="margin-bottom:4px">
     <div class="ch">
       <div>
-        <div class="ct">Nigeria Inflation Context (2020-2026)</div>
-        <div class="cs">Macroeconomic backdrop driving pricing pressure</div>
+        <div class="ct">How bad was the inflationary environment Mixta was pricing into?</div>
+        <div class="cs">CPI index (left axis, 2020=100) · YoY headline inflation % (right axis) · Any price rise below the CPI line was a real loss</div>
       </div>
+      <div id="px-inflation-summary" style="font-size:11px;color:var(--text2);text-align:right;max-width:260px;line-height:1.4"></div>
     </div>
-    <div class="cw" style="height:240px">
+    <div class="cw" style="height:220px">
       <canvas id="c-inflation-context"></canvas>
     </div>
   </div>
 
-  <!-- Nominal vs Real Comparison -->
-  <div class="cc full" style="margin-bottom:14px">
-    <div class="ch">
-      <div>
-        <div class="ct">Price Appreciation — Nominal vs Real (Top 5 Products)</div>
-        <div class="cs">Solid = nominal pricing · Dashed = inflation-adjusted real pricing</div>
+  <!-- ── ACT 2: PRODUCT EXPLORER ───────────────────────────────────────── -->
+  <div style="margin-top:22px;margin-bottom:6px" class="sdiv">② Product Price Explorer — Track any product's journey vs inflation</div>
+  <div class="cc full" style="margin-bottom:4px">
+    <div class="ch" style="flex-wrap:wrap;gap:10px">
+      <div style="flex:1;min-width:200px">
+        <div class="ct">Price Trend — Nominal vs Real vs Inflation Benchmark</div>
+        <div class="cs">Select any product · Solid line = asking price · Dashed = inflation-adjusted real value · Grey band = what the price should be to just break even with inflation</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <select id="px-product-select" class="filter-select" style="min-width:260px;font-size:11px" onchange="renderPriceTrendExplorer()">
+          <option value="">— Select a product —</option>
+        </select>
+        <div style="display:flex;gap:4px;background:rgba(0,0,0,0.04);padding:3px;border-radius:8px">
+          <button class="scenario-btn active" data-pxmode="both"   onclick="setPxMode('both')"   style="padding:4px 10px;border:none;background:white;border-radius:6px;font-size:10px;font-weight:600;color:var(--text);cursor:pointer;font-family:var(--font);transition:all 0.15s;box-shadow:0 1px 3px rgba(0,0,0,0.08)">Nom + Real</button>
+          <button class="scenario-btn"       data-pxmode="nominal" onclick="setPxMode('nominal')" style="padding:4px 10px;border:none;background:transparent;border-radius:6px;font-size:10px;font-weight:600;color:var(--text3);cursor:pointer;font-family:var(--font);transition:all 0.15s">Nominal only</button>
+          <button class="scenario-btn"       data-pxmode="real"    onclick="setPxMode('real')"    style="padding:4px 10px;border:none;background:transparent;border-radius:6px;font-size:10px;font-weight:600;color:var(--text3);cursor:pointer;font-family:var(--font);transition:all 0.15s">Real only</button>
+        </div>
       </div>
     </div>
-    <div class="cw" style="height:280px">
-      <canvas id="c-nominal-vs-real"></canvas>
+    <div id="px-explorer-empty" style="height:280px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px;flex-direction:column;gap:8px">
+      <div style="font-size:28px">📈</div>
+      <div>Select a product above to explore its price history</div>
+      <div style="font-size:11px;opacity:0.6">Showing nominal asking price, inflation-adjusted real value, and the inflation breakeven line</div>
     </div>
+    <div class="cw" style="height:280px;display:none" id="px-explorer-wrap">
+      <canvas id="c-price-trend-explorer"></canvas>
+    </div>
+    <div id="px-explorer-callout" style="display:none;margin-top:12px;padding:12px 16px;border-radius:10px;font-size:11.5px;line-height:1.6;border-left:4px solid #2980B9;background:#EBF5FB"></div>
   </div>
 
-  <!-- Two column layout -->
-  <div class="grid2">
-    <!-- Homes Performance -->
+  <!-- ── ACT 3: WHO WON ────────────────────────────────────────────────── -->
+  <div style="margin-top:22px;margin-bottom:6px" class="sdiv">③ Who Beat Inflation? — Real price appreciation by product</div>
+  <div id="px-act3-summary" style="font-size:12px;color:var(--text2);margin-bottom:10px;padding:10px 14px;background:#F7F9FC;border-radius:8px;line-height:1.6;border-left:3px solid #27AE60"></div>
+  <div class="grid2" style="margin-bottom:4px">
     <div class="cc">
       <div class="ch">
         <div>
           <div class="ct">Homes — Real Price CAGR</div>
-          <div class="cs">Top 10 finished homes by real appreciation</div>
+          <div class="cs">Green = beat inflation · Amber = marginal · Red = fell behind</div>
         </div>
       </div>
-      <div class="cw" style="height:280px">
+      <div class="cw" style="height:300px">
         <canvas id="c-homes-real-cagr"></canvas>
       </div>
     </div>
-
-    <!-- Plots Performance -->
     <div class="cc">
       <div class="ch">
         <div>
-          <div class="ct">Plots — Real Price CAGR (₦/sqm)</div>
-          <div class="cs">Top 10 plots by real appreciation</div>
+          <div class="ct">Plots — Real Price CAGR</div>
+          <div class="cs">Green = beat inflation · Amber = marginal · Red = fell behind</div>
         </div>
       </div>
-      <div class="cw" style="height:280px">
+      <div class="cw" style="height:300px">
         <canvas id="c-plots-real-cagr"></canvas>
       </div>
     </div>
   </div>
 
-  <!-- Inflation Erosion -->
-  <div class="cc full" style="margin-bottom:14px">
+  <!-- ── ACT 4: THE HIDDEN TAX ─────────────────────────────────────────── -->
+  <div style="margin-top:22px;margin-bottom:6px" class="sdiv">④ The Hidden Tax — How many percentage points did inflation consume?</div>
+  <div class="cc full" style="margin-bottom:4px">
     <div class="ch">
       <div>
-        <div class="ct">Inflation Erosion — Top 15 Products</div>
-        <div class="cs">Percentage points lost to inflation (nominal CAGR - real CAGR)</div>
+        <div class="ct">Inflation Erosion — Nominal CAGR minus Real CAGR, per product</div>
+        <div class="cs">A product with 30% nominal CAGR and 5% real CAGR has 25pp of "phantom growth" — it looks good on paper but buyers who sold early gained little real wealth</div>
       </div>
     </div>
-    <div class="cw" style="height:320px">
+    <div class="cw" style="height:340px">
       <canvas id="c-inflation-erosion"></canvas>
     </div>
   </div>
 
-  <!-- Discount Rate Monitor -->
-  <div class="cc full" style="margin-bottom:14px">
+  <!-- ── ACT 5: WHERE TO INVEST NEXT ──────────────────────────────────── -->
+  <div style="margin-top:22px;margin-bottom:6px" class="sdiv">⑤ Where to Invest Next — Revenue vs Real Appreciation matrix</div>
+  <div class="cc full" style="margin-bottom:4px">
+    <div class="ch">
+      <div>
+        <div class="ct">Product Performance Matrix — Revenue Contribution vs Real Price CAGR</div>
+        <div class="cs">X = share of actual sales revenue · Y = real (inflation-adjusted) price growth · Bubble size = units sold · Use this to prioritise the next land bank or launch decision</div>
+      </div>
+    </div>
+    <div class="cw" style="height:380px">
+      <canvas id="c-price-performance-matrix"></canvas>
+    </div>
+  </div>
+
+  <!-- ── DISCOUNT RATE (data-pending, kept compact) ─────────────────────── -->
+  <div class="cc full" style="margin-bottom:4px;display:none" id="px-discount-wrap">
     <div class="ch">
       <div>
         <div class="ct">Pricing Resistance Monitor — Discount Rate Trend</div>
-        <div class="cs">Gap between asking price (price sheet) and realized revenue · Red threshold = 12%</div>
+        <div class="cs">Gap between asking price and realized revenue per unit · >12% signals buyer resistance</div>
       </div>
     </div>
-    <div class="cw" style="height:240px">
+    <div class="cw" style="height:200px">
       <canvas id="c-discount-rate"></canvas>
     </div>
   </div>
 
-  <!-- Product Performance Matrix -->
-  <div class="cc full">
-    <div class="ch">
-      <div>
-        <div class="ct">Product Performance Matrix — Revenue vs Real CAGR</div>
-        <div class="cs">X-axis: Revenue contribution · Y-axis: Real price appreciation · Bubble size: Units sold</div>
-      </div>
-    </div>
-    <div class="cw" style="height:360px">
-      <canvas id="c-price-performance-matrix"></canvas>
-    </div>
-  </div>
 </div>
 
 <!-- ===== PREDICTIVE INTELLIGENCE (Stage 1: forecast only) ===== -->
@@ -3199,502 +3236,443 @@ function addInterpretations(d) {
 }
 
 /* =====================================================
-   PRICING TAB RENDERING
+   PRICING TAB RENDERING — Narrative 5-Act Structure
    ===================================================== */
+
+// ── Price Trend Explorer state ────────────────────────────────────────────────
+let _pxMode = 'both';
+let _pxCurrentProduct = null;
+
+function setPxMode(mode) {
+  _pxMode = mode;
+  document.querySelectorAll('[data-pxmode]').forEach(btn => {
+    const isActive = btn.dataset.pxmode === mode;
+    btn.style.background = isActive ? 'white' : 'transparent';
+    btn.style.color      = isActive ? 'var(--text)' : 'var(--text3)';
+    btn.style.boxShadow  = isActive ? '0 1px 3px rgba(0,0,0,0.08)' : 'none';
+  });
+  renderPriceTrendExplorer();
+}
+
+function renderPriceTrendExplorer() {
+  if (!PRICING_DATA || !INFLATION_DATA) return;
+  const sel = document.getElementById('px-product-select');
+  const productName = sel ? sel.value : '';
+  _pxCurrentProduct = productName;
+
+  const empty   = document.getElementById('px-explorer-empty');
+  const wrap    = document.getElementById('px-explorer-wrap');
+  const callout = document.getElementById('px-explorer-callout');
+
+  if (!productName) {
+    if (empty)   empty.style.display   = 'flex';
+    if (wrap)    wrap.style.display    = 'none';
+    if (callout) callout.style.display = 'none';
+    return;
+  }
+
+  const product = PRICING_DATA.enhanced.find(p => p.product === productName);
+  if (!product) return;
+  if (empty)  empty.style.display  = 'none';
+  if (wrap)   wrap.style.display   = '';
+
+  const validPoints = product.realPrices
+    .map((rp, i) => rp ? { q: product.quarters[i], nominal: rp.nominal, real: rp.real, cpi: rp.cpiIndex } : null)
+    .filter(Boolean);
+  if (!validPoints.length) return;
+
+  const baseCpi      = validPoints[0].cpi;
+  const baseNominal  = validPoints[0].nominal;
+  const breakeven    = validPoints.map(p => baseNominal * (p.cpi / baseCpi));
+  const labels       = validPoints.map(p => p.q);
+  const nominal      = validPoints.map(p => p.nominal);
+  const real         = validPoints.map(p => p.real);
+
+  const datasets = [{
+    label: 'Inflation breakeven',
+    data: breakeven,
+    borderColor: 'rgba(231,76,60,0.4)',
+    backgroundColor: 'rgba(231,76,60,0.06)',
+    borderWidth: 1.5, borderDash: [4,4], tension: 0.3,
+    pointRadius: 0, fill: false, order: 3
+  }];
+
+  if (_pxMode === 'both' || _pxMode === 'nominal') {
+    datasets.push({
+      label: 'Nominal asking price',
+      data: nominal,
+      borderColor: '#2980B9', backgroundColor: 'rgba(41,128,185,0.06)',
+      borderWidth: 2.5, tension: 0.3, pointRadius: 3, pointHoverRadius: 6,
+      fill: false, order: 1
+    });
+  }
+  if (_pxMode === 'both' || _pxMode === 'real') {
+    datasets.push({
+      label: 'Real value (2020 ₦)',
+      data: real,
+      borderColor: '#27AE60', backgroundColor: 'rgba(39,174,96,0.06)',
+      borderWidth: 2, borderDash: _pxMode === 'real' ? [] : [6,3],
+      tension: 0.3, pointRadius: 2, pointHoverRadius: 5,
+      fill: false, order: 2
+    });
+  }
+
+  mkChart('c-price-trend-explorer', {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 10 }, boxWidth: 10, padding: 16 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const v = ctx.parsed.y;
+              return ' ' + ctx.dataset.label + ': ' + (v >= 1e6 ? '₦' + (v/1e6).toFixed(2) + 'M' : '₦' + Math.round(v).toLocaleString());
+            },
+            afterBody: items => {
+              const nomDs = datasets.findIndex(d => d.label === 'Nominal asking price');
+              const realDs = datasets.findIndex(d => d.label === 'Real value (2020 ₦)');
+              if (nomDs < 0 || realDs < 0) return [];
+              const n = items.find(i => i.datasetIndex === nomDs);
+              const r = items.find(i => i.datasetIndex === realDs);
+              if (!n || !r) return [];
+              const gap = ((n.parsed.y - r.parsed.y) / n.parsed.y * 100).toFixed(1);
+              return ['', '  Inflation ate: ' + gap + '% of this price'];
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { font:{size:9}, maxRotation:45, callback: (v,i) => i%4===0 ? labels[i] : '' }, grid: { color:'rgba(0,0,0,0.04)' } },
+        y: { ticks: { callback: v => v >= 1e6 ? '₦'+(v/1e6).toFixed(0)+'M' : '₦'+(v/1000).toFixed(0)+'K' }, grid: { color:'rgba(0,0,0,0.04)' } }
+      }
+    }
+  });
+
+  // Smart narrative callout
+  const pxMeta = PRICING_DATA.metrics.byProduct.find(p => p.product === productName);
+  if (callout && pxMeta) {
+    const { nominalCAGR, realCAGR, inflationErosion, firstPriceNominal, lastPriceNominal } = pxMeta;
+    const fmtM = v => v >= 1e6 ? '₦'+(v/1e6).toFixed(2)+'M' : '₦'+Math.round(v).toLocaleString();
+    let msg, bg, border;
+    if (realCAGR > 10) {
+      bg='#EAFAF1'; border='#27AE60';
+      msg = `✅ <strong>${productName}</strong> is a genuine winner. Nominal CAGR: <strong>${nominalCAGR.toFixed(1)}%</strong>. Real CAGR after inflation: <strong>${realCAGR.toFixed(1)}%</strong>. Inflation consumed <strong>${inflationErosion.toFixed(1)}pp</strong> but enough remained. Price journey: ${fmtM(firstPriceNominal)} → ${fmtM(lastPriceNominal)}. <em>Expand this product — buyers are building genuine equity.</em>`;
+    } else if (realCAGR > 0) {
+      bg='#FEF9E7'; border='#F39C12';
+      msg = `⚠️ <strong>${productName}</strong> is marginally positive in real terms (<strong>${realCAGR.toFixed(1)}%</strong>), but inflation consumed <strong>${inflationErosion.toFixed(1)}pp</strong> of its <strong>${nominalCAGR.toFixed(1)}% nominal gain</strong>. Price: ${fmtM(firstPriceNominal)} → ${fmtM(lastPriceNominal)}. <em>Accelerate price increases or this product will fall behind inflation.</em>`;
+    } else {
+      bg='#FDECEA'; border='#E74C3C';
+      msg = `🔴 <strong>${productName}</strong> lost ground to inflation. Despite <strong>${nominalCAGR.toFixed(1)}% nominal CAGR</strong>, the real return is <strong>${realCAGR.toFixed(1)}%</strong> — buyers hold an asset worth less in real terms than when they purchased. The dashed green line falling below the red breakeven shows exactly when the product fell behind. Price: ${fmtM(firstPriceNominal)} → ${fmtM(lastPriceNominal)}. <em>Urgent pricing review required.</em>`;
+    }
+    callout.style.display = '';
+    callout.style.background = bg;
+    callout.style.borderLeftColor = border;
+    callout.innerHTML = msg;
+  }
+}
+
 function renderPricingCharts() {
   if (!PRICING_DATA || !INFLATION_DATA) {
     console.warn('[Pricing] No pricing data available for rendering');
     return;
   }
-  
-  const metrics = PRICING_DATA.metrics;
-  const inflation = INFLATION_DATA;
-  
-  // Update KPI Cards
-  // Guard all values against NaN/undefined before rendering
-  const fmtPct   = (v, decimals=1) => isFinite(v) ? v.toFixed(decimals) + '%' : '—';
-  const fmtPp    = (v, decimals=1) => isFinite(v) ? '-' + Math.abs(v).toFixed(decimals) + 'pp' : '—';
-  const fmtPlus  = (v, decimals=0) => isFinite(v) ? '+' + v.toFixed(decimals) + '%' : '—';
 
+  const metrics   = PRICING_DATA.metrics;
+  const inflation = INFLATION_DATA;
+
+  const fmtPct  = (v, d=1) => isFinite(v) ? v.toFixed(d)+'%' : '—';
+  const fmtPp   = (v, d=1) => isFinite(v) ? '-'+Math.abs(v).toFixed(d)+'pp' : '—';
+  const fmtPlus = (v, d=0) => isFinite(v) ? '+'+v.toFixed(d)+'%' : '—';
+
+  // KPI cards
   document.getElementById('pricing-nominal-cagr').textContent = fmtPct(metrics.portfolio.nominalCAGR);
   document.getElementById('pricing-real-cagr').textContent    = fmtPct(metrics.portfolio.realCAGR);
   document.getElementById('pricing-erosion').textContent      = fmtPp(metrics.portfolio.inflationErosion);
 
-  // Find the latest available CPI year for total inflation calculation
-  const cpiYears = Object.keys(inflation.cpiIndex).map(Number).sort();
+  const cpiYears      = Object.keys(inflation.cpiIndex).map(Number).sort();
   const latestCpiYear = cpiYears[cpiYears.length - 1];
-  const baseYear = cpiYears[0] || 2020;
-  const totalInflation = (cpiYears.length >= 2 && inflation.cpiIndex[baseYear])
-    ? ((inflation.cpiIndex[latestCpiYear] / inflation.cpiIndex[baseYear]) - 1) * 100
-    : NaN;
+  const baseYear      = cpiYears[0] || 2020;
+  const totalInflation = cpiYears.length >= 2 && inflation.cpiIndex[baseYear]
+    ? ((inflation.cpiIndex[latestCpiYear] / inflation.cpiIndex[baseYear]) - 1) * 100 : NaN;
   document.getElementById('pricing-total-inflation').textContent = fmtPlus(totalInflation);
-  document.getElementById('pricing-discount-rate').textContent = '—';
-  document.getElementById('pricing-product-count').textContent = metrics.byProduct.length || '—';
-  
-  // CHART 1: Inflation Context
-  const years = Object.keys(inflation.byYear).map(y => parseInt(y)).sort();
-  
+  document.getElementById('pricing-discount-rate').textContent   = '—';
+  document.getElementById('pricing-product-count').textContent   = metrics.byProduct.length || '—';
+
+  const qualified = metrics.byProduct.filter(p => p.dataPoints >= 4);
+  const winners   = qualified.filter(p => p.realCAGR > 0);
+  const losers    = qualified.filter(p => p.realCAGR <= 0);
+  const winnersEl = document.getElementById('pricing-winners-count');
+  if (winnersEl) winnersEl.textContent = winners.length + ' / ' + qualified.length;
+
+  // Narrative header
+  const allYears = Object.keys(inflation.byYear).map(Number).sort();
+  const avgInflation = allYears.length
+    ? allYears.reduce((s,y) => s + inflation.byYear[y].headline, 0) / allYears.length : null;
+  const hdrEl = document.getElementById('px-headline-avg-inflation');
+  if (hdrEl && avgInflation) hdrEl.textContent = avgInflation.toFixed(1) + '%';
+
+  const summaryEl = document.getElementById('px-inflation-summary');
+  if (summaryEl && isFinite(totalInflation)) {
+    const peakYear = allYears.reduce((best,y) => inflation.byYear[y].headline > inflation.byYear[best].headline ? y : best, allYears[0]);
+    summaryEl.innerHTML = '<strong style="color:var(--red)">₦100 in '+baseYear+' = ₦'+(inflation.cpiIndex[latestCpiYear]||0).toFixed(0)+' in '+latestCpiYear+'</strong><br>Peak: '+inflation.byYear[peakYear].headline.toFixed(1)+'% in '+peakYear+'. Prices had to rise faster than this to preserve real value.';
+  }
+
+  const act3El = document.getElementById('px-act3-summary');
+  if (act3El) {
+    const topW = winners.sort((a,b) => b.realCAGR - a.realCAGR)[0];
+    const topL = losers.sort((a,b) => a.realCAGR - b.realCAGR)[0];
+    act3El.innerHTML = 'Of <strong>'+qualified.length+' products</strong> with enough pricing history, <strong style="color:#27AE60">'+winners.length+' beat inflation</strong> and <strong style="color:var(--red)">'+losers.length+' fell behind</strong>. Best performer: <strong>'+(topW ? topW.product.substring(0,35) : '—')+'</strong> at <strong style="color:#27AE60">'+(topW ? topW.realCAGR.toFixed(1)+'% real CAGR' : '—')+'</strong>. Worst: <strong>'+(topL ? topL.product.substring(0,35) : '—')+'</strong> at <strong style="color:var(--red)">'+(topL ? topL.realCAGR.toFixed(1)+'% real CAGR' : '—')+'</strong>. Green bars = real value created; red bars = inflation won.';
+  }
+
+  // Populate product selector (once)
+  const sel = document.getElementById('px-product-select');
+  if (sel && sel.options.length <= 1) {
+    const addGroup = (label, products) => {
+      if (!products.length) return;
+      const grp = document.createElement('optgroup');
+      grp.label = label;
+      products.forEach(p => {
+        const m   = metrics.byProduct.find(x => x.product === p.product);
+        const opt = document.createElement('option');
+        opt.value = p.product;
+        opt.textContent = (m ? (m.realCAGR > 0 ? '✅ ' : '🔴 ') + m.realCAGR.toFixed(1) + '% · ' : '') + p.product.substring(0, 48);
+        grp.appendChild(opt);
+      });
+      sel.appendChild(grp);
+    };
+    const sortByRealCAGR = arr => arr.sort((a,b) => {
+      const ma = metrics.byProduct.find(x => x.product === a.product);
+      const mb = metrics.byProduct.find(x => x.product === b.product);
+      return (mb?.realCAGR||0) - (ma?.realCAGR||0);
+    });
+    addGroup('🏠 Homes', sortByRealCAGR(PRICING_DATA.enhanced.filter(p => { const m=metrics.byProduct.find(x=>x.product===p.product); return m&&m.category==='Home'&&m.dataPoints>=4; })));
+    addGroup('📐 Plots', sortByRealCAGR(PRICING_DATA.enhanced.filter(p => { const m=metrics.byProduct.find(x=>x.product===p.product); return m&&m.category==='Plot'&&m.dataPoints>=4; })));
+    addGroup('📦 Other', sortByRealCAGR(PRICING_DATA.enhanced.filter(p => { const m=metrics.byProduct.find(x=>x.product===p.product); return m&&m.category!=='Home'&&m.category!=='Plot'&&m.dataPoints>=4; })));
+    if (sel.options.length > 1) { sel.selectedIndex = 1; renderPriceTrendExplorer(); }
+  }
+
+  // ACT 1: Inflation context
   mkChart('c-inflation-context', {
     type: 'line',
     data: {
-      labels: years,
+      labels: allYears,
       datasets: [
-        {
-          label: 'Cumulative CPI (2020=100)',
-          data: years.map(y => inflation.cpiIndex[y]),
-          borderColor: '#E74C3C',
-          backgroundColor: 'rgba(231,76,60,0.1)',
-          borderWidth: 3,
-          tension: 0.3,
-          yAxisID: 'y',
-          fill: true
-        },
-        {
-          label: 'YoY Inflation %',
-          data: years.map(y => inflation.byYear[y].headline),
-          borderColor: '#F39C12',
-          backgroundColor: 'transparent',
-          borderWidth: 2,
-          tension: 0.3,
-          yAxisID: 'y1',
-          borderDash: [5, 3]
-        }
+        { label: 'Cumulative CPI (base=100)', data: allYears.map(y => inflation.cpiIndex[y]),
+          borderColor: '#E74C3C', backgroundColor: 'rgba(231,76,60,0.08)', borderWidth: 2.5,
+          tension: 0.3, yAxisID: 'y', fill: true, pointRadius: 4, pointHoverRadius: 7 },
+        { label: 'YoY Headline Inflation %', data: allYears.map(y => inflation.byYear[y].headline),
+          borderColor: '#F39C12', backgroundColor: 'transparent', borderWidth: 2,
+          tension: 0.3, yAxisID: 'y1', borderDash: [5,3], pointRadius: 3, pointHoverRadius: 6 }
       ]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { position: 'top', labels: { font: { size: 10 }, boxWidth: 8 } },
-        tooltip: { mode: 'index', intersect: false }
+        legend: { position: 'top', labels: { font:{size:10}, boxWidth:8 } },
+        tooltip: { callbacks: { label: ctx => ctx.dataset.label+': '+(ctx.datasetIndex===0 ? ctx.parsed.y.toFixed(0) : ctx.parsed.y.toFixed(1)+'%') } }
       },
       scales: {
-        y: { position: 'left', title: { display: true, text: 'CPI Index' }, ticks: { callback: v => v.toFixed(0) }, grid: { color: 'rgba(0,0,0,0.04)' } },
-        y1: { position: 'right', title: { display: true, text: 'YoY %' }, grid: { display: false }, ticks: { callback: v => v.toFixed(1) + '%' } }
+        y:  { position:'left',  title:{display:true,text:'CPI Index (base=100)'}, ticks:{callback:v=>v.toFixed(0)}, grid:{color:'rgba(0,0,0,0.04)'} },
+        y1: { position:'right', title:{display:true,text:'YoY %'}, grid:{display:false}, ticks:{callback:v=>v.toFixed(0)+'%'} }
       }
     }
   });
-  
-  addAfter('c-inflation-context', isFinite(totalInflation)
-    ? `<div class="chart-interp">₦100 in ${baseYear} = ₦${(inflation.cpiIndex[latestCpiYear] || 0).toFixed(0)} in ${latestCpiYear}. <strong>Total inflation: ${totalInflation.toFixed(0)}%.</strong> Any product with nominal appreciation below ${totalInflation.toFixed(0)}% lost real value.</div>`
-    : `<div class="chart-interp">Inflation context chart — CPI index anchored at ${baseYear}=100. Check Inflation Rate sheet has headline % values for each year.</div>`);
-  
-  // CHART 2: Nominal vs Real (Top 5)
-  // Filter to products with enough data points, ranked by real CAGR
-  const top5 = metrics.byProduct
-    .filter(p => p.dataPoints >= 4)
-    .sort((a,b) => b.realCAGR - a.realCAGR)
-    .slice(0, 5);
+  addAfter('c-inflation-context',
+    isFinite(totalInflation)
+      ? '<div class="chart-interp">Between '+baseYear+' and '+latestCpiYear+', Nigeria\'s cumulative inflation was <strong>'+totalInflation.toFixed(0)+'%</strong> — prices had to more than double just to preserve real value. The red band shows the rising \'bar\' Mixta\'s products had to clear. Any product whose asking price grew slower than the CPI line was getting cheaper in real terms, regardless of the Naira number on the price sheet. The charts below measure who cleared that bar.</div>'
+      : '<div class="chart-interp">CPI index chart — add Inflation Rate data to see the full context.</div>'
+  );
 
-  // ── Build a single unified quarter axis ──────────────────────────────────
-  // Each product may have started at a different quarter. We merge all quarter
-  // labels into one sorted master list so Chart.js category axis stays consistent
-  // across all datasets. Missing values for a product in a given quarter = null.
-  const QTR_SORT_KEY = q => {
-    const m = q.match(/Q([1-4])\s*(\d{4})/i);
-    return m ? parseInt(m[2]) * 10 + parseInt(m[1]) : 0;
-  };
-  const allQuarterSet = new Set();
-  top5.forEach(p => {
-    const enhanced = PRICING_DATA.enhanced.find(e => e.product === p.product);
-    if (enhanced) enhanced.quarters.forEach(q => allQuarterSet.add(q));
-  });
-  const allQuarters = Array.from(allQuarterSet).sort((a,b) => QTR_SORT_KEY(a) - QTR_SORT_KEY(b));
+  // ACT 3: Homes & Plots real CAGR bars
+  const homesData = metrics.byProduct.filter(p => p.category==='Home' && p.dataPoints>=4).sort((a,b)=>b.realCAGR-a.realCAGR).slice(0,12);
+  const plotsData = metrics.byProduct.filter(p => p.category==='Plot' && p.dataPoints>=4).sort((a,b)=>b.realCAGR-a.realCAGR).slice(0,12);
+  const barCol = v => v>10 ? '#27AE60' : v>0 ? '#F39C12' : '#E74C3C';
 
-  const colors = ['#C0392B', '#2980B9', '#27AE60', '#F39C12', '#8E44AD'];
-  const nomVsRealDatasets = [];
-
-  top5.forEach((product, idx) => {
-    const enhanced = PRICING_DATA.enhanced.find(e => e.product === product.product);
-    if (!enhanced) return;
-
-    // Map this product's data onto the unified axis (null where no data)
-    const qMap = {};
-    enhanced.realPrices.forEach((rp, i) => {
-      if (rp && enhanced.quarters[i]) {
-        qMap[enhanced.quarters[i]] = { nominal: rp.nominal, real: rp.real };
-      }
-    });
-
-    const nomData = allQuarters.map(q => qMap[q] ? qMap[q].nominal : null);
-    const realData = allQuarters.map(q => qMap[q] ? qMap[q].real   : null);
-
-    // Skip products that have no non-null values (fully empty)
-    if (nomData.every(v => v === null)) return;
-
-    const shortName = product.product.length > 28 ? product.product.substring(0, 26) + '…' : product.product;
-
-    nomVsRealDatasets.push({
-      label: shortName + ' (Nominal)',
-      data: nomData,
-      borderColor: colors[idx % colors.length],
-      backgroundColor: 'transparent',
-      borderWidth: 2.5,
-      tension: 0.3,
-      pointRadius: 0,
-      spanGaps: true   // connect across null gaps
-    });
-    nomVsRealDatasets.push({
-      label: shortName + ' (Real)',
-      data: realData,
-      borderColor: colors[idx % colors.length],
-      backgroundColor: 'transparent',
-      borderWidth: 1.5,
-      borderDash: [6, 3],
-      tension: 0.3,
-      pointRadius: 0,
-      spanGaps: true
-    });
-  });
-  
-  mkChart('c-nominal-vs-real', {
-    type: 'line',
-    data: { labels: allQuarters, datasets: nomVsRealDatasets },
+  const makeBar = (data, label) => ({
+    type: 'bar',
+    data: {
+      labels: data.map(p => p.product.length>34 ? p.product.substring(0,32)+'…' : p.product),
+      datasets: [{
+        label,
+        data: data.map(p => +p.realCAGR.toFixed(1)),
+        backgroundColor: data.map(p => barCol(p.realCAGR)+'BB'),
+        borderColor: data.map(p => barCol(p.realCAGR)),
+        borderWidth: 1, borderRadius: 4
+      }]
+    },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
       plugins: {
-        legend: {
-          position: 'right',
-          labels: {
-            font: { size: 9 }, boxWidth: 8,
-            // Only show one legend entry per product (not both Nominal + Real)
-            filter: item => item.text.includes('(Nominal)')
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => {
+          const p = data[ctx.dataIndex];
+          const verdict = p.realCAGR>10 ? '✅ Beat inflation well' : p.realCAGR>0 ? '⚠️ Marginal' : '🔴 Lost to inflation';
+          return [' Real CAGR: '+p.realCAGR.toFixed(1)+'%  '+verdict, ' Nominal CAGR: '+p.nominalCAGR.toFixed(1)+'%', ' Inflation ate: '+p.inflationErosion.toFixed(1)+'pp'];
+        } } }
+      },
+      scales: {
+        x: {
+          title: { display:true, text:'Real CAGR % (inflation-adjusted)' },
+          ticks: { callback: v => v+'%' }, grid: { color:'rgba(0,0,0,0.04)' },
+          afterDraw: chart => {
+            const {ctx:c, scales:{x,y}} = chart;
+            const zero = x.getPixelForValue(0);
+            c.save(); c.beginPath(); c.moveTo(zero,y.top); c.lineTo(zero,y.bottom);
+            c.strokeStyle='rgba(231,76,60,0.5)'; c.lineWidth=1.5; c.setLineDash([4,4]); c.stroke(); c.restore();
           }
         },
+        y: { ticks:{font:{size:9}}, grid:{display:false} }
+      }
+    }
+  });
+
+  mkChart('c-homes-real-cagr', makeBar(homesData, 'Homes Real CAGR'));
+  mkChart('c-plots-real-cagr', makeBar(plotsData, 'Plots Real CAGR'));
+
+  const topH = homesData[0], botH = homesData[homesData.length-1];
+  const topP = plotsData[0], botP = plotsData[plotsData.length-1];
+  addAfter('c-homes-real-cagr', topH ? '<div class="chart-interp">Best home: <strong>'+topH.product.substring(0,35)+'</strong> at <strong style="color:#27AE60">'+topH.realCAGR.toFixed(1)+'%</strong> real. Weakest: <strong>'+botH.product.substring(0,35)+'</strong> at <strong style="color:var(--red)">'+botH.realCAGR.toFixed(1)+'%</strong>. Red vertical line = inflation breakeven. Bars left of zero mean this product is eroding buyer wealth in real terms. Use the Product Explorer above to see the quarter-by-quarter story.</div>' : '');
+  addAfter('c-plots-real-cagr', topP ? '<div class="chart-interp">Best plot: <strong>'+topP.product.substring(0,35)+'</strong> at <strong style="color:#27AE60">'+topP.realCAGR.toFixed(1)+'%</strong> real. Weakest: <strong>'+botP.product.substring(0,35)+'</strong> at <strong style="color:var(--red)">'+botP.realCAGR.toFixed(1)+'%</strong>. Plots tend to be more volatile — land value swings can compress or amplify price appreciation quickly. Select any plot in the Product Explorer to see its inflation-adjusted journey.</div>' : '');
+
+  // ACT 4: Erosion — stacked bar (real kept + inflation eaten)
+  const erosionData = metrics.byProduct.filter(p => p.dataPoints>=4 && isFinite(p.inflationErosion)).sort((a,b)=>b.inflationErosion-a.inflationErosion).slice(0,15);
+  mkChart('c-inflation-erosion', {
+    type: 'bar',
+    data: {
+      labels: erosionData.map(p => p.product.length>40 ? p.product.substring(0,38)+'…' : p.product),
+      datasets: [
+        { label:'Real gain (kept)', data: erosionData.map(p => Math.max(0,p.realCAGR)), backgroundColor:'rgba(39,174,96,0.75)', borderRadius:4, stack:'s' },
+        { label:'Inflation erosion (lost)', data: erosionData.map(p => p.inflationErosion), backgroundColor: erosionData.map(p => p.inflationErosion>30 ? 'rgba(231,76,60,0.8)' : 'rgba(243,156,18,0.7)'), borderRadius:4, stack:'s' }
+      ]
+    },
+    options: {
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins: {
+        legend: { position:'top', labels:{font:{size:10},boxWidth:10} },
         tooltip: {
-          mode: 'index',
-          intersect: false,
+          mode:'index',
           callbacks: {
-            label: ctx => {
-              const v = ctx.parsed.y;
-              if (v === null || v === undefined) return null;
-              return ctx.dataset.label + ': ' + (v >= 1e6 ? '₦' + (v/1e6).toFixed(1) + 'M' : '₦' + v.toLocaleString());
+            title: items => erosionData[items[0].dataIndex].product,
+            afterBody: items => {
+              const p = erosionData[items[0].dataIndex];
+              const eatsPct = (p.inflationErosion/p.nominalCAGR*100).toFixed(0);
+              return ['', ' Nominal CAGR: '+p.nominalCAGR.toFixed(1)+'% (total on price sheet)', ' Real kept: '+p.realCAGR.toFixed(1)+'%', ' Inflation ate: '+p.inflationErosion.toFixed(1)+'pp ('+eatsPct+'% of all gains)'];
             }
           }
         }
       },
       scales: {
-        x: {
-          ticks: {
-            maxRotation: 45,
-            minRotation: 45,
-            font: { size: 8 },
-            // Only label every 4th quarter to avoid overcrowding
-            callback: (val, idx) => idx % 4 === 0 ? allQuarters[idx] : ''
-          },
-          grid: { color: 'rgba(0,0,0,0.04)' }
-        },
-        y: {
-          ticks: { callback: v => v >= 1e6 ? '₦' + (v/1e6).toFixed(0) + 'M' : '₦' + (v/1000).toFixed(0) + 'K' },
-          grid: { color: 'rgba(0,0,0,0.04)' }
-        }
+        x: { stacked:true, title:{display:true,text:'Percentage points of nominal CAGR'}, ticks:{callback:v=>v+'pp'}, grid:{color:'rgba(0,0,0,0.04)'} },
+        y: { stacked:true, ticks:{font:{size:9}}, grid:{display:false} }
       }
     }
   });
-  
-  if (top5.length > 0) {
-    const best = top5[0];
-    const worst = top5[top5.length - 1];
-    addAfter('c-nominal-vs-real', `<div class="chart-interp"><strong>Real appreciation leaders:</strong> ${best.product} achieved ${best.realCAGR.toFixed(1)}% real CAGR despite ${best.inflationErosion.toFixed(0)}pp inflation erosion. <strong>Comparison:</strong> ${worst.product} ${worst.realCAGR.toFixed(1)}% real CAGR. Gap between solid and dashed lines shows inflation impact.</div>`);
-  }
-  
-  // CHART 3: Homes Real CAGR
-  const homesData = metrics.byProduct.filter(p => p.category === 'Home').sort((a,b) => b.realCAGR - a.realCAGR).slice(0, 10);
-  
-  mkChart('c-homes-real-cagr', {
-    type: 'bar',
-    data: {
-      labels: homesData.map(p => p.product.substring(0, 30)),
-      datasets: [{
-        label: 'Real CAGR %',
-        data: homesData.map(p => p.realCAGR),
-        backgroundColor: homesData.map(p => p.realCAGR > 20 ? '#27AE60' : p.realCAGR > 10 ? '#F39C12' : '#E74C3C'),
-        borderRadius: 5
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: ctx => { const p = homesData[ctx.dataIndex]; return [`Real CAGR: ${p.realCAGR.toFixed(1)}%`, `Nominal: ${p.nominalCAGR.toFixed(1)}%`, `Erosion: -${p.inflationErosion.toFixed(1)}pp`]; } } }
-      },
-      scales: {
-        x: { title: { display: true, text: 'Real CAGR % (Inflation-Adjusted)' }, ticks: { callback: v => v.toFixed(0) + '%' } },
-        y: { ticks: { font: { size: 9 } } }
-      }
-    }
-  });
-  
-  // CHART 4: Plots Real CAGR
-  const plotsData = metrics.byProduct.filter(p => p.category === 'Plot').sort((a,b) => b.realCAGR - a.realCAGR).slice(0, 10);
-  
-  mkChart('c-plots-real-cagr', {
-    type: 'bar',
-    data: {
-      labels: plotsData.map(p => p.product.substring(0, 30)),
-      datasets: [{
-        label: 'Real CAGR %',
-        data: plotsData.map(p => p.realCAGR),
-        backgroundColor: plotsData.map(p => p.realCAGR > 20 ? '#27AE60' : p.realCAGR > 10 ? '#F39C12' : '#E74C3C'),
-        borderRadius: 5
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: ctx => { const p = plotsData[ctx.dataIndex]; return [`Real CAGR: ${p.realCAGR.toFixed(1)}%`, `Nominal: ${p.nominalCAGR.toFixed(1)}%`, `₦/sqm: ${p.lastPriceNominal.toLocaleString()}`]; } } }
-      },
-      scales: {
-        x: { title: { display: true, text: 'Real CAGR % (Inflation-Adjusted)' }, ticks: { callback: v => v.toFixed(0) + '%' } },
-        y: { ticks: { font: { size: 9 } } }
-      }
-    }
-  });
-  
-  // CHART 5: Inflation Erosion
-  const erosionData = metrics.byProduct.sort((a,b) => b.inflationErosion - a.inflationErosion).slice(0, 15);
-  
-  mkChart('c-inflation-erosion', {
-    type: 'bar',
-    data: {
-      labels: erosionData.map(p => p.product.substring(0, 35)),
-      datasets: [{
-        label: 'Erosion (pp)',
-        data: erosionData.map(p => p.inflationErosion),
-        backgroundColor: erosionData.map(p => p.inflationErosion > 30 ? '#E74C3C' : p.inflationErosion > 25 ? '#F39C12' : '#95A5A6'),
-        borderRadius: 5
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: ctx => { const p = erosionData[ctx.dataIndex]; return [`Nominal: ${p.nominalCAGR.toFixed(1)}%`, `Real: ${p.realCAGR.toFixed(1)}%`, `Erosion: -${p.inflationErosion.toFixed(1)}pp`]; } } }
-      },
-      scales: {
-        x: { title: { display: true, text: 'Percentage Points Lost to Inflation' }, ticks: { callback: v => v.toFixed(0) + 'pp' } },
-        y: { ticks: { font: { size: 9 } } }
-      }
-    }
-  });
-  
-  addAfter('c-inflation-erosion', `<div class="chart-interp">Inflation erosion = Nominal CAGR - Real CAGR. Products with >30pp erosion saw most price gains wiped out by currency debasement. Portfolio average: ${metrics.portfolio.inflationErosion.toFixed(1)}pp.</div>`);
-  
-  // CHART 6: Discount Rate (Placeholder)
-  mkChart('c-discount-rate', {
-    type: 'line',
-    data: {
-      labels: ['Q1 2024', 'Q2 2024', 'Q3 2024', 'Q4 2024', 'Q1 2025', 'Q2 2025', 'Q3 2025', 'Q4 2025', 'Q1 2026'],
-      datasets: [{
-        label: 'Avg Discount Rate %',
-        data: [8, 9, 10, 12, 11, 10, 9, 8, 7],
-        borderColor: '#2980B9',
-        backgroundColor: 'rgba(41,128,185,0.1)',
-        borderWidth: 2.5,
-        tension: 0.3,
-        fill: true
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false }
-      },
-      scales: {
-        y: { title: { display: true, text: 'Discount Rate %' }, ticks: { callback: v => v.toFixed(0) + '%' }, grid: { color: 'rgba(0,0,0,0.04)' } }
-      }
-    }
-  });
-  
-  addAfter('c-discount-rate', `<div class="chart-interp"><strong>Discount rate</strong> = (Asking Price - Realized Revenue per Unit) / Asking Price × 100. Shows gap between price sheet and actual transactions. >12% signals pricing resistance. <em>Note: Full calculation pending transaction-to-price-sheet mapping.</em></div>`);
-  
-  // CHART 7: Product Performance Matrix
-  // X-axis = real revenue contribution % (from transaction data matched by product name)
-  // Y-axis = real price CAGR % (from price sheet)
-  // Bubble size = units sold (from transaction data)
-  //
-  // We match price-sheet product names to transaction `property` field via
-  // the same fuzzy logic used in fetchPriceSheet. We use the analytics object
-  // stored at window._lastAnalytics (set in renderFromRows).
-  const txAnalytics = window._lastAnalytics || null;
-  const txByProp    = txAnalytics ? txAnalytics.propRevenue : [];  // [{k, v}] sorted by revenue
-  const txTotalRev  = txAnalytics ? txAnalytics.totalRev : 0;
-  const txPropUnits = txAnalytics ? txAnalytics.propUnits : {};    // {propName: unitCount}
+  const wst = erosionData[0];
+  const wstEatPct = wst ? (wst.inflationErosion/wst.nominalCAGR*100).toFixed(0) : '—';
+  addAfter('c-inflation-erosion', '<div class="chart-interp">Each bar is split: <strong style="color:#27AE60">green = real value kept</strong>, <strong style="color:var(--red)">red/amber = eaten by inflation</strong>. For <strong>'+(wst?wst.product.substring(0,35):'—')+'</strong>, inflation consumed <strong>'+wstEatPct+'%</strong> of all nominal price gains — buyers saw '+( wst?wst.nominalCAGR.toFixed(1):' —')+'% price growth on the price sheet, but only '+(wst?wst.realCAGR.toFixed(1):'—')+'% was real. Portfolio average erosion: <strong>'+metrics.portfolio.inflationErosion.toFixed(1)+'pp</strong>. This is the hidden tax every buyer is paying.</div>');
 
-  function fuzzyMatchRevenue(productName) {
+  // ACT 5: Performance Matrix
+  const txAnalytics = window._lastAnalytics || null;
+  const txByProp    = txAnalytics ? txAnalytics.propRevenue : [];
+  const txTotalRev  = txAnalytics ? txAnalytics.totalRev : 0;
+  const txPropUnits = txAnalytics ? txAnalytics.propUnits : {};
+  const usedProps   = new Set();
+
+  function fuzzyMatchRevenue(pName) {
     if (!txByProp.length || !txTotalRev) return null;
-    const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const pn   = norm(productName);
-    // Try progressively looser matches
+    const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g,'');
+    const pn = norm(pName);
     for (const prop of txByProp) {
+      if (usedProps.has(prop.k)) continue;
       const tn = norm(prop.k);
-      if (tn === pn || tn.includes(pn) || pn.includes(tn)) {
-        return { rev: prop.v, units: txPropUnits[prop.k] || 0 };
-      }
+      if (tn===pn || tn.includes(pn) || pn.includes(tn)) { usedProps.add(prop.k); return {rev:prop.v,units:txPropUnits[prop.k]||0}; }
     }
-    // Try partial word overlap (at least 6 chars in common)
     for (const prop of txByProp) {
+      if (usedProps.has(prop.k)) continue;
       const tn = norm(prop.k);
-      if (pn.length >= 6 && tn.includes(pn.substring(0, 6))) {
-        return { rev: prop.v, units: txPropUnits[prop.k] || 0 };
-      }
+      if (pn.length>=8 && tn.includes(pn.substring(0,8))) { usedProps.add(prop.k); return {rev:prop.v,units:txPropUnits[prop.k]||0}; }
     }
     return null;
   }
 
-  // Build matrix — split into two datasets so legend shows Home vs Plot
-  const matrixHomes = [], matrixPlots = [], matrixOther = [];
+  const mH=[], mP=[], mO=[];
   let hasRealX = false;
-
-  metrics.byProduct
-    .filter(p => isFinite(p.realCAGR) && p.dataPoints >= 4)
-    .forEach(p => {
-      const txMatch  = fuzzyMatchRevenue(p.product);
-      const revPct   = txMatch ? (txMatch.rev / txTotalRev * 100) : null;
-      const units    = txMatch ? txMatch.units : p.dataPoints;
-      const rBubble  = Math.max(4, Math.min(25, units * 0.8));  // radius: 4–25px
-
-      if (revPct !== null) hasRealX = true;
-
-      const point = {
-        x: revPct !== null ? +revPct.toFixed(2) : null,
-        y: +p.realCAGR.toFixed(1),
-        r: rBubble,
-        label: p.product,
-        units,
-        nominalCAGR: p.nominalCAGR,
-        realCAGR: p.realCAGR,
-        erosion: p.inflationErosion
-      };
-
-      if (p.category === 'Home') matrixHomes.push(point);
-      else if (p.category === 'Plot') matrixPlots.push(point);
-      else matrixOther.push(point);
-    });
-
-  // If no transaction match was found fall back to distributing revenue evenly
-  // so the chart at least shows the Y-axis spread meaningfully
+  const sorted = [...metrics.byProduct].filter(p=>isFinite(p.realCAGR)&&p.dataPoints>=4).sort((a,b)=>{
+    const ta=txByProp.find(x=>x.k.toLowerCase().includes(a.product.toLowerCase().substring(0,8)));
+    const tb=txByProp.find(x=>x.k.toLowerCase().includes(b.product.toLowerCase().substring(0,8)));
+    return (tb?.v||0)-(ta?.v||0);
+  });
+  sorted.forEach(p => {
+    const tx = fuzzyMatchRevenue(p.product);
+    const revPct = tx ? +(tx.rev/txTotalRev*100).toFixed(2) : null;
+    const units  = tx ? tx.units : p.dataPoints;
+    const r = Math.max(5, Math.min(28, Math.sqrt(units)*3));
+    if (revPct!==null) hasRealX=true;
+    const pt = {x:revPct,y:+p.realCAGR.toFixed(1),r,label:p.product,units,nominalCAGR:p.nominalCAGR,realCAGR:p.realCAGR,erosion:p.inflationErosion};
+    if (p.category==='Home') mH.push(pt);
+    else if (p.category==='Plot') mP.push(pt);
+    else mO.push(pt);
+  });
   if (!hasRealX) {
-    const totalPoints = matrixHomes.length + matrixPlots.length + matrixOther.length;
-    let idx = 0;
-    [...matrixHomes, ...matrixPlots, ...matrixOther].forEach(p => {
-      p.x = totalPoints > 1 ? (idx++ / (totalPoints - 1)) * 80 + 10 : 50;
-    });
+    const all=[...mH,...mP,...mO];
+    all.forEach((p,i)=>{ p.x=all.length>1?(i/(all.length-1))*80+10:50; });
   }
 
-  const matrixTooltip = (ctx, dataset) => {
-    const p = dataset[ctx.dataIndex];
+  const matTip = ctx => {
+    const ds = ctx.chart.data.datasets[ctx.datasetIndex].data;
+    const p = ds[ctx.dataIndex];
     if (!p) return [];
-    return [
-      p.label.substring(0, 40),
-      `Real CAGR: ${p.y.toFixed(1)}%`,
-      `Nominal CAGR: ${p.nominalCAGR ? p.nominalCAGR.toFixed(1) + '%' : '—'}`,
-      `Inflation erosion: -${p.erosion ? p.erosion.toFixed(1) : '—'}pp`,
-      p.units ? `Units sold: ${p.units}` : '',
-      p.x !== null ? `Revenue share: ${p.x.toFixed(1)}%` : 'Revenue: unmatched'
-    ].filter(Boolean);
+    const v = p.y>10&&p.x>5?'⭐ Star':p.y>0&&p.x>5?'🐄 Cash Cow':p.y>0?'❓ Question Mark':p.x>5?'⚠️ Drag':'🐕 Dog';
+    return [v+'  '+p.label.substring(0,40),'Real CAGR: '+p.y.toFixed(1)+'%','Nominal CAGR: '+(p.nominalCAGR?p.nominalCAGR.toFixed(1)+'%':'—'),'Inflation erosion: -'+(p.erosion?p.erosion.toFixed(1):'—')+'pp',p.units?'Units sold: '+p.units:'',p.x!==null?'Revenue share: '+p.x.toFixed(1)+'%':'No tx match'].filter(Boolean);
   };
 
   mkChart('c-price-performance-matrix', {
-    type: 'bubble',
-    data: {
-      datasets: [
-        {
-          label: 'Homes',
-          data: matrixHomes.filter(p => p.x !== null),
-          backgroundColor: 'rgba(41,128,185,0.55)',
-          borderColor: '#2980B9',
-          borderWidth: 1.5
-        },
-        {
-          label: 'Plots',
-          data: matrixPlots.filter(p => p.x !== null),
-          backgroundColor: 'rgba(39,174,96,0.55)',
-          borderColor: '#27AE60',
-          borderWidth: 1.5
-        },
-        {
-          label: 'Unclassified',
-          data: matrixOther.filter(p => p.x !== null),
-          backgroundColor: 'rgba(149,165,166,0.45)',
-          borderColor: '#95A5A6',
-          borderWidth: 1
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top',
-          labels: { font: { size: 10 }, boxWidth: 10 }
-        },
-        tooltip: {
-          callbacks: {
-            label: ctx => {
-              const ds = ctx.chart.data.datasets[ctx.datasetIndex].data;
-              return matrixTooltip(ctx, ds);
-            }
-          }
-        },
-        // Draw quadrant reference lines
-        annotation: undefined
+    type:'bubble',
+    data:{ datasets:[
+      {label:'Homes', data:mH.filter(p=>p.x!==null), backgroundColor:'rgba(41,128,185,0.55)', borderColor:'#2980B9', borderWidth:1.5},
+      {label:'Plots', data:mP.filter(p=>p.x!==null), backgroundColor:'rgba(39,174,96,0.55)',  borderColor:'#27AE60', borderWidth:1.5},
+      {label:'Unclassified', data:mO.filter(p=>p.x!==null), backgroundColor:'rgba(149,165,166,0.45)', borderColor:'#95A5A6', borderWidth:1}
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:10}},
+        tooltip:{callbacks:{label:ctx=>matTip(ctx)}}
       },
-      scales: {
-        x: {
-          title: {
-            display: true,
-            text: hasRealX ? 'Revenue Contribution % (from transactions)' : 'Product rank (revenue match pending)'
-          },
-          ticks: { callback: v => v.toFixed(0) + '%' },
-          grid: { color: 'rgba(0,0,0,0.04)' }
-        },
-        y: {
-          title: { display: true, text: 'Real Price CAGR % (inflation-adjusted)' },
-          ticks: { callback: v => v.toFixed(0) + '%' },
-          grid: { color: 'rgba(0,0,0,0.04)' }
-        }
+      scales:{
+        x:{title:{display:true,text:hasRealX?'Revenue contribution %':'Product index (revenue match pending)'},ticks:{callback:v=>v.toFixed(0)+'%'},grid:{color:'rgba(0,0,0,0.04)'}},
+        y:{title:{display:true,text:'Real price CAGR % (inflation-adjusted)'},ticks:{callback:v=>v.toFixed(0)+'%'},grid:{color:'rgba(0,0,0,0.04)'}}
       }
     }
   });
 
-  // Draw quadrant labels directly on the canvas after chart renders
   setTimeout(() => {
     const canvas = document.getElementById('c-price-performance-matrix');
     if (!canvas) return;
-    const ctx2 = canvas.getContext('2d');
     const chart = Chart.getChart(canvas);
-    if (!chart) return;
-    const xMid = chart.scales.x.getPixelForValue((chart.scales.x.min + chart.scales.x.max) / 2);
+    if (!chart||!chart.chartArea) return;
+    const c2 = canvas.getContext('2d');
+    const {left,right,top,bottom} = chart.chartArea;
+    const xMid = (left+right)/2;
     const yMid = chart.scales.y.getPixelForValue(0);
-    const style = (text, x, y, color) => {
-      ctx2.save();
-      ctx2.font = '10px sans-serif';
-      ctx2.fillStyle = color;
-      ctx2.globalAlpha = 0.45;
-      ctx2.fillText(text, x, y);
-      ctx2.restore();
-    };
-    const { left, right, top, bottom } = chart.chartArea;
-    style('⭐ Stars',        xMid + 8,    top   + 14, '#27AE60');
-    style('❓ Question Marks', left + 4,  top   + 14, '#F39C12');
-    style('🐄 Cash Cows',    xMid + 8,    bottom - 6, '#2980B9');
-    style('🐕 Dogs',         left + 4,    bottom - 6, '#E74C3C');
-  }, 300);
-  
-  addAfter('c-price-performance-matrix', `<div class="chart-interp"><strong>Product positioning matrix:</strong> Blue = Homes, Green = Plots. Y-axis = Real appreciation. <strong>Top-right</strong> = Stars (high revenue, high appreciation) - prioritize. <strong>Bottom-right</strong> = Cash Cows - maintain. <strong>Top-left</strong> = Question Marks - test & scale. <strong>Bottom-left</strong> = Dogs - exit candidates.</div>`);
-  
+    const lbl = (t,x,y,col) => { c2.save();c2.font='700 11px sans-serif';c2.fillStyle=col;c2.globalAlpha=0.5;c2.fillText(t,x,y);c2.restore(); };
+    lbl('⭐ STARS — prioritise',    xMid+10, top+18,    '#1E8449');
+    lbl('❓ QUESTION MARKS — test', left+6,  top+18,    '#D68910');
+    lbl('🐄 CASH COWS — maintain', xMid+10, bottom-8,  '#1A5276');
+    lbl('🐕 DOGS — exit / review', left+6,  bottom-8,  '#922B21');
+    c2.save();c2.beginPath();c2.moveTo(left,yMid);c2.lineTo(right,yMid);
+    c2.strokeStyle='rgba(231,76,60,0.3)';c2.lineWidth=1;c2.setLineDash([4,4]);c2.stroke();c2.restore();
+  }, 350);
+
+  const allPts = [...mH,...mP,...mO].filter(p=>p.x!==null);
+  const star = allPts.filter(p=>p.y>0).sort((a,b)=>(b.y*b.x)-(a.y*a.x))[0];
+  const dog  = allPts.filter(p=>p.y<0).sort((a,b)=>(a.y*a.x)-(b.y*b.x))[0];
+  addAfter('c-price-performance-matrix', '<div class="chart-interp"><strong>How to read this final chart:</strong> Top-right = Stars (high revenue AND prices beating inflation — double down on these). Bottom-right = Cash Cows (high revenue but prices lagging inflation — protect margin, don\'t over-invest). Top-left = Question Marks (great appreciation but small revenue — these could be Stars, scale them up). Bottom-left = Dogs (low revenue, losing to inflation — exit or fundamental reposition). '+(star?'<strong>Top Star right now: '+star.label.substring(0,35)+'</strong> — '+star.y.toFixed(1)+'% real CAGR, '+star.x.toFixed(1)+'% of revenue. ':' ')+(dog?'<strong>Biggest Dog: '+dog.label.substring(0,35)+'</strong> — '+dog.y.toFixed(1)+'% real CAGR, generating '+dog.x.toFixed(1)+'% of revenue.':'')+'</div>');
+
   console.log('[Pricing] Charts rendered successfully');
 }
 
