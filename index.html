@@ -156,6 +156,20 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .filter-reset:hover{background:var(--red3)}
 .filter-divider{width:1px;height:20px;background:rgba(0,0,0,0.1);flex-shrink:0}
 .filter-count{font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-left:auto;white-space:nowrap}
+/* ── MULTI-SELECT DROPDOWN ───────────────────────── */
+.ms-wrap{position:relative;display:inline-block}
+.ms-btn{padding:5px 10px;border-radius:8px;font-size:12px;font-weight:500;color:var(--text);background:rgba(255,255,255,0.9);border:1px solid rgba(0,0,0,0.1);cursor:pointer;font-family:var(--font);outline:none;transition:all 0.18s;white-space:nowrap;display:flex;align-items:center;gap:5px;min-width:90px;justify-content:space-between}
+.ms-btn.active{border-color:var(--red);background:var(--red4);color:var(--red)}
+.ms-btn .ms-arrow{font-size:8px;opacity:0.5;transition:transform 0.15s}
+.ms-btn.open .ms-arrow{transform:rotate(180deg)}
+.ms-panel{position:absolute;top:calc(100% + 4px);left:0;z-index:999;background:white;border:1px solid rgba(0,0,0,0.12);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.12);padding:6px 0;min-width:170px;max-height:280px;overflow-y:auto;display:none}
+.ms-panel.open{display:block}
+.ms-opt{display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:var(--text);transition:background 0.12s;white-space:nowrap}
+.ms-opt:hover{background:rgba(0,0,0,0.04)}
+.ms-opt input[type=checkbox]{accent-color:var(--red);width:13px;height:13px;cursor:pointer;flex-shrink:0}
+.ms-opt label{cursor:pointer;flex:1;user-select:none}
+.ms-all{border-bottom:1px solid rgba(0,0,0,0.06);margin-bottom:4px;padding-bottom:6px}
+.ms-badge{display:inline-block;background:var(--red);color:white;border-radius:10px;font-size:10px;font-weight:700;padding:0 5px;min-width:16px;text-align:center;line-height:15px}
 .freshness{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px}
 .sdiv{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;margin-top:6px;display:flex;align-items:center;gap:8px}
 .sdiv::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(0,0,0,0.07) 0%,transparent 100%)}
@@ -358,35 +372,68 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <div class="filter-bar" id="filterBar">
   <span class="filter-label">Filter</span>
   <div class="filter-divider"></div>
+
   <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Year</span>
-  <select class="filter-select" id="filterYear" onchange="updateQuarterDropdown(); applyFilters()">
-    <option value="all">All Years</option>
-  </select>
-  <div class="filter-divider"></div>
-  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Quarter</span>
-  <select class="filter-select" id="filterQuarter" onchange="applyFilters()" disabled>
-    <option value="all">All Quarters</option>
-  </select>
-  <div class="filter-divider"></div>
-  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Community</span>
-  <select class="filter-select" id="filterCommunity" onchange="applyFilters()">
-    <option value="all">All Communities</option>
+  <div class="ms-wrap" id="ms-year-wrap">
+    <button class="ms-btn" id="ms-year-btn" onclick="toggleMS('year')" type="button">
+      <span id="ms-year-label">All Years</span><span class="ms-arrow">▼</span>
+    </button>
+    <div class="ms-panel" id="ms-year-panel">
+      <div class="ms-opt ms-all"><input type="checkbox" id="ms-year-all" checked onchange="msToggleAll('year')"><label for="ms-year-all">All Years</label></div>
+    </div>
+  </div>
+
+  <div class="filter-divider"></div>
+  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Quarter</span>
+  <select class="filter-select" id="filterQuarter" onchange="applyFilters()" disabled>
+    <option value="all">All Quarters</option>
   </select>
+
+  <div class="filter-divider"></div>
+  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Segment</span>
+  <div class="ms-wrap" id="ms-segment-wrap">
+    <button class="ms-btn" id="ms-segment-btn" onclick="toggleMS('segment')" type="button">
+      <span id="ms-segment-label">All Segments</span><span class="ms-arrow">▼</span>
+    </button>
+    <div class="ms-panel" id="ms-segment-panel">
+      <div class="ms-opt ms-all"><input type="checkbox" id="ms-segment-all" checked onchange="msToggleAll('segment')"><label for="ms-segment-all">All Segments</label></div>
+    </div>
+  </div>
+
+  <div class="filter-divider"></div>
+  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Community</span>
+  <div class="ms-wrap" id="ms-community-wrap">
+    <button class="ms-btn" id="ms-community-btn" onclick="toggleMS('community')" type="button">
+      <span id="ms-community-label">All Communities</span><span class="ms-arrow">▼</span>
+    </button>
+    <div class="ms-panel" id="ms-community-panel">
+      <div class="ms-opt ms-all"><input type="checkbox" id="ms-community-all" checked onchange="msToggleAll('community')"><label for="ms-community-all">All Communities</label></div>
+    </div>
+  </div>
+
   <div class="filter-divider"></div>
   <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Channel</span>
-  <select class="filter-select" id="filterAgent" onchange="applyFilters()">
-    <option value="all">All Channels</option>
-  </select>
+  <div class="ms-wrap" id="ms-channel-wrap">
+    <button class="ms-btn" id="ms-channel-btn" onclick="toggleMS('channel')" type="button">
+      <span id="ms-channel-label">All Channels</span><span class="ms-arrow">▼</span>
+    </button>
+    <div class="ms-panel" id="ms-channel-panel">
+      <div class="ms-opt ms-all"><input type="checkbox" id="ms-channel-all" checked onchange="msToggleAll('channel')"><label for="ms-channel-all">All Channels</label></div>
+    </div>
+  </div>
+
   <div class="filter-divider"></div>
   <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Risk</span>
   <select class="filter-select" id="filterRisk" onchange="applyFilters()">
     <option value="all">All Risk Tiers</option>
   </select>
+
   <div class="filter-divider"></div>
   <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Phase</span>
   <select class="filter-select" id="filterPhase" onchange="applyFilters()">
     <option value="all">All Phases</option>
   </select>
+
   <button class="filter-reset" onclick="resetFilters()" id="resetBtn" style="display:none">✕ Clear Filters</button>
   <span class="filter-count" id="filterCount"></span>
 </div>
@@ -448,6 +495,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <div class="cc full">
     <div class="ch"><div><div class="ct">Top Properties by Cumulative Revenue</div><div class="cs">Ranked by total selling price</div></div><span class="badge bg_">Top 12</span></div>
     <div id="top-props-bars"></div>
+  </div>
+
+  <!-- Segment Breakdown Chart — always visible, highlights when segment filter active -->
+  <div class="cc full" id="segment-breakdown-card">
+    <div class="ch">
+      <div>
+        <div class="ct">Product Segment Breakdown — Revenue &amp; Units</div>
+        <div class="cs" id="segment-chart-sub">Portfolio split across Premium · Mid-Market · Affordable · use Segment filter above to compare</div>
+      </div>
+      <span class="badge br" id="segment-mode-badge">All Segments</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px">
+      <div class="cw" style="height:220px"><canvas id="c-segment-rev"></canvas></div>
+      <div class="cw" style="height:220px"><canvas id="c-segment-units"></canvas></div>
+    </div>
   </div>
 </div>
 
@@ -1555,6 +1617,15 @@ function enrichData(rows) {
     // Safely Extract Year & Quarter from the best available date columns
     r._year = getYearFromVal(r.revYear) || getYearFromVal(r.soldDate) || getYearFromVal(r.paymentReceipt);
     r._quarter = getQuarterFromVal(r.revYear) || getQuarterFromVal(r.soldDate) || getQuarterFromVal(r.paymentReceipt);
+
+    // Attach segment from Classification sheet if available
+    if (!r._segment && window._classificationData && window._classificationData.segmentLookup) {
+      const seg = window._classificationData.segmentLookup;
+      const propName = (r.property || '').trim();
+      const key = propName.replace(/[^a-z0-9]/gi, '').toLowerCase();
+      r._segment = seg[propName] || seg[propName.toLowerCase()] || seg[key] || 'Unclassified';
+    }
+    if (!r._segment) r._segment = 'Unclassified';
   });
 }
 
@@ -1748,6 +1819,15 @@ function computeAnalytics(rows) {
 
   data.collectionsBook = (byAG['Collections']||[]).length;
 
+  // ── By product segment (Premium / Mid-Market / Affordable) ──
+  const bySegment = groupBy(valid.filter(r=>r._segment&&r._segment!=='Unclassified'), '_segment');
+  const segOrder = ['Premium','Mid-Market','Affordable'];
+  const allSegKeys = [...new Set([...segOrder, ...Object.keys(bySegment)])].filter(s=>bySegment[s]);
+  data.segmentLabels  = allSegKeys;
+  data.segmentRevs    = allSegKeys.map(s=>sumKey(bySegment[s]||[],'_sp'));
+  data.segmentUnits   = allSegKeys.map(s=>(bySegment[s]||[]).length);
+  data.segmentAvgPrice= allSegKeys.map((s,i)=>data.segmentUnits[i]?data.segmentRevs[i]/data.segmentUnits[i]:0);
+
   return data;
 }
 
@@ -1905,17 +1985,17 @@ async function fetchClassificationData(workbook) {
     const classRaw = XLSX.utils.sheet_to_json(classSheet, { header: 1 });
     console.log('[Pricing] Classification sheet rows 0-5:', JSON.stringify(classRaw.slice(0, 6)));
 
-    const classification = { homes: [], plots: [], lookup: {} };
+    const classification = { homes: [], plots: [], lookup: {}, segmentLookup: {} };
 
     // ── Detect column layout by scanning for "Homes" / "Plots" header cells ──
     // The sheet has "Homes" merged across some cols and "Plots" across others.
     // We scan all rows up to row 5 to find which column each section starts in.
-    const SKIP_WORDS = new Set(['homes','plots','class','name','s/n','sn','#','type','category','']);
+    const SKIP_WORDS = new Set(['homes','plots','class','name','s/n','sn','#','type','category','segment','']);
 
-    // Find the columns for: HomesClass, HomesName, PlotsClass, PlotsName
-    // by scanning for the "Class" / "Name" sub-headers under each section
-    let homesClassCol = 1, homesNameCol = 2;  // defaults from screenshot col B, C
-    let plotsClassCol = 4, plotsNameCol = 5;  // defaults from screenshot col E, F
+    // Find the columns for: HomesClass, HomesName, HomesSegment, PlotsClass, PlotsName
+    // by scanning for the "Class" / "Name" / "Segment" sub-headers under each section
+    let homesClassCol = 1, homesNameCol = 2, homesSegmentCol = -1;
+    let plotsClassCol = 4, plotsNameCol = 5, plotsSegmentCol = -1;
 
     // Scan for the row that has "Homes" and "Plots" labels to find column groups
     let homesCol = -1, plotsCol = -1;
@@ -1948,9 +2028,17 @@ async function fetchClassificationData(workbook) {
             plotsNameCol = c; foundPlotsName = true;
           }
         }
+        // NEW: detect Segment column (the new column added to Classification sheet)
+        if (s === 'segment' || s === 'tier' || s === 'market segment') {
+          if (homesCol >= 0 && c >= homesCol && c < (plotsCol >= 0 ? plotsCol : 999) && homesSegmentCol < 0) {
+            homesSegmentCol = c;
+          } else if (plotsCol >= 0 && c >= plotsCol && plotsSegmentCol < 0) {
+            plotsSegmentCol = c;
+          }
+        }
       });
     }
-    console.log('[Pricing] Classification cols — Homes:', homesClassCol, homesNameCol, '| Plots:', plotsClassCol, plotsNameCol);
+    console.log('[Pricing] Classification cols — Homes:', homesClassCol, homesNameCol, 'seg:', homesSegmentCol, '| Plots:', plotsClassCol, plotsNameCol, 'seg:', plotsSegmentCol);
 
     // ── Find first data row ───────────────────────────────────────────────────
     let dataStart = 3;
@@ -1964,11 +2052,9 @@ async function fetchClassificationData(workbook) {
     }
     console.log('[Pricing] Classification data starts row index', dataStart);
 
-    // ── Parse rows, carrying forward merged Class values ─────────────────────
-    // Merged cells in XLSX.js only populate the TOP cell; subsequent rows in the
-    // merge are empty. We carry the last non-empty class value forward.
-    let lastHomesClass = '';
-    let lastPlotsClass = '';
+    // ── Parse rows, carrying forward merged Class and Segment values ─────────
+    let lastHomesClass = '', lastPlotsClass = '';
+    let lastHomesSegment = 'Unclassified', lastPlotsSegment = 'Unclassified';
 
     for (let i = dataStart; i < classRaw.length; i++) {
       const row = classRaw[i];
@@ -1981,30 +2067,46 @@ async function fetchClassificationData(workbook) {
       if (row[plotsClassCol] && row[plotsClassCol].toString().trim()) {
         lastPlotsClass = row[plotsClassCol].toString().trim();
       }
+      // Update carried-forward segment values (new column — carry forward like class)
+      if (homesSegmentCol >= 0 && row[homesSegmentCol] && row[homesSegmentCol].toString().trim()) {
+        lastHomesSegment = row[homesSegmentCol].toString().trim();
+      }
+      if (plotsSegmentCol >= 0 && row[plotsSegmentCol] && row[plotsSegmentCol].toString().trim()) {
+        lastPlotsSegment = row[plotsSegmentCol].toString().trim();
+      }
 
       // Homes name column
       const homeName = row[homesNameCol] ? row[homesNameCol].toString().trim() : '';
       if (homeName && !SKIP_WORDS.has(homeName.toLowerCase())) {
-        classification.homes.push({ class: lastHomesClass, name: homeName });
-        // Register multiple lookup variants for fuzzy matching with Price Sheet
-        [homeName, homeName.toLowerCase(),
-         homeName.replace(/\s+/g, ' ').trim(),
-         homeName.replace(/[^a-z0-9]/gi, '').toLowerCase()
-        ].forEach(k => { if (k) classification.lookup[k] = 'Home'; });
+        classification.homes.push({ class: lastHomesClass, name: homeName, segment: lastHomesSegment });
+        const variants = [homeName, homeName.toLowerCase(),
+          homeName.replace(/\s+/g, ' ').trim(),
+          homeName.replace(/[^a-z0-9]/gi, '').toLowerCase()];
+        variants.forEach(k => {
+          if (k) {
+            classification.lookup[k] = 'Home';
+            classification.segmentLookup[k] = lastHomesSegment;
+          }
+        });
       }
 
       // Plots name column
       const plotName = row[plotsNameCol] ? row[plotsNameCol].toString().trim() : '';
       if (plotName && !SKIP_WORDS.has(plotName.toLowerCase())) {
-        classification.plots.push({ class: lastPlotsClass, name: plotName });
-        [plotName, plotName.toLowerCase(),
-         plotName.replace(/\s+/g, ' ').trim(),
-         plotName.replace(/[^a-z0-9]/gi, '').toLowerCase()
-        ].forEach(k => { if (k) classification.lookup[k] = 'Plot'; });
+        classification.plots.push({ class: lastPlotsClass, name: plotName, segment: lastPlotsSegment });
+        const variants = [plotName, plotName.toLowerCase(),
+          plotName.replace(/\s+/g, ' ').trim(),
+          plotName.replace(/[^a-z0-9]/gi, '').toLowerCase()];
+        variants.forEach(k => {
+          if (k) {
+            classification.lookup[k] = 'Plot';
+            classification.segmentLookup[k] = lastPlotsSegment;
+          }
+        });
       }
     }
 
-    console.log('[Pricing] Classification loaded:', classification.homes.length, 'homes,', classification.plots.length, 'plots');
+    console.log('[Pricing] Classification loaded:', classification.homes.length, 'homes,', classification.plots.length, 'plots | Segments:', [...new Set(Object.values(classification.segmentLookup))].join(', '));
     return classification;
 
   } catch (error) {
@@ -2332,6 +2434,7 @@ async function loadPricingIntelligence(workbook) {
     
     // Fetch all pricing data components
     CLASSIFICATION_DATA = await fetchClassificationData(workbook);
+    window._classificationData = CLASSIFICATION_DATA; // make accessible to enrichData
     INFLATION_DATA = await fetchInflationData(workbook);
     const priceSheetData = await fetchPriceSheet(workbook, CLASSIFICATION_DATA);
     
@@ -2505,6 +2608,41 @@ function renderCharts(d) {
   const maxR=d.propRevenue[0]?.v||1;
   d.propRevenue.slice(0,12).forEach((p,i)=>{tpEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl"><span class="rn">${i+1}</span>&nbsp;${p.k}</div><div class="sl-bw"><div class="sl-bf" style="width:${(p.v/maxR*100).toFixed(0)}%"></div></div><div class="sl-val">${fB(p.v)}<span style="color:var(--text3)"> (${d.propUnits[p.k]||0})</span></div></div>`;});
 
+  // ── SEGMENT BREAKDOWN ─────────────────────────────────────────────────────
+  // segmentBreakdown set by applyFilters/renderFromRows; fall back to computeAnalytics data
+  const segData = d.segmentBreakdown ||
+    (d.segmentLabels || []).map((s,i) => ({ segment:s, revenue:d.segmentRevs[i]||0, units:d.segmentUnits[i]||0 })).filter(s=>s.revenue>0);
+  const segColors = { 'Premium': C.red, 'Mid-Market': C.blue, 'Affordable': C.green, 'Unclassified': C.slate };
+  const activeSegs = d.activeSegments || [];
+  const isSegFiltered = activeSegs.length > 0;
+  const segBadge = document.getElementById('segment-mode-badge');
+  const segSub = document.getElementById('segment-chart-sub');
+  if (segBadge) {
+    segBadge.textContent = isSegFiltered ? activeSegs.join(' vs ') : 'All Segments';
+    segBadge.className = 'badge ' + (isSegFiltered ? 'br' : 'bg_');
+  }
+  if (segSub) segSub.textContent = isSegFiltered
+    ? 'Comparing: ' + activeSegs.join(', ') + ' — select more segments in the filter bar to cross-compare'
+    : 'Portfolio split across Premium · Mid-Market · Affordable · use Segment filter above to compare';
+  if (segData.length) {
+    const segLabels = segData.map(s=>s.segment);
+    const segBgColors = segLabels.map(s => segColors[s] || C.gray);
+    mkChart('c-segment-rev',{
+      type: 'bar',
+      data: { labels: segLabels, datasets:[{ label:'Revenue ₦B', data: segData.map(s=>+(s.revenue/1e9).toFixed(2)), backgroundColor: segBgColors, borderRadius:5, borderSkipped:false }] },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>'₦'+c.parsed.y.toFixed(2)+'B — '+segData[c.dataIndex].units+' units' }}},
+        scales:{ x:{ grid:{display:false} }, y:{ grid:{color:'rgba(0,0,0,0.04)'}, title:{display:true,text:'Revenue ₦B'}, ticks:{callback:v=>'₦'+v+'B'} }}}
+    });
+    mkChart('c-segment-units',{
+      type: 'bar',
+      data: { labels: segLabels, datasets:[{ label:'Units', data: segData.map(s=>s.units), backgroundColor: segBgColors, borderRadius:5, borderSkipped:false }] },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>c.parsed.y+' units — ₦'+(segData[c.dataIndex].revenue/1e9).toFixed(1)+'B' }}},
+        scales:{ x:{ grid:{display:false} }, y:{ grid:{color:'rgba(0,0,0,0.04)'}, title:{display:true,text:'Units sold'} }}}
+    });
+  }
+
   // ── REVENUE ──
   mkChart('c-stacked',{type:'bar',data:{labels:d.years,datasets:topComms.map((comm,i)=>({label:comm,data:d.years.map(y=>+((d.commYearMatrix[comm]?.[y]||0)/1e9).toFixed(2)),backgroundColor:[C.red,C.blue,C.green,C.purple,C.orange][i],borderRadius:3,borderSkipped:false}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
 
@@ -2660,114 +2798,214 @@ function updateFreshness(fromCache) {
 function setLoaderSub(msg) { const el=document.getElementById('loader-sub'); if(el) el.textContent=msg; }
 function setLoaderText(msg){ const el=document.getElementById('loader-text'); if(el) el.textContent=msg; }
 
+
 /* =====================================================
-   FILTER ENGINE
-   ===================================================== */
+   MULTI-SELECT FILTER SYSTEM
+   ===================================================== */
 let _allRows = null;
 
-function populateFilters(rows) {
-  const years = [...new Set(rows.map(r=>r._year).filter(Boolean))].sort();
-  const ySel  = document.getElementById('filterYear');
-  ySel.innerHTML = '<option value="all">All Years</option>';
-  years.forEach(y=>{ const o=document.createElement('option'); o.value=y; o.textContent=y; ySel.appendChild(o); });
+const _msState = { year: new Set(), segment: new Set(), community: new Set(), channel: new Set() };
 
-  const comms = [...new Set(rows.map(r=>r.community).filter(c=>c&&c!=='Unknown'))].sort();
-  const cSel  = document.getElementById('filterCommunity');
-  cSel.innerHTML = '<option value="all">All Communities</option>';
-  comms.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; cSel.appendChild(o); });
-
-  const ags  = [...new Set(rows.map(r=>r.agentGroup).filter(a=>a&&a!=='Unknown'))].sort();
-  const aSel = document.getElementById('filterAgent');
-  aSel.innerHTML = '<option value="all">All Channels</option>';
-  ags.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; aSel.appendChild(o); });
-
-  const risks = ['Collected','Near Completion','Low Risk','Medium Risk','High Risk'].filter(r=>rows.some(row=>row.collectionRisk===r));
-  const rSel  = document.getElementById('filterRisk');
-  rSel.innerHTML = '<option value="all">All Risk Tiers</option>';
-  risks.forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; rSel.appendChild(o); });
-
-  const phases = [...new Set(rows.map(r=>r.phase).filter(p=>p&&p!=='nan'&&p!==''))].sort();
-  const pSel   = document.getElementById('filterPhase');
-  pSel.innerHTML = '<option value="all">All Phases</option>';
-  phases.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; pSel.appendChild(o); });
+function toggleMS(key) {
+  const panel = document.getElementById('ms-' + key + '-panel');
+  const btn   = document.getElementById('ms-' + key + '-btn');
+  const isOpen = panel.classList.contains('open');
+  document.querySelectorAll('.ms-panel').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.ms-btn').forEach(b => b.classList.remove('open'));
+  if (!isOpen) { panel.classList.add('open'); btn.classList.add('open'); }
 }
 
-// NEW: Handles Quarter logic based on Year selection
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ms-wrap')) {
+    document.querySelectorAll('.ms-panel').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.ms-btn').forEach(b => b.classList.remove('open'));
+  }
+});
+
+function msToggleAll(key) {
+  const allCb = document.getElementById('ms-' + key + '-all');
+  const panel = document.getElementById('ms-' + key + '-panel');
+  panel.querySelectorAll('input[type=checkbox]:not(#ms-' + key + '-all)').forEach(cb => { cb.checked = allCb.checked; });
+  _msState[key] = new Set();
+  updateMSLabel(key);
+  applyFilters();
+}
+
+function msOptionChange(key, value, checked) {
+  if (checked) _msState[key].add(value);
+  else _msState[key].delete(value);
+  const panel = document.getElementById('ms-' + key + '-panel');
+  const total = panel.querySelectorAll('input[type=checkbox]:not(#ms-' + key + '-all)').length;
+  const cnt   = panel.querySelectorAll('input[type=checkbox]:not(#ms-' + key + '-all):checked').length;
+  const allCb = document.getElementById('ms-' + key + '-all');
+  allCb.checked = cnt === total;
+  allCb.indeterminate = cnt > 0 && cnt < total;
+  updateMSLabel(key);
+  if (key === 'year') updateQuarterDropdown();
+  applyFilters();
+}
+
+function updateMSLabel(key) {
+  const sel = _msState[key];
+  const btn = document.getElementById('ms-' + key + '-btn');
+  const lbl = document.getElementById('ms-' + key + '-label');
+  const defaults = { year:'All Years', segment:'All Segments', community:'All Communities', channel:'All Channels' };
+  if (sel.size === 0) {
+    lbl.textContent = defaults[key];
+    btn.classList.remove('active');
+  } else if (sel.size === 1) {
+    lbl.textContent = [...sel][0];
+    btn.classList.add('active');
+  } else {
+    const noun = defaults[key].replace('All ','');
+    lbl.innerHTML = noun + ' <span class="ms-badge">' + sel.size + '</span>';
+    btn.classList.add('active');
+  }
+}
+
+function buildMSOptions(key, values) {
+  const panel = document.getElementById('ms-' + key + '-panel');
+  panel.querySelectorAll('.ms-opt:not(.ms-all)').forEach(el => el.remove());
+  values.forEach(v => {
+    const safeId = 'ms-' + key + '-' + String(v).replace(/[^a-z0-9]/gi,'_');
+    const safeVal = String(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const div = document.createElement('div');
+    div.className = 'ms-opt';
+    div.innerHTML = '<input type="checkbox" id="' + safeId + '" checked onchange="msOptionChange(\'' + key + '\',\'' + safeVal + '\',this.checked)"><label for="' + safeId + '">' + v + '</label>';
+    panel.appendChild(div);
+  });
+  _msState[key] = new Set();
+  updateMSLabel(key);
+}
+
+function populateFilters(rows) {
+  const years = [...new Set(rows.map(r=>r._year).filter(Boolean))].sort();
+  buildMSOptions('year', years);
+
+  const segments = [...new Set(rows.map(r=>r._segment).filter(s=>s&&s!=='Unclassified'))].sort();
+  // Always include the 3 known segments first, then any extras from data
+  const segOrder = ['Premium','Mid-Market','Affordable'];
+  const allSegs = [...new Set([...segOrder.filter(s=>segments.includes(s)||rows.some(r=>r._segment===s)), ...segments])];
+  buildMSOptions('segment', allSegs);
+
+  const comms = [...new Set(rows.map(r=>r.community).filter(c=>c&&c!=='Unknown'))].sort();
+  buildMSOptions('community', comms);
+
+  const ags = [...new Set(rows.map(r=>r.agentGroup).filter(a=>a&&a!=='Unknown'))].sort();
+  buildMSOptions('channel', ags);
+
+  const risks = ['Collected','Near Completion','Low Risk','Medium Risk','High Risk'].filter(r=>rows.some(row=>row.collectionRisk===r));
+  const rSel = document.getElementById('filterRisk');
+  rSel.innerHTML = '<option value="all">All Risk Tiers</option>';
+  risks.forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; rSel.appendChild(o); });
+
+  const phases = [...new Set(rows.map(r=>r.phase).filter(p=>p&&p!=='nan'&&p!==''))].sort();
+  const pSel = document.getElementById('filterPhase');
+  pSel.innerHTML = '<option value="all">All Phases</option>';
+  phases.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; pSel.appendChild(o); });
+}
+
 function updateQuarterDropdown() {
-  const yr = document.getElementById('filterYear').value;
+  const yrs = _msState.year;
   const qSel = document.getElementById('filterQuarter');
-  
-  if (yr === 'all') {
+  if (yrs.size !== 1) {
     qSel.value = 'all';
     qSel.disabled = true;
   } else {
+    const yr = [...yrs][0];
     qSel.disabled = false;
-    qSel.innerHTML = `
-      <option value="all">All Quarters</option>
-      <option value="Q1">Q1 ${yr}</option>
-      <option value="Q2">Q2 ${yr}</option>
-      <option value="Q3">Q3 ${yr}</option>
-      <option value="Q4">Q4 ${yr}</option>
-    `;
+    qSel.innerHTML = '<option value="all">All Quarters</option>' +
+      ['Q1','Q2','Q3','Q4'].map(q=>'<option value="'+q+'">'+q+' '+yr+'</option>').join('');
   }
+}
+
+function msGetValues(key) {
+  // Returns array of selected values, or null meaning "no filter / all"
+  const s = _msState[key];
+  return s.size > 0 ? [...s] : null;
 }
 
 function applyFilters() {
-  if(!_allRows) return;
-  const yr   = document.getElementById('filterYear').value;
-  const qtr  = document.getElementById('filterQuarter').value; 
-  const com  = document.getElementById('filterCommunity').value;
-  const ag   = document.getElementById('filterAgent').value;
-  const risk = document.getElementById('filterRisk').value;
-  const ph   = document.getElementById('filterPhase').value;
+  if (!_allRows) return;
+  const yrs  = msGetValues('year');
+  const segs = msGetValues('segment');
+  const coms = msGetValues('community');
+  const ags  = msGetValues('channel');
+  const qtr  = document.getElementById('filterQuarter').value;
+  const risk = document.getElementById('filterRisk').value;
+  const ph   = document.getElementById('filterPhase').value;
 
-  let filtered = _allRows;
-  if(yr   !== 'all') filtered = filtered.filter(r=>r._year === yr);
-  if(qtr  !== 'all') filtered = filtered.filter(r=>r._quarter === qtr); 
-  if(com  !== 'all') filtered = filtered.filter(r=>r.community === com);
-  if(ag   !== 'all') filtered = filtered.filter(r=>r.agentGroup === ag);
-  if(risk !== 'all') filtered = filtered.filter(r=>r.collectionRisk === risk);
-  if(ph   !== 'all') filtered = filtered.filter(r=>r.phase === ph);
+  let filtered = _allRows;
+  if (yrs)  filtered = filtered.filter(r => yrs.includes(r._year));
+  if (qtr  !== 'all') filtered = filtered.filter(r => r._quarter === qtr);
+  if (segs) filtered = filtered.filter(r => segs.includes(r._segment));
+  if (coms) filtered = filtered.filter(r => coms.includes(r.community));
+  if (ags)  filtered = filtered.filter(r => ags.includes(r.agentGroup));
+  if (risk !== 'all') filtered = filtered.filter(r => r.collectionRisk === risk);
+  if (ph   !== 'all') filtered = filtered.filter(r => r.phase === ph);
 
-  const isFiltered = (yr!=='all'||qtr!=='all'||com!=='all'||ag!=='all'||risk!=='all'||ph!=='all');
-  document.getElementById('resetBtn').style.display = isFiltered ? '' : 'none';
+  const isFiltered = (yrs||segs||coms||ags||qtr!=='all'||risk!=='all'||ph!=='all');
+  document.getElementById('resetBtn').style.display = isFiltered ? '' : 'none';
 
-  const total=_allRows.length, shown=filtered.length;
-  document.getElementById('filterCount').textContent = isFiltered
-    ? `Showing ${shown.toLocaleString()} of ${total.toLocaleString()} records`
-    : `${total.toLocaleString()} records`;
+  const total = _allRows.length, shown = filtered.length;
+  document.getElementById('filterCount').textContent = isFiltered
+    ? 'Showing ' + shown.toLocaleString() + ' of ' + total.toLocaleString() + ' records'
+    : total.toLocaleString() + ' records';
 
-  const analytics = computeAnalytics(filtered);
+  // Segment comparison mode: if multiple segments selected, add segmented breakdown to analytics
+  const analytics = computeAnalytics(filtered);
+  analytics.currentYearFilter  = yrs && yrs.length === 1 ? yrs[0] : 'all';
+  analytics.currentQtrFilter   = qtr;
+  analytics.activeSegments     = segs || [];
+  analytics.activeYears        = yrs  || [];
+  analytics.activeCommunities  = coms || [];
 
-  // NEW: Inject Quarterly Data for the Chart (retains all 4 quarters for visual context)
-  analytics.currentYearFilter = yr;
-  analytics.currentQtrFilter = qtr;
-  
-  if (yr !== 'all') {
-      // Re-filter but IGNORE the quarter filter so we can draw all 4 bars
-      let yearBase = _allRows.filter(r => r._year === yr);
-      if(com !== 'all') yearBase = yearBase.filter(r=>r.community === com);
-      if(ag  !== 'all') yearBase = yearBase.filter(r=>r.agentGroup === ag);
-      if(risk!== 'all') yearBase = yearBase.filter(r=>r.collectionRisk === risk);
-      if(ph  !== 'all') yearBase = yearBase.filter(r=>r.phase === ph);
-      
-      const qRev = { Q1: 0, Q2: 0, Q3: 0, Q4: 0 };
-      yearBase.forEach(r => {
-         if (r._quarter && qRev[r._quarter] !== undefined) {
-             qRev[r._quarter] += (r._sp || 0);
-         }
-      });
-      analytics.quarterlyRev = [qRev['Q1'], qRev['Q2'], qRev['Q3'], qRev['Q4']];
+  // Quarterly revenue (when a single year is selected)
+  if (yrs && yrs.length === 1) {
+    let yearBase = _allRows.filter(r => r._year === yrs[0]);
+    if (segs) yearBase = yearBase.filter(r => segs.includes(r._segment));
+    if (coms) yearBase = yearBase.filter(r => coms.includes(r.community));
+    if (ags)  yearBase = yearBase.filter(r => ags.includes(r.agentGroup));
+    if (risk !== 'all') yearBase = yearBase.filter(r => r.collectionRisk === risk);
+    if (ph   !== 'all') yearBase = yearBase.filter(r => r.phase === ph);
+    const qRev = { Q1:0, Q2:0, Q3:0, Q4:0 };
+    yearBase.forEach(r => { if (r._quarter && qRev[r._quarter] !== undefined) qRev[r._quarter] += (r._sp||0); });
+    analytics.quarterlyRev = [qRev.Q1, qRev.Q2, qRev.Q3, qRev.Q4];
   }
 
-  renderKPIs(analytics);
-  renderCharts(analytics);
+  // Segment breakdown for cross-comparison (always compute when segments are active)
+  if (segs && segs.length > 1) {
+    analytics.segmentBreakdown = segs.map(seg => {
+      const segRows = filtered.filter(r => r._segment === seg);
+      return { segment: seg, revenue: segRows.reduce((s,r)=>s+(r._sp||0),0), units: segRows.length };
+    });
+  } else if (!segs) {
+    // Show all segments breakdown for context
+    const allSegs = [...new Set(_allRows.map(r=>r._segment).filter(Boolean))];
+    analytics.segmentBreakdown = allSegs.map(seg => {
+      const segRows = filtered.filter(r => r._segment === seg);
+      return { segment: seg, revenue: segRows.reduce((s,r)=>s+(r._sp||0),0), units: segRows.length };
+    }).filter(s=>s.revenue>0);
+  }
+
+  renderKPIs(analytics);
+  renderCharts(analytics);
   try { renderInsightEngine(analytics, filtered); } catch(e) { console.warn('[insights] filter render failed:', e); }
 }
+
 function resetFilters() {
-  ['filterYear','filterCommunity','filterAgent','filterRisk','filterPhase']
-    .forEach(id=>{ document.getElementById(id).value='all'; });
-  applyFilters();
+  // Reset all multi-select filters
+  ['year','segment','community','channel'].forEach(key => {
+    const panel = document.getElementById('ms-' + key + '-panel');
+    if (panel) panel.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = true; cb.indeterminate = false; });
+    _msState[key] = new Set();
+    updateMSLabel(key);
+  });
+  document.getElementById('filterQuarter').value = 'all';
+  document.getElementById('filterQuarter').disabled = true;
+  document.getElementById('filterRisk').value = 'all';
+  document.getElementById('filterPhase').value = 'all';
+  applyFilters();
 }
 
 /* =====================================================
@@ -2778,11 +3016,18 @@ function renderFromRows(rows, fromCache) {
   populateFilters(rows); // Now filters will successfully see the years!
   
   const analytics = computeAnalytics(rows);
-  // Make analytics accessible to renderPricingCharts (performance matrix X-axis)
   window._lastAnalytics = analytics;
-  // so they draw the line chart correctly on the initial load without crashing!
   analytics.currentYearFilter = 'all';
   analytics.currentQtrFilter = 'all';
+  analytics.activeSegments = [];
+  analytics.activeYears = [];
+  analytics.activeCommunities = [];
+  // Always compute full segment breakdown on initial load
+  const allSegKeys = [...new Set(rows.map(r=>r._segment).filter(Boolean))];
+  analytics.segmentBreakdown = allSegKeys.map(seg => {
+    const segRows = rows.filter(r => r._segment === seg);
+    return { segment: seg, revenue: segRows.reduce((s,r)=>s+(r._sp||0),0), units: segRows.length };
+  }).filter(s=>s.revenue>0);
 
   renderKPIs(analytics);
   renderCharts(analytics);
@@ -2902,7 +3147,8 @@ async function downloadAIReport() {
   btn.disabled = true;
 
   try {
-    const yr = document.getElementById('filterYear').value;
+    const yrs = [...(_msState.year || new Set())];
+    const yr = yrs.length === 1 ? yrs[0] : 'all';
     const qtr = document.getElementById('filterQuarter').value;
     const periodStr = yr === 'all' ? 'All Years' : (qtr === 'all' ? yr : yr + ' ' + qtr);
 
@@ -5914,27 +6160,36 @@ function renderCMAMatrixCharts() {
     type: 'bar',
     data: {
       labels: sorted.map(p => p.name.length > 24 ? p.name.substring(0, 22) + '…' : p.name),
-      datasets: [{
-        label: 'TCO price (₦M)',
-        data: sorted.map(p => +(p.price / 1e6).toFixed(1)),
-        backgroundColor: sorted.map(p => p.isMixta ? 'rgba(192,57,43,0.8)' : 'rgba(243,156,18,0.55)'),
-        borderColor:     sorted.map(p => p.isMixta ? '#922B21' : '#D68910'),
-        borderWidth: 1, borderRadius: 4
-      }]
+      datasets: [
+        {
+          label: 'Mixta (current price)',
+          data: sorted.map(p => p.isMixta ? +(p.price / 1e6).toFixed(1) : null),
+          backgroundColor: 'rgba(192,57,43,0.85)',
+          borderColor: '#922B21',
+          borderWidth: 1, borderRadius: 4, borderSkipped: false
+        },
+        {
+          label: 'Competitors (TCO-normalised)',
+          data: sorted.map(p => !p.isMixta ? +(p.price / 1e6).toFixed(1) : null),
+          backgroundColor: 'rgba(243,156,18,0.55)',
+          borderColor: '#D68910',
+          borderWidth: 1, borderRadius: 4, borderSkipped: false
+        }
+      ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: {
-        legend: { display: false },
+        legend: { display: true, position: 'top', labels: { font:{size:10}, boxWidth:10, filter: item => item.label !== undefined } },
         tooltip: {
           callbacks: {
             label: ctx => {
               const p = sorted[ctx.dataIndex];
+              if (ctx.parsed.y === null) return null;
               return [
-                ' Price: ₦' + ctx.parsed.y.toFixed(1) + 'M (TCO-normalised)',
+                ' ' + (p.isMixta ? '🔴 Mixta' : '🟡 Competitor') + ': ₦' + ctx.parsed.y.toFixed(1) + 'M (TCO)',
                 p.sqm  ? ' Size: ' + p.sqm + 'm²' : '',
                 p.ppsm ? ' ₦/m²: ₦' + Math.round(p.ppsm / 1000) + 'K' : '',
-                p.isMixta ? ' ✅ Mixta product' : ' Competitor',
                 p.notes ? ' ' + p.notes.substring(0, 60) : ''
               ].filter(Boolean);
             }
@@ -5943,7 +6198,7 @@ function renderCMAMatrixCharts() {
       },
       scales: {
         x: { ticks: { font:{size:9}, maxRotation: 45 }, grid: { display: false } },
-        y: { title: { display: true, text: '₦M (TCO-normalised)' }, ticks: { callback: v => '₦' + v + 'M' }, grid: { color: 'rgba(0,0,0,0.04)' } }
+        y: { title: { display: true, text: '₦M (TCO-normalised, fully finished equiv.)' }, ticks: { callback: v => '₦' + v + 'M' }, grid: { color: 'rgba(0,0,0,0.04)' } }
       }
     }
   });
