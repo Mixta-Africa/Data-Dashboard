@@ -2578,30 +2578,90 @@ function renderKPIs(d) {
    RENDER CHARTS
    ===================================================== */
 function renderCharts(d) {
+  const cmp = d.comparison || { mode:'none', series:[], years:[] };
+  const isComp = cmp.mode !== 'none' && cmp.series.length > 1;
   const commColors = [C.red,C.blue,C.green,C.purple,C.orange,C.teal,C.amber,C.slate];
   const commRevSorted = d.communities.map((c,i)=>({c,r:d.commRevenue[i]})).sort((a,b)=>b.r-a.r);
   const topComms = commRevSorted.slice(0,Math.min(5,commRevSorted.length)).map(x=>x.c);
 
- // ── OVERVIEW ──
-  // DYNAMIC CHART: Line for 'All Years', Bar for specific year
-  if (d.currentYearFilter === 'all') {
-    mkChart('c-revyear',{type:'line',data:{labels:d.years,datasets:[{label:'Revenue ₦B',data:d.revByYear.map(v=>+(v/1e9).toFixed(2)),borderColor:C.red,backgroundColor:'rgba(192,57,43,0.07)',fill:true,tension:0.4,borderWidth:2.5,pointBackgroundColor:C.red,pointRadius:4,pointHoverRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
-    document.querySelector('#c-revyear').parentElement.previousElementSibling.querySelector('.cs').textContent = 'Annual total selling price · ₦ Billions';
-  } else {
-    const qLabels = ['Q1', 'Q2', 'Q3', 'Q4'];
-    const activeQ = d.currentQtrFilter;
-    // Highlight logic: Red if 'all' or if it matches the specific quarter. Gray otherwise.
-    const bgColors = qLabels.map(q => (activeQ === 'all' || activeQ === q) ? C.red : '#E0E0E8');
-    
-    mkChart('c-revyear',{type:'bar',data:{labels:qLabels,datasets:[{label:'Revenue ₦B',data:d.quarterlyRev.map(v=>+(v/1e9).toFixed(2)),backgroundColor:bgColors,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
-    document.querySelector('#c-revyear').parentElement.previousElementSibling.querySelector('.cs').textContent = `Quarterly breakdown for ${d.currentYearFilter} · ₦ Billions`;
+  // ── HELPERS ──────────────────────────────────────────────────────────────
+  // Build Chart.js datasets from comparison series for a time-series chart
+  function compDatasets(key, scaleFn, fillFirst) {
+    return cmp.series.map((s,i) => ({
+      label: s.label,
+      data: (key==='rev' ? s.revByYear : s.unitsByYear).map(v=>+(scaleFn(v)).toFixed(2)),
+      borderColor: s.color,
+      backgroundColor: i===0&&fillFirst ? s.color.replace(')',',0.08)').replace('rgb','rgba') : 'transparent',
+      borderWidth: 2.5, tension: 0.4, fill: i===0&&fillFirst,
+      pointRadius: 3, pointHoverRadius: 6, pointBackgroundColor: s.color
+    }));
+  }
+  // Build grouped-bar datasets from comparison series for a single-period bar
+  function compGroupedBar(key, scaleFn) {
+    return cmp.series.map(s => ({
+      label: s.label,
+      data: [+(scaleFn(key==='rev' ? s.totalRev : s.totalUnits)).toFixed(2)],
+      backgroundColor: s.color, borderRadius:5, borderSkipped:false
+    }));
+  }
+  const compYAxisLabel = isComp && cmp.dimension==='year' ? 'Quarter' : 'Year';
+  const compXLabels = isComp ? cmp.series[0].years : d.years;
+
+  // sub-label helper
+  function setChartSub(canvasId, text) {
+    try {
+      const cs = document.querySelector('#'+canvasId)?.closest('.cc')?.querySelector('.cs');
+      if(cs) cs.textContent = text;
+    } catch(e){}
   }
 
-  mkChart('c-commdonut',{type:'doughnut',data:{labels:commRevSorted.map(x=>x.c),datasets:[{data:commRevSorted.map(x=>+(x.r/1e9).toFixed(2)),backgroundColor:commColors.slice(0,commRevSorted.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'64%',plugins:{tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B'}}}}});
-  const legComm=document.getElementById('leg-comm'); legComm.innerHTML='';
-  commRevSorted.forEach((x,i)=>{legComm.innerHTML+=`<div class="li"><div class="ld" style="background:${commColors[i]}"></div>${x.c}: ₦${(x.r/1e9).toFixed(1)}B</div>`;});
+  // ── OVERVIEW — Revenue trend ─────────────────────────────────────────────
+  if (isComp) {
+    // Comparison mode: multi-line, one per dimension value
+    const subLabel = cmp.series.map(s=>s.label).join(' vs ') + ' — Revenue ₦B';
+    mkChart('c-revyear',{
+      type:'line',
+      data:{ labels: compXLabels, datasets: compDatasets('rev', v=>v/1e9, true) },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{ legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},
+          tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},
+        scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}
+    });
+    setChartSub('c-revyear', subLabel);
+  } else if (d.currentYearFilter === 'all') {
+    mkChart('c-revyear',{type:'line',data:{labels:d.years,datasets:[{label:'Revenue ₦B',data:d.revByYear.map(v=>+(v/1e9).toFixed(2)),borderColor:C.red,backgroundColor:'rgba(192,57,43,0.07)',fill:true,tension:0.4,borderWidth:2.5,pointBackgroundColor:C.red,pointRadius:4,pointHoverRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
+    setChartSub('c-revyear','Annual total selling price · ₦ Billions');
+  } else {
+    const qLabels=['Q1','Q2','Q3','Q4'], activeQ=d.currentQtrFilter;
+    const bgColors=qLabels.map(q=>(activeQ==='all'||activeQ===q)?C.red:'#E0E0E8');
+    mkChart('c-revyear',{type:'bar',data:{labels:qLabels,datasets:[{label:'Revenue ₦B',data:(d.quarterlyRev||[0,0,0,0]).map(v=>+(v/1e9).toFixed(2)),backgroundColor:bgColors,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
+    setChartSub('c-revyear',`Quarterly breakdown for ${d.currentYearFilter} · ₦ Billions`);
+  }
 
-  mkChart('c-agentgrp',{type:'bar',data:{labels:d.agentGroups,datasets:[{label:'Revenue ₦B',data:d.agentGrpRev.map(v=>+(v/1e9).toFixed(2)),backgroundColor:d.agentGroups.map((_,i)=>i===0?C.red:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.x.toFixed(1)+'B ('+d.agentGrpCnt[c.dataIndex]+' units)'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}},y:{grid:{display:false}}}}});
+  // ── OVERVIEW — Community donut or comparison bar ──────────────────────────
+  if (isComp && cmp.dimension==='community') {
+    // Comparing communities: show stacked revenue by year per community
+    mkChart('c-commdonut',{type:'bar',data:{labels:compXLabels,datasets:compDatasets('rev',v=>v/1e9,false)},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},
+        scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>'₦'+v+'B'},grid:{color:'rgba(0,0,0,0.04)'}}}
+      }});
+    const legComm=document.getElementById('leg-comm'); if(legComm) legComm.innerHTML = cmp.series.map((s,i)=>`<div class="li"><div class="ld" style="background:${s.color}"></div>${s.label}</div>`).join('');
+  } else {
+    mkChart('c-commdonut',{type:'doughnut',data:{labels:commRevSorted.map(x=>x.c),datasets:[{data:commRevSorted.map(x=>+(x.r/1e9).toFixed(2)),backgroundColor:commColors.slice(0,commRevSorted.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'64%',plugins:{tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B'}}}}});
+    const legComm=document.getElementById('leg-comm'); if(legComm){legComm.innerHTML=''; commRevSorted.forEach((x,i)=>{legComm.innerHTML+=`<div class="li"><div class="ld" style="background:${commColors[i]}"></div>${x.c}: ₦${(x.r/1e9).toFixed(1)}B</div>`;});}
+  }
+
+  // ── OVERVIEW — Channel bars ───────────────────────────────────────────────
+  if (isComp && cmp.dimension==='channel') {
+    mkChart('c-agentgrp',{type:'line',data:{labels:compXLabels,datasets:compDatasets('rev',v=>v/1e9,false)},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},
+        scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{ticks:{callback:v=>'₦'+v+'B'},grid:{color:'rgba(0,0,0,0.04)'}}}}
+    });
+  } else {
+    mkChart('c-agentgrp',{type:'bar',data:{labels:d.agentGroups,datasets:[{label:'Revenue ₦B',data:d.agentGrpRev.map(v=>+(v/1e9).toFixed(2)),backgroundColor:d.agentGroups.map((_,i)=>i===0?C.red:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.x.toFixed(1)+'B ('+d.agentGrpCnt[c.dataIndex]+' units)'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}},y:{grid:{display:false}}}}});
+  }
 
   mkChart('c-finish',{type:'bar',data:{labels:d.finishTypes,datasets:[{label:'Avg Price',data:d.finishAvg.map(v=>+(v/1e6).toFixed(0)),backgroundColor:d.finishTypes.map((_,i)=>i===0?C.red:i===1?C.red2:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(0)+'M avg ('+d.finishUnits[c.dataIndex]+' units)'}}},scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'M'}}}}});
 
@@ -2610,184 +2670,130 @@ function renderCharts(d) {
   d.propRevenue.slice(0,12).forEach((p,i)=>{tpEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl"><span class="rn">${i+1}</span>&nbsp;${p.k}</div><div class="sl-bw"><div class="sl-bf" style="width:${(p.v/maxR*100).toFixed(0)}%"></div></div><div class="sl-val">${fB(p.v)}<span style="color:var(--text3)"> (${d.propUnits[p.k]||0})</span></div></div>`;});
 
   // ── SEGMENT BREAKDOWN ─────────────────────────────────────────────────────
-  // segmentBreakdown set by applyFilters/renderFromRows; fall back to computeAnalytics data
-  const segData = d.segmentBreakdown ||
-    (d.segmentLabels || []).map((s,i) => ({ segment:s, revenue:d.segmentRevs[i]||0, units:d.segmentUnits[i]||0 })).filter(s=>s.revenue>0);
-  const segColors = { 'Premium': C.red, 'Mid-Market': C.blue, 'Affordable': C.green, 'Unclassified': C.slate };
-  const activeSegs = d.activeSegments || [];
-  const isSegFiltered = activeSegs.length > 0;
-  const segBadge = document.getElementById('segment-mode-badge');
-  const segSub = document.getElementById('segment-chart-sub');
-  if (segBadge) {
-    segBadge.textContent = isSegFiltered ? activeSegs.join(' vs ') : 'All Segments';
-    segBadge.className = 'badge ' + (isSegFiltered ? 'br' : 'bg_');
-  }
-  if (segSub) segSub.textContent = isSegFiltered
-    ? 'Comparing: ' + activeSegs.join(', ') + ' — select more segments in the filter bar to cross-compare'
-    : 'Portfolio split across Premium · Mid-Market · Affordable · use Segment filter above to compare';
-  if (segData.length) {
-    const segLabels = segData.map(s=>s.segment);
-    const segBgColors = segLabels.map(s => segColors[s] || C.gray);
-    mkChart('c-segment-rev',{
-      type: 'bar',
-      data: { labels: segLabels, datasets:[{ label:'Revenue ₦B', data: segData.map(s=>+(s.revenue/1e9).toFixed(2)), backgroundColor: segBgColors, borderRadius:5, borderSkipped:false }] },
-      options:{ responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>'₦'+c.parsed.y.toFixed(2)+'B — '+segData[c.dataIndex].units+' units' }}},
-        scales:{ x:{ grid:{display:false} }, y:{ grid:{color:'rgba(0,0,0,0.04)'}, title:{display:true,text:'Revenue ₦B'}, ticks:{callback:v=>'₦'+v+'B'} }}}
-    });
-    mkChart('c-segment-units',{
-      type: 'bar',
-      data: { labels: segLabels, datasets:[{ label:'Units', data: segData.map(s=>s.units), backgroundColor: segBgColors, borderRadius:5, borderSkipped:false }] },
-      options:{ responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>c.parsed.y+' units — ₦'+(segData[c.dataIndex].revenue/1e9).toFixed(1)+'B' }}},
-        scales:{ x:{ grid:{display:false} }, y:{ grid:{color:'rgba(0,0,0,0.04)'}, title:{display:true,text:'Units sold'} }}}
-    });
+  const segData = d.segmentBreakdown || (d.segmentLabels||[]).map((s,i)=>({segment:s,revenue:d.segmentRevs[i]||0,units:d.segmentUnits[i]||0})).filter(s=>s.revenue>0);
+  const segColors={'Premium':C.red,'Mid-Market':C.blue,'Affordable':C.green,'Unclassified':C.slate};
+  const activeSegs = d.activeSegments||[];
+  const segBadge=document.getElementById('segment-mode-badge');
+  const segSub=document.getElementById('segment-chart-sub');
+  if(segBadge){segBadge.textContent=activeSegs.length>1?activeSegs.join(' vs '):'All Segments';segBadge.className='badge '+(activeSegs.length>1?'br':'bg_');}
+  if(segSub) segSub.textContent=activeSegs.length>1?'Comparing: '+activeSegs.join(', '):' Portfolio split · use Segment filter to compare';
+  if(segData.length){
+    const segLabels=segData.map(s=>s.segment);
+    const segBgColors=segLabels.map(s=>segColors[s]||C.gray);
+    if(isComp && cmp.dimension==='segment'){
+      // Segment comparison: multi-line over time
+      mkChart('c-segment-rev',{type:'line',data:{labels:compXLabels,datasets:compDatasets('rev',v=>v/1e9,false)},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{ticks:{callback:v=>'₦'+v+'B'},grid:{color:'rgba(0,0,0,0.04)'}}}}});
+      mkChart('c-segment-units',{type:'line',data:{labels:compXLabels,datasets:compDatasets('units',v=>v,false)},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y+' units'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'}}}}});
+    } else {
+      mkChart('c-segment-rev',{type:'bar',data:{labels:segLabels,datasets:[{label:'Revenue ₦B',data:segData.map(s=>+(s.revenue/1e9).toFixed(2)),backgroundColor:segBgColors,borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(2)+'B — '+segData[c.dataIndex].units+' units'}}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},title:{display:true,text:'Revenue ₦B'},ticks:{callback:v=>'₦'+v+'B'}}}}});
+      mkChart('c-segment-units',{type:'bar',data:{labels:segLabels,datasets:[{label:'Units',data:segData.map(s=>s.units),backgroundColor:segBgColors,borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+' units'}}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},title:{display:true,text:'Units sold'}}}}});
+    }
   }
 
-  // ── REVENUE ──
-  mkChart('c-stacked',{type:'bar',data:{labels:d.years,datasets:topComms.map((comm,i)=>({label:comm,data:d.years.map(y=>+((d.commYearMatrix[comm]?.[y]||0)/1e9).toFixed(2)),backgroundColor:[C.red,C.blue,C.green,C.purple,C.orange][i],borderRadius:3,borderSkipped:false}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
-
-  mkChart('c-volprice',{type:'bar',data:{labels:d.years,datasets:[{label:'Units',data:d.unitsByYear,backgroundColor:C.red3,borderRadius:4,borderSkipped:false,yAxisID:'y'},{label:'Avg Price ₦M',data:d.avgPriceByYear.map(v=>+(v/1e6).toFixed(1)),type:'line',borderColor:C.red,backgroundColor:'transparent',borderWidth:2,tension:0.4,pointRadius:3,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}}},scales:{x:{grid:{display:false}},y:{position:'left',grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' u'}},y1:{position:'right',grid:{display:false},ticks:{callback:v=>'₦'+v+'M'}}}}});
+  // ── REVENUE TAB ──────────────────────────────────────────────────────────
+  // Stacked community chart: comparison mode → multi-line per dimension
+  if (isComp) {
+    mkChart('c-stacked',{type:'line',data:{labels:compXLabels,datasets:compDatasets('rev',v=>v/1e9,false)},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},
+        scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}
+    });
+    // Volume: comparison units over time
+    mkChart('c-volprice',{type:'line',data:{labels:compXLabels,datasets:compDatasets('units',v=>v,false)},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y+' units'}}},
+        scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' u'}}}}
+    });
+  } else {
+    mkChart('c-stacked',{type:'bar',data:{labels:d.years,datasets:topComms.map((comm,i)=>({label:comm,data:d.years.map(y=>+((d.commYearMatrix[comm]?.[y]||0)/1e9).toFixed(2)),backgroundColor:[C.red,C.blue,C.green,C.purple,C.orange][i],borderRadius:3,borderSkipped:false}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
+    mkChart('c-volprice',{type:'bar',data:{labels:d.years,datasets:[{label:'Units',data:d.unitsByYear,backgroundColor:C.red3,borderRadius:4,borderSkipped:false,yAxisID:'y'},{label:'Avg Price ₦M',data:d.avgPriceByYear.map(v=>+(v/1e6).toFixed(1)),type:'line',borderColor:C.red,backgroundColor:'transparent',borderWidth:2,tension:0.4,pointRadius:3,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}}},scales:{x:{grid:{display:false}},y:{position:'left',grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' u'}},y1:{position:'right',grid:{display:false},ticks:{callback:v=>'₦'+v+'M'}}}}});
+  }
 
   mkChart('c-unittype',{type:'bar',data:{labels:d.unitTypes,datasets:[{label:'Revenue',data:d.unitTypeRevs.map(v=>+(v/1e9).toFixed(2)),backgroundColor:d.unitTypes.map((_,i)=>i===0?C.red:i===1?C.red2:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.x.toFixed(1)+'B'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}},y:{grid:{display:false},ticks:{font:{size:9.5}}}}}});
 
   const bdrColors=[C.red,C.red2,C.blue,C.green,C.purple,C.amber];
   mkChart('c-bedroom',{type:'doughnut',data:{labels:d.bedroomLabels.map(b=>b+'-bed'),datasets:[{data:d.bedroomRevs.map(v=>+(v/1e9).toFixed(2)),backgroundColor:bdrColors.slice(0,d.bedroomLabels.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B'}}}}});
-  const legBdr=document.getElementById('leg-bedroom'); legBdr.innerHTML='';
-  d.bedroomLabels.forEach((b,i)=>{legBdr.innerHTML+=`<div class="li"><div class="ld" style="background:${bdrColors[i]}"></div>${b}-bed: ₦${(d.bedroomRevs[i]/1e9).toFixed(1)}B</div>`;});
+  const legBdr=document.getElementById('leg-bedroom'); if(legBdr){legBdr.innerHTML=''; d.bedroomLabels.forEach((b,i)=>{legBdr.innerHTML+=`<div class="li"><div class="ld" style="background:${bdrColors[i]}"></div>${b}-bed: ₦${(d.bedroomRevs[i]/1e9).toFixed(1)}B</div>`;});}
 
   mkChart('c-payplan',{type:'bar',data:{labels:d.ppLabels,datasets:[{label:'Units',data:d.ppCounts,backgroundColor:d.ppLabels.map((_,i)=>i===0?C.red:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>c.parsed.y+' units'}}},scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:30}},y:{grid:{color:'rgba(0,0,0,0.04)'}}}}});
 
-  // ── PORTFOLIO ──
+  // ── PORTFOLIO ─────────────────────────────────────────────────────────────
   const prTop=d.propRevenue.slice(0,20);
   mkChart('c-proprank',{type:'bar',data:{labels:prTop.map(x=>x.k),datasets:[{label:'Revenue',data:prTop.map(x=>+(x.v/1e9).toFixed(2)),backgroundColor:prTop.map((_,i)=>i===0?C.red:i<3?C.red2:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.x.toFixed(1)+'B ('+(d.propUnits[prTop[c.dataIndex]?.k]||0)+' units)'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}},y:{grid:{display:false},ticks:{font:{size:9.5}}}}}});
 
   mkChart('c-status',{type:'doughnut',data:{labels:d.statusLabels,datasets:[{data:d.statusCounts,backgroundColor:d.statusLabels.map(s=>s==='Sold'?C.green:s==='Reserved'?C.red:C.blue),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10},boxWidth:9,boxHeight:9}}}}});
 
   const csEl=document.getElementById('comm-simple-bars'); csEl.innerHTML='';
-  const maxU=Math.max(...d.commUnits);
+  const maxU=Math.max(...d.commUnits)||1;
   commRevSorted.slice(0,6).forEach((x,i)=>{const u=d.commUnits[d.communities.indexOf(x.c)]; csEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl" style="width:120px">${x.c}</div><div class="sl-bw"><div class="sl-bf" style="width:${(u/maxU*100).toFixed(0)}%"></div></div><div class="sl-val" style="width:80px">${u} units</div></div>`;});
 
   mkChart('c-finishmix',{type:'bar',data:{labels:d.finishTypes,datasets:[{label:'Units',data:d.finishUnits,backgroundColor:C.red3,borderRadius:4,borderSkipped:false,yAxisID:'y'},{label:'Revenue ₦B',data:d.finishRev.map(v=>+(v/1e9).toFixed(2)),type:'line',borderColor:C.red,backgroundColor:'transparent',borderWidth:2,tension:0.3,pointRadius:4,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}}},scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{position:'left',grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' u'}},y1:{position:'right',grid:{display:false},ticks:{callback:v=>'₦'+v+'B'}}}}});
 
-  // Heatmap
+  // Heatmap — filters already applied via computeAnalytics, just re-render
   const hmEl=document.getElementById('heatmap-wrap'); hmEl.innerHTML='';
   const allVals=topComms.flatMap(c=>d.years.map(y=>d.commYearMatrix[c]?.[y]||0)).filter(v=>v>0);
   const maxHM=Math.max(...allVals)||1;
-  const getHMColor=v=>{if(!v)return '#F0F0F4';const r=v/maxHM;const R=Math.round(192+(255-192)*(1-r)),G=Math.round(57*(1-r)),B=Math.round(43*(1-r));return `rgb(${R},${G},${B})`;};
+  const getHMColor=v=>{if(!v)return '#F0F0F4';const r=v/maxHM;const R=Math.round(192+(255-192)*(1-r)),G=Math.round(57*(1-r)),B=Math.round(43*(1-r));return `rgb(${R},${G},${B})`;}
   let htm=`<table style="border-collapse:separate;border-spacing:4px;font-family:var(--mono);font-size:10px;min-width:500px"><tr><td style="padding:4px 8px;color:var(--text3);font-size:9px;font-weight:600"> </td>`;
   d.years.forEach(y=>{htm+=`<td style="padding:4px 5px;text-align:center;color:var(--text3);font-weight:600;font-size:9px">${y}</td>`;});
   htm+='</tr>';
   topComms.forEach(comm=>{htm+=`<tr><td style="padding:4px 10px 4px 0;white-space:nowrap;color:var(--text2);font-size:10px;font-weight:500">${comm}</td>`;d.years.forEach(y=>{const v=(d.commYearMatrix[comm]?.[y]||0)/1e9;const bg=getHMColor(d.commYearMatrix[comm]?.[y]||0);const tc=v>maxHM/1e9*0.4?'white':'#5A5A72';htm+=`<td><div class="hm-cell" style="background:${bg};color:${tc}" title="${comm} ${y}: ₦${v.toFixed(1)}B">${v>0?v.toFixed(0):'—'}</div></td>`;});htm+='</tr>';});
-  htm+='</table>';
-  hmEl.innerHTML=htm;
+  htm+='</table>'; hmEl.innerHTML=htm;
 
-  // ── NEW: Phase chart ──
-  if(d.phaseLabels.length) {
-    mkChart('c-phase',{type:'bar',data:{labels:d.phaseLabels,datasets:[{label:'Revenue ₦B',data:d.phaseRevs.map(v=>+(v/1e9).toFixed(2)),backgroundColor:d.phaseLabels.map((_,i)=>i===0?C.red:i===1?C.red2:C.red3),borderRadius:5,borderSkipped:false,yAxisID:'y'},{label:'Units',data:d.phaseUnits,type:'line',borderColor:C.blue,backgroundColor:'transparent',borderWidth:2,tension:0.3,pointRadius:4,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label==='Units'?c.parsed.y+' units':'₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{display:false}},y:{position:'left',grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}},y1:{position:'right',grid:{display:false},ticks:{callback:v=>v+' u'}}}}});
-  }
+  if(d.phaseLabels.length){mkChart('c-phase',{type:'bar',data:{labels:d.phaseLabels,datasets:[{label:'Revenue ₦B',data:d.phaseRevs.map(v=>+(v/1e9).toFixed(2)),backgroundColor:d.phaseLabels.map((_,i)=>i===0?C.red:i===1?C.red2:C.red3),borderRadius:5,borderSkipped:false,yAxisID:'y'},{label:'Units',data:d.phaseUnits,type:'line',borderColor:C.blue,backgroundColor:'transparent',borderWidth:2,tension:0.3,pointRadius:4,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label==='Units'?c.parsed.y+' units':'₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{display:false}},y:{position:'left',grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}},y1:{position:'right',grid:{display:false},ticks:{callback:v=>v+' u'}}}}});}
 
-  // ── NEW: Collection Risk Breakdown (HTML table) ──
   const riskEl=document.getElementById('risk-breakdown'); riskEl.innerHTML='';
-  const riskCls = {'Collected':'risk-collected','Near Completion':'risk-near','Low Risk':'risk-low','Medium Risk':'risk-medium','High Risk':'risk-high'};
-  if(d.riskLabels.length) {
-    let rhtml='<div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">';
-    const maxRiskU = Math.max(...d.riskCounts)||1;
-    d.riskLabels.forEach((r,i)=>{
-      const cls = riskCls[r]||'';
-      rhtml+=`<div class="sl-row"><div class="sl-lbl" style="width:140px"><span class="risk-pill ${cls}">${r}</span></div><div class="sl-bw"><div class="sl-bf" style="width:${(d.riskCounts[i]/maxRiskU*100).toFixed(0)}%"></div></div><div class="sl-val" style="width:130px">${d.riskCounts[i]} units · ${fM(d.riskRevs[i])}</div></div>`;
+  const riskCls={'Collected':'risk-collected','Near Completion':'risk-near','Low Risk':'risk-low','Medium Risk':'risk-medium','High Risk':'risk-high'};
+  if(d.riskLabels.length){let rhtml='<div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">';const maxRiskU=Math.max(...d.riskCounts)||1;d.riskLabels.forEach((r,i)=>{const cls=riskCls[r]||'';rhtml+=`<div class="sl-row"><div class="sl-lbl" style="width:140px"><span class="risk-pill ${cls}">${r}</span></div><div class="sl-bw"><div class="sl-bf" style="width:${(d.riskCounts[i]/maxRiskU*100).toFixed(0)}%"></div></div><div class="sl-val" style="width:130px">${d.riskCounts[i]} units · ${fM(d.riskRevs[i])}</div></div>`;});rhtml+='</div>';riskEl.innerHTML=rhtml;}else{riskEl.innerHTML='<p style="color:var(--text3);font-size:11px;margin-top:8px">Collection Risk column not found in published CSV.</p>';}
+
+  // ── COLLECTIONS ───────────────────────────────────────────────────────────
+  // Paid/outstanding bars — comparison mode stacks or groups per dimension
+  if (isComp) {
+    mkChart('c-collstack',{type:'line',
+      data:{labels:compXLabels,datasets:cmp.series.map((s,i)=>{
+        const byYr={};compXLabels.forEach(y=>{byYr[y]={paid:0,out:0};});
+        s.rows.forEach(r=>{if(r._year&&byYr[r._year]){byYr[r._year].paid+=r._paid||0;byYr[r._year].out+=r._out||0;}});
+        return {label:s.label+' Collected',data:compXLabels.map(y=>+(byYr[y].paid/1e9).toFixed(2)),borderColor:s.color,backgroundColor:'transparent',borderWidth:2,tension:0.4,pointRadius:3};
+      })},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>'₦'+v+'B'},grid:{color:'rgba(0,0,0,0.04)'}}}}
     });
-    rhtml+='</div>';
-    riskEl.innerHTML=rhtml;
   } else {
-    riskEl.innerHTML='<p style="color:var(--text3);font-size:11px;margin-top:8px">Collection Risk column not found in published CSV. Add a "Collection_Risk" column to your sheet and republish.</p>';
+    mkChart('c-collstack',{type:'bar',data:{labels:d.years,datasets:[{label:'Collected ₦B',data:d.paidByYear.map(v=>+(v/1e9).toFixed(2)),backgroundColor:C.green,borderRadius:4,borderSkipped:false},{label:'Outstanding ₦B',data:d.outByYear.map(v=>+(v/1e9).toFixed(2)),backgroundColor:C.red3,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
   }
 
-  // ── COLLECTIONS ──
-  mkChart('c-collstack',{type:'bar',data:{labels:d.years,datasets:[{label:'Collected ₦B',data:d.paidByYear.map(v=>+(v/1e9).toFixed(2)),backgroundColor:C.green,borderRadius:4,borderSkipped:false},{label:'Outstanding ₦B',data:d.outByYear.map(v=>+(v/1e9).toFixed(2)),backgroundColor:C.red3,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
-
-  mkChart('c-collrate', {
-    type: 'bar',
-    data: {
-      labels: d.collBrackets,
-      datasets: [{
-        label: 'Units',
-        data: d.collBracketCounts,
-        backgroundColor: [C.red, C.red2, '#F39C12', '#E67E22', C.green, C.blue, '#1ABC9C'],
-        borderRadius: 5,
-        borderSkipped: false
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        tooltip: { callbacks: { label: c => c.parsed.y + ' units' } }
-      },
-      scales: {
-        x: { grid: { display: false } },
-        y: { grid: { color: 'rgba(0,0,0,0.04)' } }
-      }
-    },
-    plugins: [{
-      id: 'barLabels',
-      afterDatasetsDraw: (chart) => {
-        const ctx = chart.ctx;
-        chart.data.datasets.forEach((dataset, i) => {
-          const meta = chart.getDatasetMeta(i);
-          meta.data.forEach((bar, index) => {
-            const value = dataset.data[index];
-            if (value > 0) {
-              ctx.save();
-              ctx.font = '600 11px DM Sans';
-              ctx.fillStyle = '#1A1A2E';
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'bottom';
-              ctx.fillText(value, bar.x, bar.y - 4);
-              ctx.restore();
-            }
-          });
-        });
-      }
-    }]
-  });
+  mkChart('c-collrate',{type:'bar',data:{labels:d.collBrackets,datasets:[{label:'Units',data:d.collBracketCounts,backgroundColor:[C.red,C.red2,'#F39C12','#E67E22',C.green,C.blue,'#1ABC9C'],borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>c.parsed.y+' units'}}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'}}}},plugins:[{id:'barLabels',afterDatasetsDraw:(chart)=>{const ctx=chart.ctx;chart.data.datasets.forEach((dataset,i)=>{const meta=chart.getDatasetMeta(i);meta.data.forEach((bar,index)=>{const value=dataset.data[index];if(value>0){ctx.save();ctx.font='600 11px DM Sans';ctx.fillStyle='#1A1A2E';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(value,bar.x,bar.y-4);ctx.restore();}});});}}]});
 
   mkChart('c-mortgage',{type:'bar',data:{labels:d.years,datasets:[{label:'Cash/Plan',data:d.cashByYear,backgroundColor:C.red3,borderRadius:4,borderSkipped:false},{label:'Mortgage',data:d.mortgageByYear,backgroundColor:C.red,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'}}}}});
 
   mkChart('c-outstandcomm',{type:'doughnut',data:{labels:d.communities,datasets:[{data:d.commOutstanding.map(v=>+(v/1e9).toFixed(2)),backgroundColor:commColors.slice(0,d.communities.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:true,position:'right',labels:{font:{size:9},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B outstanding'}}}}});
 
-  // ── AGENTS ──
+  // ── AGENTS ────────────────────────────────────────────────────────────────
   const agEl=document.getElementById('agent-bars'); agEl.innerHTML='';
   const maxAR=d.dealingAgentRev[0]||1;
   d.dealingAgents.forEach((n,i)=>{agEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl"><span class="rn">${i+1}</span>&nbsp;${n}</div><div class="sl-bw"><div class="sl-bf" style="width:${(d.dealingAgentRev[i]/maxAR*100).toFixed(0)}%"></div></div><div class="sl-val">${fB(d.dealingAgentRev[i])}<span style="color:var(--text3)"> (${d.dealingAgentCnt[i]})</span></div></div>`;});
 
   const chanColors=[C.red,C.blue,C.green,C.purple,C.orange,C.teal,C.amber];
   mkChart('c-channel',{type:'doughnut',data:{labels:d.agentGroups,datasets:[{data:d.agentGrpRev.map(v=>+(v/1e9).toFixed(2)),backgroundColor:chanColors.slice(0,d.agentGroups.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B'}}}}});
-  const legCh=document.getElementById('leg-channel'); legCh.innerHTML='';
-  d.agentGroups.forEach((g,i)=>{legCh.innerHTML+=`<div class="li"><div class="ld" style="background:${chanColors[i]}"></div>${g}</div>`;});
+  const legCh=document.getElementById('leg-channel'); if(legCh){legCh.innerHTML=''; d.agentGroups.forEach((g,i)=>{legCh.innerHTML+=`<div class="li"><div class="ld" style="background:${chanColors[i]}"></div>${g}</div>`;});}
 
-  mkChart('c-agtrend',{type:'line',data:{labels:d.years,datasets:d.agGroupTrend.map((t,i)=>({label:t.label,data:t.data,borderColor:[C.red,C.blue,C.green][i],backgroundColor:'transparent',borderWidth:2,tension:0.4,pointRadius:3,borderDash:i>0?[i*3,3]:[] }))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y+' units'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' units'}}}}});
-
-  // ── BUYERS ──
-  // NEW: Buyer Type donut
-  if(d.buyerTypeLabels.length) {
-    const btColors=[C.red,C.blue,C.green,C.purple,C.orange,C.teal];
-    mkChart('c-buyertype',{type:'doughnut',data:{labels:d.buyerTypeLabels,datasets:[{data:d.buyerTypeCounts,backgroundColor:btColors.slice(0,d.buyerTypeLabels.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:true,position:'right',labels:{font:{size:10},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed+' units'}}}}});
+  if (isComp && cmp.dimension==='channel') {
+    mkChart('c-agtrend',{type:'line',data:{labels:compXLabels,datasets:compDatasets('rev',v=>v/1e9,false)},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{ticks:{callback:v=>'₦'+v+'B'},grid:{color:'rgba(0,0,0,0.04)'}}}}}); 
+  } else {
+    mkChart('c-agtrend',{type:'line',data:{labels:d.years,datasets:d.agGroupTrend.map((t,i)=>({label:t.label,data:t.data,borderColor:[C.red,C.blue,C.green][i],backgroundColor:'transparent',borderWidth:2,tension:0.4,pointRadius:3,borderDash:i>0?[i*3,3]:[] }))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y+' units'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' units'}}}}});
   }
+
+  // ── BUYERS ────────────────────────────────────────────────────────────────
+  if(d.buyerTypeLabels.length){const btColors=[C.red,C.blue,C.green,C.purple,C.orange,C.teal];mkChart('c-buyertype',{type:'doughnut',data:{labels:d.buyerTypeLabels,datasets:[{data:d.buyerTypeCounts,backgroundColor:btColors.slice(0,d.buyerTypeLabels.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:true,position:'right',labels:{font:{size:10},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed+' units'}}}}});}
 
   mkChart('c-buyerstate',{type:'bar',data:{labels:d.stateLabels,datasets:[{label:'Buyers',data:d.stateCounts,backgroundColor:d.stateLabels.map((_,i)=>i===0?C.red:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{tooltip:{callbacks:{label:c=>c.parsed.x+' buyers'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
 
   const salColors=[C.red,C.blue,C.green,C.purple,C.orange,C.teal,C.amber,C.slate];
   mkChart('c-salutation',{type:'doughnut',data:{labels:d.salLabels,datasets:[{data:d.salCounts,backgroundColor:salColors.slice(0,d.salLabels.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{display:true,position:'right',labels:{font:{size:9.5},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed}}}}});
 
-  const bsEl=document.getElementById('buyer-state-bars'); bsEl.innerHTML='';
-  const maxSC=Math.max(...d.stateCounts)||1;
-  d.stateLabels.forEach((s,i)=>{bsEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl" style="width:180px">${s}</div><div class="sl-bw"><div class="sl-bf" style="width:${(d.stateCounts[i]/maxSC*100).toFixed(0)}%;background:${i===0?'linear-gradient(90deg,var(--red5),var(--red2))':'linear-gradient(90deg,var(--red3),var(--red2))'}"></div></div><div class="sl-val">${d.stateCounts[i]} buyers</div></div>`;});
+  const bsEl=document.getElementById('buyer-state-bars'); if(bsEl){bsEl.innerHTML='';const maxSC=Math.max(...d.stateCounts)||1;d.stateLabels.forEach((s,i)=>{bsEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl" style="width:180px">${s}</div><div class="sl-bw"><div class="sl-bf" style="width:${(d.stateCounts[i]/maxSC*100).toFixed(0)}%;background:${i===0?'linear-gradient(90deg,var(--red5),var(--red2))':'linear-gradient(90deg,var(--red3),var(--red2))'}"></div></div><div class="sl-val">${d.stateCounts[i]} buyers</div></div>`;});}
 }
 
-/* =====================================================
-   FRESHNESS LABEL
-   ===================================================== */
+
 function updateFreshness(fromCache) {
   const ts  = parseInt(localStorage.getItem(LS_TS_KEY)||'0');
   const el  = document.getElementById('freshness-label');
@@ -2973,41 +2979,88 @@ function applyFilters() {
     ? 'Showing ' + shown.toLocaleString() + ' of ' + total.toLocaleString() + ' records'
     : total.toLocaleString() + ' records';
 
-  // Segment comparison mode: if multiple segments selected, add segmented breakdown to analytics
   const analytics = computeAnalytics(filtered);
   analytics.currentYearFilter  = yrs && yrs.length === 1 ? yrs[0] : 'all';
   analytics.currentQtrFilter   = qtr;
   analytics.activeSegments     = segs || [];
   analytics.activeYears        = yrs  || [];
   analytics.activeCommunities  = coms || [];
+  analytics.activeChannels     = ags  || [];
 
   // Quarterly revenue (when a single year is selected)
   if (yrs && yrs.length === 1) {
-    let yearBase = _allRows.filter(r => r._year === yrs[0]);
-    if (segs) yearBase = yearBase.filter(r => segs.includes(r._segment));
-    if (coms) yearBase = yearBase.filter(r => coms.includes(r.community));
-    if (ags)  yearBase = yearBase.filter(r => ags.includes(r.agentGroup));
-    if (risk !== 'all') yearBase = yearBase.filter(r => r.collectionRisk === risk);
-    if (ph   !== 'all') yearBase = yearBase.filter(r => r.phase === ph);
+    let yearBase = filtered.slice();
     const qRev = { Q1:0, Q2:0, Q3:0, Q4:0 };
     yearBase.forEach(r => { if (r._quarter && qRev[r._quarter] !== undefined) qRev[r._quarter] += (r._sp||0); });
     analytics.quarterlyRev = [qRev.Q1, qRev.Q2, qRev.Q3, qRev.Q4];
   }
 
-  // Segment breakdown for cross-comparison (always compute when segments are active)
-  if (segs && segs.length > 1) {
-    analytics.segmentBreakdown = segs.map(seg => {
-      const segRows = filtered.filter(r => r._segment === seg);
-      return { segment: seg, revenue: segRows.reduce((s,r)=>s+(r._sp||0),0), units: segRows.length };
+  // ── COMPARISON SERIES BUILDER ───────────────────────────────────────────
+  // Detects which dimension has multiple values selected → becomes the comparison axis.
+  // Priority: communities > channels > segments > years (most granular first).
+  // Result: analytics.comparison = { mode, dimension, values, palette, series[] }
+  // Each series = { label, color, rows, revByYear, unitsByYear, years }
+
+  const COMP_PALETTE = [C.red, C.blue, C.green, C.purple, C.orange, C.teal, C.amber, C.slate];
+  const allYears = [...new Set(filtered.map(r=>r._year).filter(Boolean))].sort();
+
+  function buildSeriesForDimension(dimValues, rowFilter, labelFn) {
+    // Cap at 6 series for readability — most important ones first (by revenue)
+    const sorted = dimValues
+      .map(v => ({ v, rows: filtered.filter(rowFilter(v)) }))
+      .sort((a,b) => b.rows.reduce((s,r)=>s+(r._sp||0),0) - a.rows.reduce((s,r)=>s+(r._sp||0),0))
+      .slice(0, 6);
+    return sorted.map((item, i) => {
+      const byYr = {};
+      allYears.forEach(y => { byYr[y] = { rev: 0, units: 0 }; });
+      item.rows.forEach(r => { if (r._year && byYr[r._year]) { byYr[r._year].rev += r._sp||0; byYr[r._year].units++; } });
+      return {
+        label: labelFn ? labelFn(item.v) : item.v,
+        value: item.v,
+        color: COMP_PALETTE[i],
+        rows: item.rows,
+        years: allYears,
+        revByYear:   allYears.map(y => byYr[y]?.rev   || 0),
+        unitsByYear: allYears.map(y => byYr[y]?.units  || 0),
+        totalRev:   item.rows.reduce((s,r)=>s+(r._sp||0),0),
+        totalUnits: item.rows.length
+      };
     });
-  } else if (!segs) {
-    // Show all segments breakdown for context
-    const allSegs = [...new Set(_allRows.map(r=>r._segment).filter(Boolean))];
-    analytics.segmentBreakdown = allSegs.map(seg => {
-      const segRows = filtered.filter(r => r._segment === seg);
-      return { segment: seg, revenue: segRows.reduce((s,r)=>s+(r._sp||0),0), units: segRows.length };
-    }).filter(s=>s.revenue>0);
   }
+
+  let compMode = 'none', compDim = null, compSeries = [];
+
+  if (coms && coms.length > 1) {
+    compMode = 'multi'; compDim = 'community';
+    compSeries = buildSeriesForDimension(coms, v => r => r.community === v);
+  } else if (ags && ags.length > 1) {
+    compMode = 'multi'; compDim = 'channel';
+    compSeries = buildSeriesForDimension(ags, v => r => r.agentGroup === v);
+  } else if (segs && segs.length > 1) {
+    compMode = 'multi'; compDim = 'segment';
+    compSeries = buildSeriesForDimension(segs, v => r => r._segment === v);
+  } else if (yrs && yrs.length > 1) {
+    // Year comparison: each series is a single year, x-axis = quarter
+    compMode = 'year'; compDim = 'year';
+    const QUARTERS = ['Q1','Q2','Q3','Q4'];
+    compSeries = yrs.slice(0,6).map((yr, i) => {
+      const yRows = filtered.filter(r => r._year === yr);
+      const qRev   = QUARTERS.map(q => yRows.filter(r=>r._quarter===q).reduce((s,r)=>s+(r._sp||0),0));
+      const qUnits = QUARTERS.map(q => yRows.filter(r=>r._quarter===q).length);
+      return { label: yr, value: yr, color: COMP_PALETTE[i], rows: yRows,
+               years: QUARTERS, revByYear: qRev, unitsByYear: qUnits,
+               totalRev: yRows.reduce((s,r)=>s+(r._sp||0),0), totalUnits: yRows.length };
+    });
+  }
+
+  analytics.comparison = { mode: compMode, dimension: compDim, series: compSeries, years: allYears };
+
+  // Segment breakdown (always)
+  const allSegKeys = [...new Set(_allRows.map(r=>r._segment).filter(Boolean))];
+  analytics.segmentBreakdown = (segs && segs.length > 0 ? segs : allSegKeys).map(seg => {
+    const segRows = filtered.filter(r => r._segment === seg);
+    return { segment: seg, revenue: segRows.reduce((s,r)=>s+(r._sp||0),0), units: segRows.length };
+  }).filter(s=>s.revenue>0);
 
   renderKPIs(analytics);
   renderCharts(analytics);
@@ -3043,6 +3096,8 @@ function renderFromRows(rows, fromCache) {
   analytics.activeSegments = [];
   analytics.activeYears = [];
   analytics.activeCommunities = [];
+  analytics.activeChannels = [];
+  analytics.comparison = { mode: 'none', dimension: null, series: [], years: analytics.years || [] };
   // Always compute full segment breakdown on initial load
   const allSegKeys = [...new Set(rows.map(r=>r._segment).filter(Boolean))];
   analytics.segmentBreakdown = allSegKeys.map(seg => {
