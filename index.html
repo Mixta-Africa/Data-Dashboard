@@ -2586,14 +2586,29 @@ function renderCharts(d) {
 
   // ── HELPERS ──────────────────────────────────────────────────────────────
   // Build Chart.js datasets from comparison series for a time-series chart
-  function compDatasets(key, scaleFn, fillFirst) {
-    return cmp.series.map((s,i) => ({
+  // Point styles to distinguish series beyond color alone
+  const POINT_STYLES = ['circle','triangle','rect','rectRot','star','cross'];
+
+  function compDatasets(key, scaleFn) {
+    // Never fill in comparison mode — fills from a dominant series bury smaller ones.
+    // Use distinct borderDash + pointStyle per series so color-blind users can read it too.
+    const DASHES = [[], [6,3], [2,4], [8,3,2,3], [4,4], [12,3]];
+    return cmp.series.map((s, i) => ({
       label: s.label,
-      data: (key==='rev' ? s.revByYear : s.unitsByYear).map(v=>+(scaleFn(v)).toFixed(2)),
+      data: (key === 'rev' ? s.revByYear : s.unitsByYear).map(v => +(scaleFn(v)).toFixed(2)),
       borderColor: s.color,
-      backgroundColor: i===0&&fillFirst ? s.color.replace(')',',0.08)').replace('rgb','rgba') : 'transparent',
-      borderWidth: 2.5, tension: 0.4, fill: i===0&&fillFirst,
-      pointRadius: 3, pointHoverRadius: 6, pointBackgroundColor: s.color
+      backgroundColor: s.color,   // used for point fill only
+      borderWidth: 2,
+      borderDash: DASHES[i] || [],
+      tension: 0.35,
+      fill: false,                 // NEVER fill — kills smaller series visibility
+      pointStyle: POINT_STYLES[i] || 'circle',
+      pointRadius: 4,
+      pointHoverRadius: 7,
+      pointBackgroundColor: s.color,
+      pointBorderColor: '#fff',
+      pointBorderWidth: 1.5,
+      spanGaps: true
     }));
   }
   // Build grouped-bar datasets from comparison series for a single-period bar
@@ -2607,7 +2622,26 @@ function renderCharts(d) {
   const compYAxisLabel = isComp && cmp.dimension==='year' ? 'Quarter' : 'Year';
   const compXLabels = isComp ? cmp.series[0].years : d.years;
 
-  // sub-label helper
+  // Shared options for ALL comparison line charts — consistent across the board
+  function compLineOpts(yLabel, tickFn, tooltipFn) {
+    return {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          display: true, position: 'top',
+          labels: { font:{size:10}, usePointStyle:true, pointStyleWidth:10, boxHeight:8 }
+        },
+        tooltip: { callbacks: { label: c => tooltipFn(c) } }
+      },
+      scales: {
+        x: { grid: { color:'rgba(0,0,0,0.04)' } },
+        y: { grid: { color:'rgba(0,0,0,0.04)' }, ticks: { callback: tickFn },
+             title: { display: !!yLabel, text: yLabel } }
+      }
+    };
+  }
+
   function setChartSub(canvasId, text) {
     try {
       const cs = document.querySelector('#'+canvasId)?.closest('.cc')?.querySelector('.cs');
@@ -2617,16 +2651,15 @@ function renderCharts(d) {
 
   // ── OVERVIEW — Revenue trend ─────────────────────────────────────────────
   if (isComp) {
-    // Comparison mode: multi-line, one per dimension value
+    // Comparison mode: clean multi-line, no fills, distinct dash + point styles
     const subLabel = cmp.series.map(s=>s.label).join(' vs ') + ' — Revenue ₦B';
-    mkChart('c-revyear',{
-      type:'line',
-      data:{ labels: compXLabels, datasets: compDatasets('rev', v=>v/1e9, true) },
-      options:{responsive:true,maintainAspectRatio:false,
-        plugins:{ legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},
-          tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},
-        scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}
-    });
+    const revOpts = compLineOpts(null, v=>'₦'+v+'B', c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B');
+    revOpts.plugins.tooltip.callbacks.afterBody = items => {
+      if (items.length < 2) return;
+      const total = items.reduce((s,i)=>s+i.parsed.y,0);
+      return ['─────────────','Combined: ₦'+total.toFixed(1)+'B'];
+    };
+    mkChart('c-revyear',{ type:'line', data:{ labels: compXLabels, datasets: compDatasets('rev', v=>v/1e9) }, options: revOpts });
     setChartSub('c-revyear', subLabel);
   } else if (d.currentYearFilter === 'all') {
     mkChart('c-revyear',{type:'line',data:{labels:d.years,datasets:[{label:'Revenue ₦B',data:d.revByYear.map(v=>+(v/1e9).toFixed(2)),borderColor:C.red,backgroundColor:'rgba(192,57,43,0.07)',fill:true,tension:0.4,borderWidth:2.5,pointBackgroundColor:C.red,pointRadius:4,pointHoverRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
@@ -2641,7 +2674,7 @@ function renderCharts(d) {
   // ── OVERVIEW — Community donut or comparison bar ──────────────────────────
   if (isComp && cmp.dimension==='community') {
     // Comparing communities: show stacked revenue by year per community
-    mkChart('c-commdonut',{type:'bar',data:{labels:compXLabels,datasets:compDatasets('rev',v=>v/1e9,false)},
+    mkChart('c-commdonut',{type:'bar',data:{labels:compXLabels,datasets:compDatasets('rev', v=>v/1e9)},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},
         scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>'₦'+v+'B'},grid:{color:'rgba(0,0,0,0.04)'}}}
@@ -2654,11 +2687,7 @@ function renderCharts(d) {
 
   // ── OVERVIEW — Channel bars ───────────────────────────────────────────────
   if (isComp && cmp.dimension==='channel') {
-    mkChart('c-agentgrp',{type:'line',data:{labels:compXLabels,datasets:compDatasets('rev',v=>v/1e9,false)},
-      options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},
-        scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{ticks:{callback:v=>'₦'+v+'B'},grid:{color:'rgba(0,0,0,0.04)'}}}}
-    });
+    mkChart('c-agentgrp',{type:'line',data:{labels:compXLabels,datasets:compDatasets('rev', v=>v/1e9)},options:compLineOpts(null,v=>'₦'+v+'B',c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B')});
   } else {
     mkChart('c-agentgrp',{type:'bar',data:{labels:d.agentGroups,datasets:[{label:'Revenue ₦B',data:d.agentGrpRev.map(v=>+(v/1e9).toFixed(2)),backgroundColor:d.agentGroups.map((_,i)=>i===0?C.red:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.x.toFixed(1)+'B ('+d.agentGrpCnt[c.dataIndex]+' units)'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}},y:{grid:{display:false}}}}});
   }
@@ -2682,8 +2711,8 @@ function renderCharts(d) {
     const segBgColors=segLabels.map(s=>segColors[s]||C.gray);
     if(isComp && cmp.dimension==='segment'){
       // Segment comparison: multi-line over time
-      mkChart('c-segment-rev',{type:'line',data:{labels:compXLabels,datasets:compDatasets('rev',v=>v/1e9,false)},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{ticks:{callback:v=>'₦'+v+'B'},grid:{color:'rgba(0,0,0,0.04)'}}}}});
-      mkChart('c-segment-units',{type:'line',data:{labels:compXLabels,datasets:compDatasets('units',v=>v,false)},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y+' units'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'}}}}});
+      mkChart('c-segment-rev',{type:'line',data:{labels:compXLabels,datasets:compDatasets('rev', v=>v/1e9)},options:compLineOpts(null,v=>'₦'+v+'B',c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B')});
+      mkChart('c-segment-units',{type:'line',data:{labels:compXLabels,datasets:compDatasets('units', v=>v)},options:compLineOpts('Units',v=>v+' u',c=>c.dataset.label+': '+c.parsed.y+' units')});
     } else {
       mkChart('c-segment-rev',{type:'bar',data:{labels:segLabels,datasets:[{label:'Revenue ₦B',data:segData.map(s=>+(s.revenue/1e9).toFixed(2)),backgroundColor:segBgColors,borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(2)+'B — '+segData[c.dataIndex].units+' units'}}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},title:{display:true,text:'Revenue ₦B'},ticks:{callback:v=>'₦'+v+'B'}}}}});
       mkChart('c-segment-units',{type:'bar',data:{labels:segLabels,datasets:[{label:'Units',data:segData.map(s=>s.units),backgroundColor:segBgColors,borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+' units'}}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},title:{display:true,text:'Units sold'}}}}});
@@ -2693,17 +2722,9 @@ function renderCharts(d) {
   // ── REVENUE TAB ──────────────────────────────────────────────────────────
   // Stacked community chart: comparison mode → multi-line per dimension
   if (isComp) {
-    mkChart('c-stacked',{type:'line',data:{labels:compXLabels,datasets:compDatasets('rev',v=>v/1e9,false)},
-      options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},
-        scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}
-    });
+    mkChart('c-stacked',{type:'line',data:{labels:compXLabels,datasets:compDatasets('rev', v=>v/1e9)},options:compLineOpts(null,v=>'₦'+v+'B',c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B')});
     // Volume: comparison units over time
-    mkChart('c-volprice',{type:'line',data:{labels:compXLabels,datasets:compDatasets('units',v=>v,false)},
-      options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y+' units'}}},
-        scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' u'}}}}
-    });
+    mkChart('c-volprice',{type:'line',data:{labels:compXLabels,datasets:compDatasets('units', v=>v)},options:compLineOpts('Units',v=>v+' u',c=>c.dataset.label+': '+c.parsed.y+' units')});
   } else {
     mkChart('c-stacked',{type:'bar',data:{labels:d.years,datasets:topComms.map((comm,i)=>({label:comm,data:d.years.map(y=>+((d.commYearMatrix[comm]?.[y]||0)/1e9).toFixed(2)),backgroundColor:[C.red,C.blue,C.green,C.purple,C.orange][i],borderRadius:3,borderSkipped:false}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
     mkChart('c-volprice',{type:'bar',data:{labels:d.years,datasets:[{label:'Units',data:d.unitsByYear,backgroundColor:C.red3,borderRadius:4,borderSkipped:false,yAxisID:'y'},{label:'Avg Price ₦M',data:d.avgPriceByYear.map(v=>+(v/1e6).toFixed(1)),type:'line',borderColor:C.red,backgroundColor:'transparent',borderWidth:2,tension:0.4,pointRadius:3,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}}},scales:{x:{grid:{display:false}},y:{position:'left',grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' u'}},y1:{position:'right',grid:{display:false},ticks:{callback:v=>'₦'+v+'M'}}}}});
@@ -2751,11 +2772,15 @@ function renderCharts(d) {
   if (isComp) {
     mkChart('c-collstack',{type:'line',
       data:{labels:compXLabels,datasets:cmp.series.map((s,i)=>{
-        const byYr={};compXLabels.forEach(y=>{byYr[y]={paid:0,out:0};});
-        s.rows.forEach(r=>{if(r._year&&byYr[r._year]){byYr[r._year].paid+=r._paid||0;byYr[r._year].out+=r._out||0;}});
-        return {label:s.label+' Collected',data:compXLabels.map(y=>+(byYr[y].paid/1e9).toFixed(2)),borderColor:s.color,backgroundColor:'transparent',borderWidth:2,tension:0.4,pointRadius:3};
+        const DASHES=[[],[6,3],[2,4],[8,3,2,3],[4,4],[12,3]];
+        const byYr={};compXLabels.forEach(y=>{byYr[y]={paid:0};});
+        s.rows.forEach(r=>{if(r._year&&byYr[r._year])byYr[r._year].paid+=r._paid||0;});
+        return {label:s.label+' Collected',data:compXLabels.map(y=>+(byYr[y].paid/1e9).toFixed(2)),
+          borderColor:s.color,backgroundColor:s.color,borderWidth:2,borderDash:DASHES[i]||[],
+          tension:0.35,fill:false,pointStyle:['circle','triangle','rect','rectRot','star','cross'][i]||'circle',
+          pointRadius:4,pointHoverRadius:7,pointBackgroundColor:s.color,pointBorderColor:'#fff',pointBorderWidth:1.5,spanGaps:true};
       })},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>'₦'+v+'B'},grid:{color:'rgba(0,0,0,0.04)'}}}}
+      options:compLineOpts(null,v=>'₦'+v+'B',c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B')
     });
   } else {
     mkChart('c-collstack',{type:'bar',data:{labels:d.years,datasets:[{label:'Collected ₦B',data:d.paidByYear.map(v=>+(v/1e9).toFixed(2)),backgroundColor:C.green,borderRadius:4,borderSkipped:false},{label:'Outstanding ₦B',data:d.outByYear.map(v=>+(v/1e9).toFixed(2)),backgroundColor:C.red3,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}}}}});
@@ -2777,7 +2802,7 @@ function renderCharts(d) {
   const legCh=document.getElementById('leg-channel'); if(legCh){legCh.innerHTML=''; d.agentGroups.forEach((g,i)=>{legCh.innerHTML+=`<div class="li"><div class="ld" style="background:${chanColors[i]}"></div>${g}</div>`;});}
 
   if (isComp && cmp.dimension==='channel') {
-    mkChart('c-agtrend',{type:'line',data:{labels:compXLabels,datasets:compDatasets('rev',v=>v/1e9,false)},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{ticks:{callback:v=>'₦'+v+'B'},grid:{color:'rgba(0,0,0,0.04)'}}}}}); 
+    mkChart('c-agtrend',{type:'line',data:{labels:compXLabels,datasets:compDatasets('rev', v=>v/1e9)},options:compLineOpts(null,v=>'₦'+v+'B',c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B')}); 
   } else {
     mkChart('c-agtrend',{type:'line',data:{labels:d.years,datasets:d.agGroupTrend.map((t,i)=>({label:t.label,data:t.data,borderColor:[C.red,C.blue,C.green][i],backgroundColor:'transparent',borderWidth:2,tension:0.4,pointRadius:3,borderDash:i>0?[i*3,3]:[] }))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y+' units'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' units'}}}}});
   }
