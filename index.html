@@ -148,7 +148,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .hm-cell:hover{transform:scale(1.12);z-index:2;position:relative}
 
 /* ── FILTER BAR ───────────────────────────────────── */
-.filter-bar{display:flex;align-items:center;gap:10px;padding:10px 28px;background:rgba(255,255,255,0.75);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,0.05);flex-wrap:wrap}
+.filter-bar{display:flex;align-items:center;gap:10px;padding:10px 28px;background:rgba(255,255,255,0.75);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,0.05);flex-wrap:wrap;position:relative;z-index:300;isolation:isolate}
 .filter-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap}
 .filter-select{padding:5px 10px;border-radius:8px;font-size:12px;font-weight:500;color:var(--text);background:rgba(255,255,255,0.9);border:1px solid rgba(0,0,0,0.1);cursor:pointer;font-family:var(--font);outline:none;transition:border-color 0.18s}
 .filter-select:focus{border-color:var(--red)}
@@ -162,7 +162,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .ms-btn.active{border-color:var(--red);background:var(--red4);color:var(--red)}
 .ms-btn .ms-arrow{font-size:8px;opacity:0.5;transition:transform 0.15s}
 .ms-btn.open .ms-arrow{transform:rotate(180deg)}
-.ms-panel{position:absolute;top:calc(100% + 4px);left:0;z-index:999;background:white;border:1px solid rgba(0,0,0,0.12);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.12);padding:6px 0;min-width:170px;max-height:280px;overflow-y:auto;display:none}
+/* Panel uses fixed positioning so it escapes every stacking context (backdrop-filter, transform, etc.) */
+.ms-panel{position:fixed;z-index:9999;background:white;border:1px solid rgba(0,0,0,0.12);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.16);padding:6px 0;min-width:200px;max-height:320px;overflow-y:auto;display:none}
 .ms-panel.open{display:block}
 .ms-opt{display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:var(--text);transition:background 0.12s;white-space:nowrap}
 .ms-opt:hover{background:rgba(0,0,0,0.04)}
@@ -2810,9 +2811,23 @@ function toggleMS(key) {
   const panel = document.getElementById('ms-' + key + '-panel');
   const btn   = document.getElementById('ms-' + key + '-btn');
   const isOpen = panel.classList.contains('open');
+  // Close all first
   document.querySelectorAll('.ms-panel').forEach(p => p.classList.remove('open'));
   document.querySelectorAll('.ms-btn').forEach(b => b.classList.remove('open'));
-  if (!isOpen) { panel.classList.add('open'); btn.classList.add('open'); }
+  if (!isOpen) {
+    // Position the fixed panel directly below its button
+    const rect = btn.getBoundingClientRect();
+    panel.style.top  = (rect.bottom + 4) + 'px';
+    panel.style.left = rect.left + 'px';
+    // Prevent running off right edge of viewport
+    const panelW = Math.max(200, rect.width);
+    panel.style.minWidth = panelW + 'px';
+    if (rect.left + panelW > window.innerWidth - 8) {
+      panel.style.left = (window.innerWidth - panelW - 8) + 'px';
+    }
+    panel.classList.add('open');
+    btn.classList.add('open');
+  }
 }
 
 document.addEventListener('click', e => {
@@ -2821,6 +2836,12 @@ document.addEventListener('click', e => {
     document.querySelectorAll('.ms-btn').forEach(b => b.classList.remove('open'));
   }
 });
+
+// Close panels on scroll or resize — avoids detached floating panels
+['scroll','resize'].forEach(evt => window.addEventListener(evt, () => {
+  document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.ms-btn.open').forEach(b => b.classList.remove('open'));
+}, { passive: true }));
 
 function msToggleAll(key) {
   const allCb = document.getElementById('ms-' + key + '-all');
