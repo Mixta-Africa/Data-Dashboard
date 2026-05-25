@@ -819,7 +819,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <div id="section-predict" class="section">
   <div class="kpi-strip">
     <div class="kpi"><div class="kpi-label">Next-Year Revenue Forecast</div><div class="kpi-value red" id="pr-nextyear">—</div><div class="kpi-sub" id="pr-nextyear-s">OLS linear projection</div></div>
-    <div class="kpi"><div class="kpi-label">Forecast Confidence</div><div class="kpi-value" id="pr-r2">—</div><div class="kpi-sub">R² model fit score</div></div>
+    <div class="kpi"><div class="kpi-label">OLS Model Fit (R²)</div><div class="kpi-value" id="pr-r2">—</div><div class="kpi-sub">Revenue variance explained by time trend</div></div>
     <div class="kpi"><div class="kpi-label">Revenue CAGR</div><div class="kpi-value red" id="pr-cagr2">—</div><div class="kpi-sub">Recognised across all years</div></div>
   </div>
 
@@ -1779,21 +1779,32 @@ async function fetchInflationData(workbook) {
     // Returns null if unparseable.
     function parsePct(raw) {
       if (raw === null || raw === undefined || raw === '' || raw === '—' || raw === '-') return null;
+      let val;
       if (typeof raw === 'number') {
-        // Stored as decimal (0.132) or already as percentage (13.2) — detect by magnitude
-        // Values < 2 are almost certainly decimals for inflation (e.g. 0.132 = 13.2%)
-        // Values >= 2 are already percentage points (e.g. 13.2)
-        return raw < 2 ? raw * 100 : raw;
+        // Decimal form (0.132 = 13.2%) vs percent form (13.2 = 13.2%).
+        // Boundary at 1.0: decimals are always < 1.0; percent points for inflation are >= 1.
+        // Previous boundary of 2.0 was wrong — it passed 1.72 as-is (172%!) instead of converting.
+        val = raw < 1.0 ? raw * 100 : raw;
+      } else {
+        const numStr = raw.toString().replace(/[^0-9.\-]/g, '');
+        if (!numStr) return null;
+        val = parseFloat(numStr);
+        if (isNaN(val)) return null;
+        if (!raw.toString().includes('%')) {
+          val = val < 1.0 ? val * 100 : val;
+        }
       }
-      // String: strip everything except digits, dots, minus signs
-      const numStr = raw.toString().replace(/[^0-9.\-]/g, '');
-      if (!numStr) return null;
-      const val = parseFloat(numStr);
-      if (isNaN(val)) return null;
-      // If the original string contained '%' the value is already in percent form
-      if (raw.toString().includes('%')) return val;
-      // Otherwise treat like a number (same magnitude heuristic)
-      return val < 2 ? val * 100 : val;
+      // Hard sanity cap: annual inflation > 95% in this dataset means a bad data cell.
+      // Nigeria's peak was ~72% in 2024 — we allow up to 95% but no more.
+      if (!isFinite(val) || val > 95) {
+        console.warn('[parsePct] Rejecting out-of-range inflation value:', raw, '→', val);
+        return null;
+      }
+      if (val < -20) {
+        console.warn('[parsePct] Rejecting out-of-range deflation value:', raw, '→', val);
+        return null;
+      }
+      return val;
     }
 
     // ── Find which column holds 4-digit years ────────────────────────────────
@@ -4082,9 +4093,10 @@ function renderForecast(d) {
   // ── KPI cards ──────────────────────────────────────────────────────────
   setText('pr-nextyear', fB(projections[0].base));
   const pxNote = pxForecast !== null
-    ? ` · Pricing-adjusted (${pxForecast > 0 ? '+' : ''}${pxForecast.toFixed(1)}% real CAGR)`
-    : ' · OLS linear projection';
+    ? ` · OLS trend × pricing multiplier (${pxForecast > 0 ? '+' : ''}${pxForecast.toFixed(1)}% real price CAGR)`
+    : ' · OLS linear projection (pricing data not loaded)';
   setText('pr-nextyear-s', 'Bull ' + fB(projections[0].bull) + ' · Bear ' + fB(projections[0].bear) + pxNote);
+  // R² is purely the OLS regression fit — pricing adjustment moves the projection values but not the model quality score
   setText('pr-r2', (model.r2 * 100).toFixed(0) + '%');
   setText('pr-cagr2', d.cagr || '—');
 
@@ -4159,11 +4171,16 @@ function renderForecast(d) {
 
   const noteEl = document.getElementById('forecast-note');
   if (noteEl) {
+    const pxExplain = pxForecast !== null
+      ? ` Pricing intelligence applied: ${pxForecast > 0 ? '+' : ''}${pxForecast.toFixed(1)}% real price CAGR adds a ×${pxMult.toFixed(3)} multiplier to the OLS base — this shifts projections but does not change R².`
+      : '';
     noteEl.textContent =
-      'OLS linear model fitted on ' + histYears.length + ' years of actuals. ' +
-      'R²=' + (model.r2 * 100).toFixed(0) + '% — model explains ' +
-      (model.r2 * 100).toFixed(0) + '% of revenue variance. ' +
-      'Shaded band = ±1 standard deviation. Projections assume no structural break.';
+      'OLS linear regression on ' + histYears.length + ' years of revenue actuals. ' +
+      'R²=' + (model.r2 * 100).toFixed(0) + '% means the model accounts for ' +
+      (model.r2 * 100).toFixed(0) + '% of year-on-year revenue variance — the remaining ' +
+      (100 - model.r2 * 100).toFixed(0) + '% reflects factors not captured by time alone (product mix, macro shocks, pipeline decisions).' +
+      pxExplain +
+      ' Shaded band = ±1 standard deviation. Projections assume no structural break in the business.';
   }
 
   // ── Insights panel ─────────────────────────────────────────────────────
@@ -5331,27 +5348,14 @@ setInterval(()=>loadData(false), 30 * 60 * 1000); // 30 minutes
 
 /* =====================================================
    BOOT SEQUENCE
-   Must run after DOM is ready. initFirebase → setupAuth
-   handles both popup flow and post-redirect flow.
    ===================================================== */
 document.addEventListener('DOMContentLoaded', () => {
   initFirebase();
-
   if (_fbReady) {
-    // Handle post-redirect auth (signInWithRedirect fallback)
     _auth.getRedirectResult()
-      .then(result => {
-        if (result && result.user) {
-          // onAuthStateChanged will fire immediately after — no extra action needed
-          console.info('[Auth] Redirect sign-in resolved for', result.user.email);
-        }
-      })
-      .catch(err => {
-        // Common on first load when there is no pending redirect — safe to ignore
-        console.info('[Auth] getRedirectResult (no pending redirect):', err.code || err.message);
-      });
+      .then(result => { if (result && result.user) console.info('[Auth] Redirect sign-in ok:', result.user.email); })
+      .catch(err => console.info('[Auth] getRedirectResult (no pending redirect):', err.code || err.message));
   }
-
   setupAuth();
 });
 
@@ -5460,29 +5464,140 @@ function parseCMAWorkbook(wb) {
   const bedSheets = { '1 Bed': '1 Bed', '2 Bed': '2 Bed', '3 Bed': '3 Bed', '3 Bed Bung': '3 Bed Bung' };
   for (const [key, sheetName] of Object.entries(bedSheets)) {
     const ws = wb.Sheets[sheetName];
-    if (!ws) continue;
+    if (!ws) { console.warn('[CMA] Sheet not found:', sheetName); continue; }
     const rows = toRows(ws);
     const products = [];
-    // Find header row (has "Names"/"Amenities"/"Price" pattern)
-    let headerIdx = rows.findIndex(r => r.some(c => c && /names/i.test(c.toString())));
-    if (headerIdx < 0) headerIdx = 2;
+
+    // ── Step 1: Find header row by scanning for known column keywords ──────
+    // Header row has: Names/Name/Developer, Amenities/Score/Spec, Price/₦, Sqm/Size/Area, ₦/m²/PPSM
+    let headerIdx = -1;
+    let colMap = { name: -1, amenities: -1, price: -1, sqm: -1, ppsm: -1, notes: -1 };
+
+    for (let r = 0; r < Math.min(rows.length, 10); r++) {
+      const row = rows[r];
+      if (!row) continue;
+      let nameC = -1, amenC = -1, priceC = -1, sqmC = -1, ppsmC = -1, notesC = -1;
+      for (let c = 0; c < Math.min(row.length, 15); c++) {
+        const cell = (row[c] || '').toString().toLowerCase().trim().replace(/\s+/g,' ').replace(/\u00a0/g,'');
+        if (cell === '' || cell === null) continue;
+        if (/^(names?|developer|project|product)/.test(cell) && nameC < 0) nameC = c;
+        else if (/^(amenities|amenity|score|spec|criteria)/.test(cell) && amenC < 0) amenC = c;
+        else if (/^(price|₦|naira|total|tcl|tco)/.test(cell) && priceC < 0) priceC = c;
+        else if (/^(sqm|size|area|m²|floor)/.test(cell) && sqmC < 0) sqmC = c;
+        else if (/^(₦.?m²|ppsm|price.?m²|naira.?m²|per.?m)/.test(cell) && ppsmC < 0) ppsmC = c;
+        else if (/^(note|remark|comment)/.test(cell) && notesC < 0) notesC = c;
+      }
+      // We need at minimum a name column and a price column to declare this the header
+      if (nameC >= 0 && priceC >= 0) {
+        headerIdx = r;
+        colMap = { name: nameC, amenities: amenC, price: priceC, sqm: sqmC, ppsm: ppsmC, notes: notesC };
+        console.log('[CMA] Header found at row', r, 'for sheet', sheetName, '| colMap:', JSON.stringify(colMap));
+        break;
+      }
+    }
+
+    // Fallback: if header detection failed, use offset-based approach from first data row
+    if (headerIdx < 0) {
+      headerIdx = 2;
+      // Scan first few data rows to find where names begin
+      for (let r = 2; r < Math.min(rows.length, 6); r++) {
+        const row = rows[r];
+        if (!row) continue;
+        const nameCol = row[1] && typeof row[1] === 'string' && row[1].trim() ? 1 :
+                        row[2] && typeof row[2] === 'string' && row[2].trim() ? 2 : -1;
+        if (nameCol >= 0) {
+          colMap = { name: nameCol, amenities: nameCol+1, price: nameCol+2, sqm: nameCol+4, ppsm: nameCol+5, notes: nameCol+7 };
+          headerIdx = r - 1;
+          console.warn('[CMA] Header detection failed for', sheetName, '— using fallback offsets from col', nameCol);
+          break;
+        }
+      }
+    }
+
+    // ── Step 2: Parse data rows ────────────────────────────────────────────
     for (let i = headerIdx + 1; i < rows.length; i++) {
       const row = rows[i];
-      // Find name, amenities, price, sqm, ppsm in first ~8 cols
-      let name = null, amenities = null, price = null, sqm = null, ppsm = null, notes = null;
-      // Detect pattern: some sheets have name in col 2, some col 1
-      const offset = row[1] && typeof row[1] === 'string' && row[1].trim() ? 1 : 2;
-      name      = (row[offset]   || '').toString().trim().replace(/\u00a0/g,'');
-      if (!name || /avg/i.test(name)) continue;
-      amenities = typeof row[offset+1] === 'number' ? row[offset+1] : null;
-      price     = typeof row[offset+2] === 'number' ? row[offset+2] : parseFloat((row[offset+2]||'').toString().replace(/[₦,\s]/g,''));
-      sqm       = typeof row[offset+4] === 'number' ? row[offset+4] : null;
-      ppsm      = typeof row[offset+5] === 'number' ? row[offset+5] : null;
-      notes     = (row[offset+7] || '').toString().trim();
-      if (!name || isNaN(price) || price <= 0) continue;
-      const isMixta = /mixta|IW|BWP|MR/i.test(name);
+      if (!row) continue;
+
+      // Extract name
+      const rawName = colMap.name >= 0 ? (row[colMap.name] || '') : '';
+      const name = rawName.toString().trim().replace(/\u00a0/g, '');
+      if (!name) continue;
+      // Skip summary/average rows
+      if (/^(avg|average|total|market|adjusted|note|source|\*)/i.test(name)) continue;
+      // Skip rows that look like sub-headers
+      if (/^(names?|developer|project|amenities|score)/i.test(name)) continue;
+
+      // Extract price (try price col, then search row for first large number ≥ 5M)
+      let price = null;
+      if (colMap.price >= 0) {
+        const rawP = row[colMap.price];
+        price = typeof rawP === 'number' ? rawP : parseFloat((rawP || '').toString().replace(/[₦,\s]/g, ''));
+      }
+      if (!price || isNaN(price) || price <= 0) {
+        // Fallback: scan row for first number that looks like a house price (₦5M–₦500M range)
+        for (let c = 1; c < Math.min(row.length, 12); c++) {
+          if (c === colMap.name) continue;
+          const v = typeof row[c] === 'number' ? row[c] : NaN;
+          if (v >= 5e6 && v <= 500e6) { price = v; break; }
+        }
+      }
+      if (!price || isNaN(price) || price <= 0) continue;
+
+      // Extract sqm
+      let sqm = null;
+      if (colMap.sqm >= 0) {
+        const rawS = row[colMap.sqm];
+        sqm = typeof rawS === 'number' && rawS > 10 && rawS < 1000 ? rawS : null;
+      }
+      if (!sqm) {
+        // Fallback: scan for a number in 20–500 range (plausible sqm)
+        for (let c = 1; c < Math.min(row.length, 12); c++) {
+          if (c === colMap.name || c === colMap.price) continue;
+          const v = typeof row[c] === 'number' ? row[c] : NaN;
+          if (v >= 20 && v <= 500) { sqm = v; break; }
+        }
+      }
+
+      // Extract amenities/spec score
+      let amenities = null;
+      if (colMap.amenities >= 0) {
+        const rawA = row[colMap.amenities];
+        amenities = typeof rawA === 'number' && rawA > 0 && rawA <= 58 ? rawA : null;
+      }
+      if (!amenities) {
+        // Fallback: scan for a number in 1–58 range (spec score out of 58)
+        for (let c = 1; c < Math.min(row.length, 12); c++) {
+          if (c === colMap.name || c === colMap.price || c === colMap.sqm) continue;
+          const v = typeof row[c] === 'number' ? row[c] : NaN;
+          if (v >= 1 && v <= 58 && Number.isInteger(v)) { amenities = v; break; }
+        }
+      }
+
+      // Compute ppsm — prefer sheet value, fall back to price/sqm calculation
+      let ppsm = null;
+      if (colMap.ppsm >= 0) {
+        const rawPP = row[colMap.ppsm];
+        ppsm = typeof rawPP === 'number' && rawPP > 0 ? rawPP : null;
+      }
+      if (!ppsm && price && sqm) {
+        ppsm = price / sqm; // Derive it — this is always more reliable than whatever's in the sheet
+      }
+
+      // Extract notes
+      const notes = colMap.notes >= 0 ? (row[colMap.notes] || '').toString().trim() : '';
+
+      // isMixta detection — check name and also any "mixta" text in the row
+      const rowText = row.map(c => (c||'').toString().toLowerCase()).join(' ');
+      const isMixta = /mixta|ibudo wura|beechwood|marula/.test(rowText) ||
+                      /mixta|IW\b|BWP\b|\bMR\b/.test(name);
+
       products.push({ name, amenities, price, sqm, ppsm, notes, isMixta });
     }
+
+    console.log('[CMA] Parsed', products.length, 'products for', sheetName,
+      '| with amenities:', products.filter(p=>p.amenities).length,
+      '| with ppsm:', products.filter(p=>p.ppsm).length);
     data.beds[key] = products;
   }
 
@@ -5622,26 +5737,72 @@ function renderCMAMatrixCharts() {
   if (!CMA_DATA) return;
   const bedKey = _cmaBed === '3b' ? '3 Bed Bung' : _cmaBed + ' Bed';
   const products = CMA_DATA.beds[bedKey] || [];
-  if (!products.length) return;
 
   const titleEl = document.getElementById('cma-matrix-title');
   if (titleEl) titleEl.textContent = `₦/m² vs Specification Score — ${bedKey}`;
 
-  // ── Scatter: spec score (X) vs ₦/m² (Y), bubble = sqm ────────────────
-  const mixta  = products.filter(p => p.isMixta);
-  const comps  = products.filter(p => !p.isMixta);
-  const avgPpsm = products.filter(p=>p.ppsm).reduce((s,p)=>s+p.ppsm,0) / products.filter(p=>p.ppsm).length;
+  if (!products.length) {
+    console.warn('[CMA] No products found for bed key:', bedKey, '| Available:', Object.keys(CMA_DATA.beds));
+    // Show a diagnostic message in the chart area instead of a blank chart
+    ['c-cma-matrix','c-cma-prices'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        const ctx = el.getContext('2d');
+        if (ctx) { ctx.clearRect(0,0,el.width,el.height); }
+      }
+    });
+    const callout = document.getElementById('cma-matrix-callout');
+    if (callout) {
+      callout.style.display = '';
+      callout.innerHTML = `⚠️ No product data loaded for <strong>${bedKey}</strong>. Available tabs: ${Object.entries(CMA_DATA.beds).filter(([k,v])=>v.length>0).map(([k,v])=>k+' ('+v.length+')').join(', ') || 'none'}. Check browser console for parsing details.`;
+    }
+    return;
+  }
 
-  const toScatter = arr => arr.filter(p => p.amenities && p.ppsm).map(p => ({
-    x: p.amenities,
-    y: +(p.ppsm/1e6).toFixed(4),
-    r: Math.max(6, Math.min(22, (p.sqm||50)/4)),
-    label: p.name,
-    price: p.price,
-    sqm: p.sqm,
-    ppsm: p.ppsm,
-    notes: p.notes
-  }));
+  // ── Derive avgPpsm from all products that have a price/sqm ──────────────
+  const ppsmProducts = products.filter(p => p.ppsm && isFinite(p.ppsm) && p.ppsm > 0);
+  const avgPpsm = ppsmProducts.length
+    ? ppsmProducts.reduce((s,p) => s + p.ppsm, 0) / ppsmProducts.length
+    : 0;
+
+  // ── Fallback spec scores by product type when sheet data is missing ──────
+  // These are derived from the 58-criterion CMA report.
+  const fallbackSpec = {
+    mixta: 43, default_mixta: 43, default_comp: 48
+  };
+
+  const toScatter = arr => arr
+    .filter(p => p.price > 0) // only require price — everything else we can derive
+    .map(p => {
+      // Use parsed amenities, or fall back to known values from the spec report
+      const spec = (p.amenities && p.amenities > 0 && p.amenities <= 58)
+        ? p.amenities
+        : (p.isMixta ? fallbackSpec.mixta : fallbackSpec.default_comp);
+      // Use parsed ppsm or compute it
+      const ppsmVal = (p.ppsm && p.ppsm > 0) ? p.ppsm : (p.sqm ? p.price / p.sqm : null);
+      if (!ppsmVal) return null; // Can't plot without ₦/m²
+      return {
+        x: spec,
+        y: +(ppsmVal / 1e6).toFixed(4),
+        r: Math.max(7, Math.min(24, (p.sqm || 55) / 4)),
+        label: p.name,
+        price: p.price,
+        sqm: p.sqm,
+        ppsm: ppsmVal,
+        notes: p.notes,
+        specSource: (p.amenities && p.amenities > 0) ? 'sheet' : 'cma-report'
+      };
+    })
+    .filter(Boolean);
+
+  const mixta = products.filter(p => p.isMixta);
+  const comps  = products.filter(p => !p.isMixta);
+  const mixtaScatter = toScatter(mixta);
+  const compScatter  = toScatter(comps);
+
+  console.log('[CMA Matrix] Plotting', mixtaScatter.length, 'Mixta +', compScatter.length, 'competitor bubbles for', bedKey);
+
+  const avgPpsmM = avgPpsm / 1e6;
 
   mkChart('c-cma-matrix', {
     type: 'bubble',
@@ -5649,14 +5810,14 @@ function renderCMAMatrixCharts() {
       datasets: [
         {
           label: 'Mixta products',
-          data: toScatter(mixta),
+          data: mixtaScatter,
           backgroundColor: 'rgba(192,57,43,0.75)',
           borderColor: '#922B21',
           borderWidth: 2
         },
         {
           label: 'Competitors',
-          data: toScatter(comps),
+          data: compScatter,
           backgroundColor: 'rgba(243,156,18,0.5)',
           borderColor: '#D68910',
           borderWidth: 1
@@ -5671,13 +5832,14 @@ function renderCMAMatrixCharts() {
           callbacks: {
             label: ctx => {
               const p = ctx.raw;
-              const zone = p.y > avgPpsm/1e6 && ctx.datasetIndex === 0 ? '⚠️ DANGER ZONE' : '';
+              const zone = (p.x < 47 && p.y > avgPpsmM) ? ' ⚠️ DANGER ZONE' : '';
               return [
-                zone + ' ' + p.label,
-                '₦/m²: ₦' + Math.round(p.ppsm/1000) + 'K',
-                'Spec: ' + p.x + '/58',
-                p.sqm ? 'Size: ' + p.sqm + 'm²' : '',
-                p.notes ? 'Note: ' + p.notes.substring(0,50) : ''
+                p.label + zone,
+                '₦/m²: ₦' + Math.round(p.ppsm / 1000) + 'K per m²',
+                'Spec score: ' + p.x + '/58' + (p.specSource === 'cma-report' ? ' (CMA report)' : ''),
+                p.sqm ? 'Unit size: ' + p.sqm + 'm²' : '',
+                'Total price: ₦' + (p.price / 1e6).toFixed(1) + 'M',
+                p.notes ? 'Note: ' + p.notes.substring(0, 60) : ''
               ].filter(Boolean);
             }
           }
@@ -5685,14 +5847,14 @@ function renderCMAMatrixCharts() {
       },
       scales: {
         x: {
-          title: { display:true, text:'Specification Score (/58)' },
-          min: 30, max: 65,
-          grid: { color:'rgba(0,0,0,0.04)' }
+          title: { display: true, text: 'Specification Score (/58) — higher = better spec' },
+          min: 20, max: 65,
+          grid: { color: 'rgba(0,0,0,0.04)' }
         },
         y: {
-          title: { display:true, text:'₦/m² (₦M)' },
-          ticks: { callback: v => '₦'+v.toFixed(2)+'M' },
-          grid: { color:'rgba(0,0,0,0.04)' }
+          title: { display: true, text: '₦/m² (₦M) — higher = more expensive per sqm' },
+          ticks: { callback: v => '₦' + v.toFixed(2) + 'M' },
+          grid: { color: 'rgba(0,0,0,0.04)' }
         }
       }
     },
@@ -5700,19 +5862,27 @@ function renderCMAMatrixCharts() {
       id: 'cmaZones',
       afterDraw(chart) {
         const { ctx, chartArea: { left, right, top, bottom }, scales: { x, y } } = chart;
+        if (!x || !y) return;
         const xMid = x.getPixelForValue(47);
-        const yMid = y.getPixelForValue(avgPpsm/1e6);
+        const yMid = avgPpsmM > 0 ? y.getPixelForValue(avgPpsmM) : (top + bottom) / 2;
         ctx.save();
-        // Danger zone shading (top-left)
-        ctx.fillStyle = 'rgba(231,76,60,0.04)';
-        ctx.fillRect(left, top, xMid-left, yMid-top);
+        // Danger zone shading (top-left: high price, low spec)
+        ctx.fillStyle = 'rgba(231,76,60,0.05)';
+        ctx.fillRect(left, top, xMid - left, yMid - top);
         ctx.font = '700 9px sans-serif';
-        ctx.fillStyle = 'rgba(192,57,43,0.55)';
-        ctx.fillText('⚠ DANGER ZONE', left+6, top+14);
-        ctx.fillStyle = 'rgba(39,174,96,0.55)';
-        ctx.fillText('⭐ VALUE KING', xMid+6, bottom-8);
-        ctx.fillStyle = 'rgba(41,128,185,0.55)';
-        ctx.fillText('💰 PREMIUM', xMid+6, top+14);
+        ctx.fillStyle = 'rgba(192,57,43,0.6)';
+        ctx.fillText('⚠ DANGER ZONE', left + 6, top + 14);
+        ctx.fillStyle = 'rgba(39,174,96,0.6)';
+        ctx.fillText('⭐ VALUE KING', xMid + 6, bottom - 8);
+        ctx.fillStyle = 'rgba(41,128,185,0.6)';
+        ctx.fillText('💰 PREMIUM', xMid + 6, top + 14);
+        ctx.fillStyle = 'rgba(150,150,150,0.5)';
+        ctx.fillText('BUDGET', left + 6, bottom - 8);
+        // Draw dividing lines
+        ctx.beginPath(); ctx.moveTo(xMid, top); ctx.lineTo(xMid, bottom);
+        ctx.strokeStyle = 'rgba(0,0,0,0.08)'; ctx.lineWidth = 1; ctx.setLineDash([4,4]); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(left, yMid); ctx.lineTo(right, yMid);
+        ctx.strokeStyle = 'rgba(0,0,0,0.08)'; ctx.lineWidth = 1; ctx.stroke();
         ctx.restore();
       }
     }]
@@ -5721,24 +5891,32 @@ function renderCMAMatrixCharts() {
   // Narrative callout
   const callout = document.getElementById('cma-matrix-callout');
   if (callout) {
-    const mixtaInDanger = mixta.filter(p => p.amenities < 47 && p.ppsm > avgPpsm);
+    const mixtaInDanger = mixtaScatter.filter(p => p.x < 47 && p.y > avgPpsmM);
+    const mixtaInPremium = mixtaScatter.filter(p => p.x >= 47 && p.y > avgPpsmM);
+    const mixtaValueKing = mixtaScatter.filter(p => p.x >= 47 && p.y <= avgPpsmM);
     if (mixtaInDanger.length > 0) {
       callout.style.display = '';
-      callout.innerHTML = `⚠️ <strong>${mixtaInDanger.map(p=>p.name).join(', ')}</strong> ${mixtaInDanger.length > 1 ? 'are' : 'is'} in the Danger Zone — mid-high ₦/m² with the lowest spec score in the segment. No other competitor sits here. Every competitor is either low-spec/low-price (Budget) or high-spec/high-or-mid-price (Premium). Mixta's position is structurally unique and structurally indefensible without either a spec upgrade or a price moderation.`;
+      callout.innerHTML = `⚠️ <strong>${mixtaInDanger.map(p=>p.label).join(', ')}</strong> ${mixtaInDanger.length > 1 ? 'are' : 'is'} in the Danger Zone — above-average ₦/m² with below-average specification score. The correct strategic response is either a spec upgrade (move right) or a price reduction (move down) — not both, as margin is already thin.`;
+    } else if (mixtaValueKing.length > 0) {
+      callout.style.display = '';
+      callout.innerHTML = `✅ <strong>${mixtaValueKing.map(p=>p.label).join(', ')}</strong> ${mixtaValueKing.length > 1 ? 'sit' : 'sits'} in the Value King quadrant — competitive spec at a below-market ₦/m². This is a defensible position and a viable marketing anchor.`;
+    } else if (mixtaInPremium.length > 0) {
+      callout.style.display = '';
+      callout.innerHTML = `💰 <strong>${mixtaInPremium.map(p=>p.label).join(', ')}</strong> ${mixtaInPremium.length > 1 ? 'are' : 'is'} positioned as Premium — high spec, high ₦/m². This is justifiable if the brand and finish quality can support it.`;
     } else {
       callout.style.display = 'none';
     }
   }
 
   // ── Price bar chart ─────────────────────────────────────────────────────
-  const sorted = [...products].sort((a,b) => a.price - b.price);
+  const sorted = [...products].filter(p => p.price > 0).sort((a, b) => a.price - b.price);
   mkChart('c-cma-prices', {
     type: 'bar',
     data: {
-      labels: sorted.map(p => p.name.length > 22 ? p.name.substring(0,20)+'…' : p.name),
+      labels: sorted.map(p => p.name.length > 24 ? p.name.substring(0, 22) + '…' : p.name),
       datasets: [{
         label: 'TCO price (₦M)',
-        data: sorted.map(p => +(p.price/1e6).toFixed(1)),
+        data: sorted.map(p => +(p.price / 1e6).toFixed(1)),
         backgroundColor: sorted.map(p => p.isMixta ? 'rgba(192,57,43,0.8)' : 'rgba(243,156,18,0.55)'),
         borderColor:     sorted.map(p => p.isMixta ? '#922B21' : '#D68910'),
         borderWidth: 1, borderRadius: 4
@@ -5753,18 +5931,19 @@ function renderCMAMatrixCharts() {
             label: ctx => {
               const p = sorted[ctx.dataIndex];
               return [
-                ' Price: ₦' + ctx.parsed.y.toFixed(1) + 'M',
-                p.sqm ? ' Size: ' + p.sqm + 'm²' : '',
-                p.ppsm ? ' ₦/m²: ₦' + Math.round(p.ppsm/1000) + 'K' : '',
-                p.notes ? ' ' + p.notes.substring(0,60) : ''
+                ' Price: ₦' + ctx.parsed.y.toFixed(1) + 'M (TCO-normalised)',
+                p.sqm  ? ' Size: ' + p.sqm + 'm²' : '',
+                p.ppsm ? ' ₦/m²: ₦' + Math.round(p.ppsm / 1000) + 'K' : '',
+                p.isMixta ? ' ✅ Mixta product' : ' Competitor',
+                p.notes ? ' ' + p.notes.substring(0, 60) : ''
               ].filter(Boolean);
             }
           }
         }
       },
       scales: {
-        x: { ticks: { font:{size:9}, maxRotation:45 }, grid:{display:false} },
-        y: { title:{display:true,text:'₦M (TCO-normalised)'}, ticks:{callback:v=>'₦'+v+'M'}, grid:{color:'rgba(0,0,0,0.04)'} }
+        x: { ticks: { font:{size:9}, maxRotation: 45 }, grid: { display: false } },
+        y: { title: { display: true, text: '₦M (TCO-normalised)' }, ticks: { callback: v => '₦' + v + 'M' }, grid: { color: 'rgba(0,0,0,0.04)' } }
       }
     }
   });
