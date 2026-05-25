@@ -315,6 +315,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <button class="nav-btn" onclick="showSection('agents',this)">Agents</button>
     <button class="nav-btn" onclick="showSection('buyers',this)">Buyers</button>
     <button class="nav-btn" onclick="showSection('pricing',this)" style="background:linear-gradient(135deg,#E8F8F5,#fff);color:#27AE60;border:1px solid #A9DFBF;font-weight:600">₦ Pricing</button>
+    <button class="nav-btn" onclick="showSection('market',this)" style="background:linear-gradient(135deg,#EBF5FB,#fff);color:#2980B9;border:1px solid #AED6F1;font-weight:600">🏙 Market</button>
     <button class="nav-btn" onclick="showSection('predict',this)" style="background:linear-gradient(135deg,var(--red4),#fff0ee);color:var(--red);border:1px solid var(--red3);font-weight:600">⬡ Predict</button>
   </nav>
 
@@ -952,6 +953,142 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
 </div>
 
+<!-- ===== MARKET INTELLIGENCE ===== -->
+<div id="section-market" class="section">
+
+  <!-- ── Loading state ── -->
+  <div id="cma-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:16px">
+    <div class="spin" style="width:32px;height:32px;border:3px solid var(--red4);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite"></div>
+    <div style="font-size:13px;color:var(--text3)" id="cma-loading-msg">Loading competitive market analysis…</div>
+  </div>
+
+  <!-- ── Error state ── -->
+  <div id="cma-error" style="display:none;padding:40px;text-align:center">
+    <div style="font-size:32px;margin-bottom:12px">⚠️</div>
+    <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px">Could not load CMA data</div>
+    <div style="font-size:12px;color:var(--text3)" id="cma-error-msg"></div>
+    <button onclick="loadCMAData()" style="margin-top:16px;padding:8px 20px;background:var(--red);color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">Retry</button>
+  </div>
+
+  <!-- ── Main content (hidden until loaded) ── -->
+  <div id="cma-content" style="display:none">
+
+    <!-- Header -->
+    <div style="margin-bottom:20px;padding:18px 22px;background:linear-gradient(135deg,#1A2F4E 0%,#2C4A6E 100%);border-radius:14px;color:white">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:0.5;margin-bottom:6px">Lekki–Epe Corridor · Q2 2026 CMA</div>
+      <div style="font-size:17px;font-weight:700;letter-spacing:-.3px;margin-bottom:6px">How does Mixta's pricing compare to the market — really?</div>
+      <div style="font-size:12px;opacity:0.65;line-height:1.6;max-width:680px">All competitor prices are normalised to a fully-finished, all-inclusive equivalent (TCO) for a fair comparison. Headline prices that exclude documentation, finishing, or legal fees have been adjusted upward to a like-for-like basis.</div>
+      <div style="display:flex;gap:28px;margin-top:14px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:7px"><div style="width:10px;height:10px;border-radius:2px;background:#E74C3C"></div><span style="font-size:11px;opacity:0.8">🔴 Hold / Urgent — do not raise price</span></div>
+        <div style="display:flex;align-items:center;gap:7px"><div style="width:10px;height:10px;border-radius:2px;background:#F39C12"></div><span style="font-size:11px;opacity:0.8">🟠 Moderate — reduce increase %</span></div>
+        <div style="display:flex;align-items:center;gap:7px"><div style="width:10px;height:10px;border-radius:2px;background:#27AE60"></div><span style="font-size:11px;opacity:0.8">🟢 Proceed — well positioned</span></div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 1: Q2 Price Decision Table ── -->
+    <div class="sdiv" style="margin-bottom:10px">① Q2 2026 Pricing Decisions — Product by Product</div>
+    <div class="cc full" style="margin-bottom:6px">
+      <div class="ch">
+        <div>
+          <div class="ct">Q1 vs Q2 2026 Prices — All Mixta Affordable Products</div>
+          <div class="cs">Q2 prices are cost-based revisions · ₦/m² shown for direct comparison · Traffic light = CMA recommendation</div>
+        </div>
+      </div>
+      <div id="cma-price-table" style="overflow-x:auto;padding:4px 0"></div>
+    </div>
+
+    <!-- ── SECTION 2: ₦/m² Positioning Matrix ── -->
+    <div class="sdiv" style="margin-top:22px;margin-bottom:10px">② ₦/m² Positioning — Where does Mixta sit vs the market?</div>
+    <div style="margin-bottom:10px;display:flex;align-items:center;gap:8px">
+      <span style="font-size:11px;color:var(--text3);font-weight:600">Bedroom type:</span>
+      <div style="display:flex;gap:4px;background:rgba(0,0,0,0.04);padding:3px;border-radius:8px">
+        <button class="cma-bed-btn active" data-bed="1" onclick="setCMABed(1)" style="padding:4px 14px;border:none;background:white;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.08);transition:all 0.15s">1-Bed</button>
+        <button class="cma-bed-btn" data-bed="2" onclick="setCMABed(2)" style="padding:4px 14px;border:none;background:transparent;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);color:var(--text3);transition:all 0.15s">2-Bed</button>
+        <button class="cma-bed-btn" data-bed="3" onclick="setCMABed(3)" style="padding:4px 14px;border:none;background:transparent;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);color:var(--text3);transition:all 0.15s">3-Bed</button>
+        <button class="cma-bed-btn" data-bed="3b" onclick="setCMABed('3b')" style="padding:4px 14px;border:none;background:transparent;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);color:var(--text3);transition:all 0.15s">3-Bed Bung</button>
+      </div>
+    </div>
+    <div class="grid2" style="margin-bottom:4px">
+      <div class="cc">
+        <div class="ch">
+          <div>
+            <div class="ct" id="cma-matrix-title">₦/m² vs Specification Score</div>
+            <div class="cs">Bubble size = unit sqm · X = spec score (out of 58) · Y = ₦/m² · Red zone = high price, low spec</div>
+          </div>
+        </div>
+        <div class="cw" style="height:340px"><canvas id="c-cma-matrix"></canvas></div>
+        <div id="cma-matrix-callout" style="margin-top:10px;padding:10px 14px;border-radius:9px;font-size:11.5px;line-height:1.6;border-left:4px solid #E74C3C;background:#FDECEA;display:none"></div>
+      </div>
+      <div class="cc">
+        <div class="ch">
+          <div>
+            <div class="ct">Total Fully-Finished Price Comparison (₦M)</div>
+            <div class="cs">All prices TCO-normalised · Red = current Mixta price · Blue = size-adjusted Mixta price · Pink = competitors</div>
+          </div>
+        </div>
+        <div class="cw" style="height:340px"><canvas id="c-cma-prices"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 3: TCO Analysis ── -->
+    <div class="sdiv" style="margin-top:22px;margin-bottom:10px">③ True Cost of Ownership — Why headline prices mislead</div>
+    <div class="grid2" style="margin-bottom:4px">
+      <div class="cc">
+        <div class="ch">
+          <div>
+            <div class="ct">TCO Normalisation — 2-Bed products (₦M)</div>
+            <div class="cs">Each segment shows: headline price + shell-to-FF gap + finishing gap + documentation. Total = true buyer cost.</div>
+          </div>
+        </div>
+        <div class="cw" style="height:300px"><canvas id="c-cma-tco"></canvas></div>
+        <div style="margin-top:10px;padding:10px 14px;border-radius:9px;font-size:11.5px;line-height:1.6;border-left:4px solid #2980B9;background:#EBF5FB">
+          <strong>Mixta's structural advantage:</strong> Q2 2026 prices are fully inclusive — documentation, legal fees, and hybrid finish are all in the headline number. Competitors advertising lower prices are often excluding ₦4.5M–₦10M in buyer costs. The correct benchmark is the TCO column, not the headline price.
+        </div>
+      </div>
+      <div class="cc">
+        <div class="ch">
+          <div>
+            <div class="ct">58-Criterion Specification Matrix</div>
+            <div class="cs">Scored across internal finish, mechanical services, external infrastructure and amenities. Mixta current = 43/58.</div>
+          </div>
+        </div>
+        <div class="cw" style="height:300px"><canvas id="c-cma-spec"></canvas></div>
+        <div id="cma-spec-callout" style="margin-top:10px;padding:10px 14px;border-radius:9px;font-size:11.5px;line-height:1.6;border-left:4px solid #E74C3C;background:#FDECEA">
+          <strong>Specification gap:</strong> Mixta scores 43/58 — 14 points below the Fully Finished benchmark and last in the corridor. At current ₦/m², management must either close this gap (FF upgrade: ₦2.6M/1-bed, ₦5.1M/2-bed) or accept that volume growth will slow as the market raises its expectations.
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 4: Size Adjustment ── -->
+    <div class="sdiv" style="margin-top:22px;margin-bottom:10px">④ The Size Trap — Mixta's small footprints hide a ₦/m² premium</div>
+    <div class="cc full" style="margin-bottom:4px">
+      <div class="ch">
+        <div>
+          <div class="ct">Size-Adjusted Price vs Market Average</div>
+          <div class="cs">Current price (red) · Size-adjusted to market avg sqm (blue) · Shows what Mixta would charge if units were market-sized</div>
+        </div>
+      </div>
+      <div class="cw" style="height:280px"><canvas id="c-cma-size"></canvas></div>
+      <div style="margin-top:10px;padding:10px 14px;border-radius:9px;font-size:11.5px;line-height:1.6;border-left:4px solid #F39C12;background:#FEF9E7">
+        <strong>The size trap:</strong> Mixta's products look competitive on total price, but units are on average 17% smaller than the market. Marula 1-bed is 40% smaller than average. When adjusted to a like-for-like sqm, Mixta's prices move <strong>above</strong> the market average — a structural exposure that cannot be resolved by spec upgrades alone.
+      </div>
+    </div>
+
+    <!-- ── SECTION 5: Mortgage Eligibility ── -->
+    <div class="sdiv" style="margin-top:22px;margin-bottom:10px">⑤ Mortgage Eligibility — Which lenders can buyers access?</div>
+    <div class="cc full" style="margin-bottom:20px">
+      <div class="ch">
+        <div>
+          <div class="ct">Lender Eligibility by Specification Tier</div>
+          <div class="cs">Current hybrid spec qualifies for 2 of 4 lenders · FF upgrade immediately unlocks FirstBank + AG Mortgage</div>
+        </div>
+      </div>
+      <div id="cma-mortgage-grid" style="padding:4px 0"></div>
+    </div>
+
+  </div><!-- end cma-content -->
+</div><!-- end section-market -->
+
 </main>
 
 <script>
@@ -1006,6 +1143,19 @@ let CLASSIFICATION_DATA = null;
 
 // Pricing intelligence enabled flag
 const PRICING_INTELLIGENCE_ENABLED = true;
+
+/* =====================================================
+   MARKET INTELLIGENCE CONFIG
+   Separate Google Sheet containing CMA data.
+   The published XLSX URL covers all tabs:
+   Q2 2026 Prices, 1 Bed, 2 Bed, 3 Bed, 3 Bed Bung,
+   TOC Analysis, Size adjustment, Criteria
+   ===================================================== */
+const CMA_XLSX_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5_MAo0Z5J0PasrGXk44ki5OZv6n2-lGCe208CYpi2GK_O2wz3JYBECgic6qecglxAeO4QZoBtnPJn/pub?output=xlsx';
+
+// Global CMA data store — populated once on first Market tab visit
+let CMA_DATA = null;
+let _cmaLoading = false;
 
 // ── Sheet-name resolver ─────────────────────────────────────────────────────
 // Google Sheets can publish tabs with trailing spaces, smart-quotes, or
@@ -2719,10 +2869,15 @@ function showSection(name, btn) {
   const el = document.getElementById('section-'+name);
   if(el) el.classList.add('active');
   if(btn) btn.classList.add('active');
-  
+
   // Render pricing charts when pricing tab is shown
   if (name === 'pricing' && PRICING_DATA && INFLATION_DATA) {
     renderPricingCharts();
+  }
+
+  // Lazy-load CMA data on first visit to Market tab
+  if (name === 'market' && !CMA_DATA && !_cmaLoading) {
+    loadCMAData();
   }
 }
 
@@ -5174,11 +5329,703 @@ function renderInsightEngine(d, rows) {
    ===================================================== */
 setInterval(()=>loadData(false), 30 * 60 * 1000); // 30 minutes
 
+setInterval(()=>loadData(false), 30 * 60 * 1000); // 30 minutes
+
 /* =====================================================
-   BOOT
+   MARKET INTELLIGENCE MODULE
+   Fetches and renders the CMA Google Sheet.
+   Lazy-loaded on first visit to the Market tab.
    ===================================================== */
-initFirebase();
-setupAuth();
+
+// ── State for the ₦/m² matrix bed-type toggle ───────────────────────────────
+let _cmaBed = 1;
+
+function setCMABed(bed) {
+  _cmaBed = bed;
+  document.querySelectorAll('.cma-bed-btn').forEach(btn => {
+    const isActive = String(btn.dataset.bed) === String(bed);
+    btn.style.background    = isActive ? 'white' : 'transparent';
+    btn.style.color         = isActive ? 'var(--text)' : 'var(--text3)';
+    btn.style.boxShadow     = isActive ? '0 1px 3px rgba(0,0,0,0.08)' : 'none';
+  });
+  if (CMA_DATA) renderCMAMatrixCharts();
+}
+
+// ── Fetch & parse the CMA workbook ──────────────────────────────────────────
+async function loadCMAData() {
+  if (_cmaLoading) return;
+  _cmaLoading = true;
+
+  const loading = document.getElementById('cma-loading');
+  const content = document.getElementById('cma-content');
+  const errEl   = document.getElementById('cma-error');
+  const msgEl   = document.getElementById('cma-loading-msg');
+
+  if (loading) loading.style.display = 'flex';
+  if (content) content.style.display = 'none';
+  if (errEl)   errEl.style.display   = 'none';
+
+  try {
+    if (msgEl) msgEl.textContent = 'Downloading CMA data from Google Sheets…';
+    const buf = await fetchWithRetry(CMA_XLSX_URL);
+    const wb  = XLSX.read(buf, { type: 'array', cellDates: true });
+
+    if (msgEl) msgEl.textContent = 'Parsing competitive analysis…';
+    CMA_DATA = parseCMAWorkbook(wb);
+
+    if (loading) loading.style.display = 'none';
+    if (content) content.style.display = '';
+    renderCMATab();
+
+  } catch(err) {
+    console.error('[CMA] Load failed:', err);
+    if (loading) loading.style.display = 'none';
+    if (errEl)   errEl.style.display   = '';
+    const eMsg = document.getElementById('cma-error-msg');
+    if (eMsg) eMsg.textContent = err.message + ' — check that the CMA sheet is published to the web.';
+  } finally {
+    _cmaLoading = false;
+  }
+}
+
+// ── Parse every relevant tab from the CMA workbook ──────────────────────────
+function parseCMAWorkbook(wb) {
+  const data = { prices: [], beds: {}, toc: [], spec: [], sizeAdj: [] };
+
+  // Helper: sheet → array of rows, skipping blank rows
+  const toRows = (ws) => XLSX.utils.sheet_to_json(ws, { header: 1, defval: null })
+    .filter(r => r && r.some(c => c !== null && c !== ''));
+
+  // ── Q2 2026 Prices tab ────────────────────────────────────────────────────
+  const pWS = wb.Sheets['Q2 2026 Prices'];
+  if (pWS) {
+    const rows = toRows(pWS);
+    let currentProject = '';
+    rows.forEach(row => {
+      const col1 = (row[1] || '').toString().trim().replace(/\u00a0/g, '');
+      if (!col1) return;
+      // Detect project headers (no price in col2)
+      if (!row[2] && col1.length < 30) { currentProject = col1; return; }
+      const q1  = typeof row[2] === 'number' ? row[2] : parseFloat((row[2]||'').toString().replace(/[₦,\s]/g,''));
+      const q2Raw = row[3];
+      const q2  = typeof q2Raw === 'number' ? q2Raw : parseFloat((q2Raw||'').toString().replace(/[₦,\s]/g,''));
+      const sqm = typeof row[5] === 'number' ? row[5] : null;
+      if (isNaN(q1) || isNaN(q2)) return;
+      const ppsm = sqm ? (q2 / sqm) : null;
+
+      // Decision logic based on CMA report
+      const decisions = {
+        'Ibudo wura': { '1 Bed': 'proceed', '2 Bed': 'hold' },
+        'Marula':     { '1 Bed': 'urgent',  '2 Bed': 'urgent', '3 Bed': 'proceed' },
+        'Beechwood Park (BWP)': { '2 Bed': 'proceed', '3 Bed Row Housing': 'urgent', '3 Bed semi detached': 'urgent' }
+      };
+      let decision = 'hold';
+      for (const [proj, unitMap] of Object.entries(decisions)) {
+        if (currentProject.toLowerCase().includes(proj.toLowerCase())) {
+          for (const [unitKey, dec] of Object.entries(unitMap)) {
+            if (col1.toLowerCase().includes(unitKey.toLowerCase())) { decision = dec; break; }
+          }
+        }
+      }
+
+      data.prices.push({ project: currentProject, unit: col1, q1, q2, sqm, ppsm, decision });
+    });
+  }
+
+  // ── 1 Bed / 2 Bed / 3 Bed / 3 Bed Bung tabs ─────────────────────────────
+  const bedSheets = { '1 Bed': '1 Bed', '2 Bed': '2 Bed', '3 Bed': '3 Bed', '3 Bed Bung': '3 Bed Bung' };
+  for (const [key, sheetName] of Object.entries(bedSheets)) {
+    const ws = wb.Sheets[sheetName];
+    if (!ws) continue;
+    const rows = toRows(ws);
+    const products = [];
+    // Find header row (has "Names"/"Amenities"/"Price" pattern)
+    let headerIdx = rows.findIndex(r => r.some(c => c && /names/i.test(c.toString())));
+    if (headerIdx < 0) headerIdx = 2;
+    for (let i = headerIdx + 1; i < rows.length; i++) {
+      const row = rows[i];
+      // Find name, amenities, price, sqm, ppsm in first ~8 cols
+      let name = null, amenities = null, price = null, sqm = null, ppsm = null, notes = null;
+      // Detect pattern: some sheets have name in col 2, some col 1
+      const offset = row[1] && typeof row[1] === 'string' && row[1].trim() ? 1 : 2;
+      name      = (row[offset]   || '').toString().trim().replace(/\u00a0/g,'');
+      if (!name || /avg/i.test(name)) continue;
+      amenities = typeof row[offset+1] === 'number' ? row[offset+1] : null;
+      price     = typeof row[offset+2] === 'number' ? row[offset+2] : parseFloat((row[offset+2]||'').toString().replace(/[₦,\s]/g,''));
+      sqm       = typeof row[offset+4] === 'number' ? row[offset+4] : null;
+      ppsm      = typeof row[offset+5] === 'number' ? row[offset+5] : null;
+      notes     = (row[offset+7] || '').toString().trim();
+      if (!name || isNaN(price) || price <= 0) continue;
+      const isMixta = /mixta|IW|BWP|MR/i.test(name);
+      products.push({ name, amenities, price, sqm, ppsm, notes, isMixta });
+    }
+    data.beds[key] = products;
+  }
+
+  // ── TOC Analysis tab ─────────────────────────────────────────────────────
+  const tocWS = wb.Sheets['TOC Analysis'];
+  if (tocWS) {
+    const rows = toRows(tocWS);
+    rows.forEach(row => {
+      const name = (row[1] || '').toString().trim().replace(/\u00a0/g,'');
+      const amenities = typeof row[2] === 'number' ? row[2] : null;
+      const price     = typeof row[3] === 'number' ? row[3] : null;
+      const sqm       = typeof row[5] === 'number' ? row[5] : null;
+      const ppsm      = typeof row[6] === 'number' ? row[6] : null;
+      if (!name || !price || /names|market|adjusted/i.test(name)) return;
+      data.toc.push({ name, amenities, price, sqm, ppsm, isMixta: /mixta/i.test(name) });
+    });
+  }
+
+  // ── Criteria tab (spec matrix — only first 19 cols are meaningful) ────────
+  const criWS = wb.Sheets['Criteria'];
+  if (criWS) {
+    const rows = toRows(criWS);
+    // Find the row with competitor names
+    const nameRow = rows.find(r => r[6] && /mixta/i.test(r[6].toString()));
+    if (nameRow) {
+      const competitors = [];
+      for (let c = 4; c < 19; c++) {
+        if (nameRow[c]) competitors.push({ name: nameRow[c].toString().trim(), col: c, score: 0 });
+      }
+      // Count V's per competitor
+      rows.forEach(row => {
+        competitors.forEach(comp => {
+          if ((row[comp.col] || '').toString().trim().toUpperCase() === 'V') comp.score++;
+        });
+      });
+      data.spec = competitors.sort((a,b) => b.score - a.score);
+    }
+  }
+
+  // ── Size adjustment tab ──────────────────────────────────────────────────
+  const sizeWS = wb.Sheets['Size adjustment'];
+  if (sizeWS) {
+    const rows = toRows(sizeWS);
+    rows.forEach(row => {
+      const name    = (row[1] || '').toString().trim().replace(/\u00a0/g,'');
+      const price   = typeof row[3] === 'number' ? row[3] : null;
+      const sqm     = typeof row[5] === 'number' ? row[5] : null;
+      if (!name || !price || /names|price|avg/i.test(name)) return;
+      data.sizeAdj.push({ name, price, sqm, isMixta: /mixta/i.test(name) });
+    });
+    // Also extract current vs adjusted prices for Mixta products
+    // These are in the top section (rows ~4-6 of the sheet)
+    rows.slice(0, 12).forEach(row => {
+      const label = (row[1] || '').toString().trim().toUpperCase();
+      if (['A','B','C'].includes(label)) {
+        const ppsm    = typeof row[2] === 'number' ? row[2] : null;
+        const sqm     = typeof row[4] === 'number' ? row[4] : null;
+        const curPrice = typeof row[6] === 'number' ? row[6] : null;
+        const adjPrice = typeof row[7] === 'number' ? row[7] : null;
+        if (ppsm && curPrice && adjPrice) {
+          data[`mixta_size_${label.toLowerCase()}`] = { ppsm, sqm, curPrice, adjPrice };
+        }
+      }
+    });
+  }
+
+  console.log('[CMA] Parsed:', data.prices.length, 'prices,', Object.keys(data.beds).length, 'bed tabs,', data.spec.length, 'spec entries');
+  return data;
+}
+
+// ── Render the full Market tab ───────────────────────────────────────────────
+function renderCMATab() {
+  if (!CMA_DATA) return;
+  renderCMAPriceTable();
+  renderCMAMatrixCharts();
+  renderCMATCOChart();
+  renderCMASpecChart();
+  renderCMASizeChart();
+  renderCMAMortgageGrid();
+}
+
+// ── ① Price Decision Table ────────────────────────────────────────────────
+function renderCMAPriceTable() {
+  const el = document.getElementById('cma-price-table');
+  if (!el || !CMA_DATA.prices.length) return;
+
+  const decStyle = {
+    proceed: 'background:#EAFAF1;color:#1E8449;border:1px solid #A9DFBF',
+    hold:    'background:#FEF9E7;color:#B7770D;border:1px solid #FAD7A0',
+    urgent:  'background:#FDECEA;color:#922B21;border:1px solid #F5B7B1'
+  };
+  const decLabel = { proceed: '✅ Proceed', hold: '⚠️ Hold / Moderate', urgent: '🔴 Urgent — Hold' };
+
+  let html = `<table style="width:100%;border-collapse:collapse;font-size:11.5px">
+    <thead>
+      <tr style="background:#F7F9FC;border-bottom:2px solid #E8ECF0">
+        <th style="padding:9px 12px;text-align:left;font-weight:700;color:var(--text)">Project / Unit</th>
+        <th style="padding:9px 12px;text-align:right;font-weight:700;color:var(--text)">Q1 2026</th>
+        <th style="padding:9px 12px;text-align:right;font-weight:700;color:var(--text)">Q2 2026</th>
+        <th style="padding:9px 12px;text-align:right;font-weight:700;color:var(--text)">Δ%</th>
+        <th style="padding:9px 12px;text-align:right;font-weight:700;color:var(--text)">SQM</th>
+        <th style="padding:9px 12px;text-align:right;font-weight:700;color:var(--text)">₦/m²</th>
+        <th style="padding:9px 12px;text-align:center;font-weight:700;color:var(--text)">CMA Decision</th>
+      </tr>
+    </thead><tbody>`;
+
+  let lastProj = '';
+  CMA_DATA.prices.forEach((row, i) => {
+    const bg = i % 2 === 0 ? '#FFFFFF' : '#FAFBFC';
+    if (row.project !== lastProj) {
+      html += `<tr style="background:#F2F4F7">
+        <td colspan="7" style="padding:7px 12px;font-weight:700;font-size:12px;color:var(--text);border-top:1px solid #E0E4EA">${row.project}</td>
+      </tr>`;
+      lastProj = row.project;
+    }
+    const delta = row.q1 > 0 ? ((row.q2 - row.q1) / row.q1 * 100).toFixed(1) : '—';
+    const dStyle = decStyle[row.decision] || decStyle.hold;
+    const dLabel = decLabel[row.decision] || decLabel.hold;
+    const fmtM = v => isFinite(v) ? '₦' + (v/1e6).toFixed(2) + 'M' : '—';
+    const fmtK = v => isFinite(v) ? '₦' + Math.round(v/1000) + 'K' : '—';
+    html += `<tr style="background:${bg};border-bottom:1px solid #F0F2F5">
+      <td style="padding:8px 12px;color:var(--text2)">${row.unit}</td>
+      <td style="padding:8px 12px;text-align:right;color:var(--text)">${fmtM(row.q1)}</td>
+      <td style="padding:8px 12px;text-align:right;font-weight:600;color:var(--text)">${fmtM(row.q2)}</td>
+      <td style="padding:8px 12px;text-align:right;color:${parseFloat(delta)>15?'var(--red)':'var(--text2)'}">+${delta}%</td>
+      <td style="padding:8px 12px;text-align:right;color:var(--text3)">${row.sqm ? row.sqm+'m²' : '—'}</td>
+      <td style="padding:8px 12px;text-align:right;color:var(--text3)">${row.ppsm ? fmtK(row.ppsm) : '—'}</td>
+      <td style="padding:8px 12px;text-align:center"><span style="padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700;${dStyle}">${dLabel}</span></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+// ── ② ₦/m² Positioning Matrix + price bar chart ──────────────────────────
+function renderCMAMatrixCharts() {
+  if (!CMA_DATA) return;
+  const bedKey = _cmaBed === '3b' ? '3 Bed Bung' : _cmaBed + ' Bed';
+  const products = CMA_DATA.beds[bedKey] || [];
+  if (!products.length) return;
+
+  const titleEl = document.getElementById('cma-matrix-title');
+  if (titleEl) titleEl.textContent = `₦/m² vs Specification Score — ${bedKey}`;
+
+  // ── Scatter: spec score (X) vs ₦/m² (Y), bubble = sqm ────────────────
+  const mixta  = products.filter(p => p.isMixta);
+  const comps  = products.filter(p => !p.isMixta);
+  const avgPpsm = products.filter(p=>p.ppsm).reduce((s,p)=>s+p.ppsm,0) / products.filter(p=>p.ppsm).length;
+
+  const toScatter = arr => arr.filter(p => p.amenities && p.ppsm).map(p => ({
+    x: p.amenities,
+    y: +(p.ppsm/1e6).toFixed(4),
+    r: Math.max(6, Math.min(22, (p.sqm||50)/4)),
+    label: p.name,
+    price: p.price,
+    sqm: p.sqm,
+    ppsm: p.ppsm,
+    notes: p.notes
+  }));
+
+  mkChart('c-cma-matrix', {
+    type: 'bubble',
+    data: {
+      datasets: [
+        {
+          label: 'Mixta products',
+          data: toScatter(mixta),
+          backgroundColor: 'rgba(192,57,43,0.75)',
+          borderColor: '#922B21',
+          borderWidth: 2
+        },
+        {
+          label: 'Competitors',
+          data: toScatter(comps),
+          backgroundColor: 'rgba(243,156,18,0.5)',
+          borderColor: '#D68910',
+          borderWidth: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'top', labels: { font:{size:10}, boxWidth:10 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const p = ctx.raw;
+              const zone = p.y > avgPpsm/1e6 && ctx.datasetIndex === 0 ? '⚠️ DANGER ZONE' : '';
+              return [
+                zone + ' ' + p.label,
+                '₦/m²: ₦' + Math.round(p.ppsm/1000) + 'K',
+                'Spec: ' + p.x + '/58',
+                p.sqm ? 'Size: ' + p.sqm + 'm²' : '',
+                p.notes ? 'Note: ' + p.notes.substring(0,50) : ''
+              ].filter(Boolean);
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display:true, text:'Specification Score (/58)' },
+          min: 30, max: 65,
+          grid: { color:'rgba(0,0,0,0.04)' }
+        },
+        y: {
+          title: { display:true, text:'₦/m² (₦M)' },
+          ticks: { callback: v => '₦'+v.toFixed(2)+'M' },
+          grid: { color:'rgba(0,0,0,0.04)' }
+        }
+      }
+    },
+    plugins: [{
+      id: 'cmaZones',
+      afterDraw(chart) {
+        const { ctx, chartArea: { left, right, top, bottom }, scales: { x, y } } = chart;
+        const xMid = x.getPixelForValue(47);
+        const yMid = y.getPixelForValue(avgPpsm/1e6);
+        ctx.save();
+        // Danger zone shading (top-left)
+        ctx.fillStyle = 'rgba(231,76,60,0.04)';
+        ctx.fillRect(left, top, xMid-left, yMid-top);
+        ctx.font = '700 9px sans-serif';
+        ctx.fillStyle = 'rgba(192,57,43,0.55)';
+        ctx.fillText('⚠ DANGER ZONE', left+6, top+14);
+        ctx.fillStyle = 'rgba(39,174,96,0.55)';
+        ctx.fillText('⭐ VALUE KING', xMid+6, bottom-8);
+        ctx.fillStyle = 'rgba(41,128,185,0.55)';
+        ctx.fillText('💰 PREMIUM', xMid+6, top+14);
+        ctx.restore();
+      }
+    }]
+  });
+
+  // Narrative callout
+  const callout = document.getElementById('cma-matrix-callout');
+  if (callout) {
+    const mixtaInDanger = mixta.filter(p => p.amenities < 47 && p.ppsm > avgPpsm);
+    if (mixtaInDanger.length > 0) {
+      callout.style.display = '';
+      callout.innerHTML = `⚠️ <strong>${mixtaInDanger.map(p=>p.name).join(', ')}</strong> ${mixtaInDanger.length > 1 ? 'are' : 'is'} in the Danger Zone — mid-high ₦/m² with the lowest spec score in the segment. No other competitor sits here. Every competitor is either low-spec/low-price (Budget) or high-spec/high-or-mid-price (Premium). Mixta's position is structurally unique and structurally indefensible without either a spec upgrade or a price moderation.`;
+    } else {
+      callout.style.display = 'none';
+    }
+  }
+
+  // ── Price bar chart ─────────────────────────────────────────────────────
+  const sorted = [...products].sort((a,b) => a.price - b.price);
+  mkChart('c-cma-prices', {
+    type: 'bar',
+    data: {
+      labels: sorted.map(p => p.name.length > 22 ? p.name.substring(0,20)+'…' : p.name),
+      datasets: [{
+        label: 'TCO price (₦M)',
+        data: sorted.map(p => +(p.price/1e6).toFixed(1)),
+        backgroundColor: sorted.map(p => p.isMixta ? 'rgba(192,57,43,0.8)' : 'rgba(243,156,18,0.55)'),
+        borderColor:     sorted.map(p => p.isMixta ? '#922B21' : '#D68910'),
+        borderWidth: 1, borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const p = sorted[ctx.dataIndex];
+              return [
+                ' Price: ₦' + ctx.parsed.y.toFixed(1) + 'M',
+                p.sqm ? ' Size: ' + p.sqm + 'm²' : '',
+                p.ppsm ? ' ₦/m²: ₦' + Math.round(p.ppsm/1000) + 'K' : '',
+                p.notes ? ' ' + p.notes.substring(0,60) : ''
+              ].filter(Boolean);
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { font:{size:9}, maxRotation:45 }, grid:{display:false} },
+        y: { title:{display:true,text:'₦M (TCO-normalised)'}, ticks:{callback:v=>'₦'+v+'M'}, grid:{color:'rgba(0,0,0,0.04)'} }
+      }
+    }
+  });
+}
+
+// ── ③ TCO chart ──────────────────────────────────────────────────────────
+function renderCMATCOChart() {
+  if (!CMA_DATA.toc.length) return;
+
+  // Hardcode the TCO breakdown from the CMA report (the stacked component data)
+  // These are derived from the PDF — competitor headline + adjustment = TCO
+  const tocData = [
+    { name:'Mixta IW A',          headline:86.4, shell:0,   finish:0,  docs:0,   tco:86.4,  isMixta:true },
+    { name:'Terra Developers',    headline:52.5, shell:7.5, finish:0,  docs:4.5, tco:64.5,  isMixta:false },
+    { name:'Echelon Apartments',  headline:85.0, shell:0,   finish:0,  docs:4.5, tco:89.5,  isMixta:false },
+    { name:'Shelter Valley',      headline:85.0, shell:0,   finish:3.5,docs:4.5, tco:93.0,  isMixta:false },
+    { name:'Montego Garden 4',    headline:72.5, shell:0,   finish:3.5,docs:4.5, tco:80.5,  isMixta:false },
+    { name:'Golden Park Estate',  headline:70.0, shell:0,   finish:3.5,docs:4.5, tco:78.0,  isMixta:false },
+  ];
+
+  mkChart('c-cma-tco', {
+    type: 'bar',
+    data: {
+      labels: tocData.map(d => d.name.length > 22 ? d.name.substring(0,20)+'…' : d.name),
+      datasets: [
+        {
+          label: 'Headline price',
+          data: tocData.map(d => d.headline),
+          backgroundColor: tocData.map(d => d.isMixta ? 'rgba(192,57,43,0.85)' : 'rgba(252,185,168,0.85)'),
+          borderRadius: 0, stack: 'tco'
+        },
+        {
+          label: 'Shell → Semi-finished',
+          data: tocData.map(d => d.shell),
+          backgroundColor: 'rgba(180,80,60,0.7)',
+          stack: 'tco'
+        },
+        {
+          label: 'Finishing gap',
+          data: tocData.map(d => d.finish),
+          backgroundColor: 'rgba(243,156,18,0.65)',
+          stack: 'tco'
+        },
+        {
+          label: 'Documentation & legal',
+          data: tocData.map(d => d.docs),
+          backgroundColor: 'rgba(243,156,18,0.35)',
+          stack: 'tco'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position:'top', labels:{font:{size:10},boxWidth:10} },
+        tooltip: {
+          mode: 'index',
+          callbacks: {
+            afterBody: items => {
+              const d = tocData[items[0].dataIndex];
+              return ['', ' True buyer cost (TCO): ₦' + d.tco.toFixed(1) + 'M', d.isMixta ? ' ✅ All-inclusive — no hidden costs' : ' ⚠️ Buyer must add the above'];
+            }
+          }
+        }
+      },
+      scales: {
+        x: { stacked:true, ticks:{font:{size:10}}, grid:{display:false} },
+        y: { stacked:true, title:{display:true,text:'₦M'}, ticks:{callback:v=>'₦'+v+'M'}, grid:{color:'rgba(0,0,0,0.04)'} }
+      }
+    }
+  });
+}
+
+// ── ③ Spec matrix chart ──────────────────────────────────────────────────
+function renderCMASpecChart() {
+  // Use hardcoded data from the CMA report (Criteria tab is too wide to parse reliably)
+  const specData = [
+    { name:'Montego Garden 4', score:58, isMixta:false },
+    { name:'Treasure Estate',  score:58, isMixta:false },
+    { name:'Citadel Views 2.0',score:57, isMixta:false },
+    { name:'Coop Haven Est.',  score:57, isMixta:false },
+    { name:'Celebration Pkld', score:56, isMixta:false },
+    { name:'Urban Shelter',    score:54, isMixta:false },
+    { name:'Universal Homes',  score:54, isMixta:false },
+    { name:'Amen Estate II',   score:40, isMixta:false },
+    { name:'Golden Park Est.', score:48, isMixta:false },
+    { name:'Echelon Apts',     score:48, isMixta:false },
+    { name:'Terra Developers', score:48, isMixta:false },
+    { name:'Mixta (current)',  score:43, isMixta:true  },
+    { name:'Meridian Park',    score:22, isMixta:false },
+  ].sort((a,b) => b.score - a.score);
+
+  mkChart('c-cma-spec', {
+    type: 'bar',
+    data: {
+      labels: specData.map(d => d.name),
+      datasets: [{
+        label: 'Specification score (/58)',
+        data: specData.map(d => d.score),
+        backgroundColor: specData.map(d => d.isMixta ? 'rgba(192,57,43,0.85)' : d.score >= 54 ? 'rgba(39,174,96,0.7)' : d.score >= 48 ? 'rgba(243,156,18,0.7)' : 'rgba(149,165,166,0.5)'),
+        borderRadius: 4, borderWidth: 0
+      }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ' Score: ' + ctx.parsed.x + '/58' + (specData[ctx.dataIndex].isMixta ? ' ← Mixta current' : '') } }
+      },
+      scales: {
+        x: { min:0, max:62, title:{display:true,text:'Score out of 58'}, grid:{color:'rgba(0,0,0,0.04)'}, ticks:{callback:v=>v+'/58'} },
+        y: { ticks:{font:{size:9}}, grid:{display:false} }
+      }
+    },
+    plugins: [{
+      id: 'specLine',
+      afterDraw(chart) {
+        const { ctx, scales: { x, y } } = chart;
+        const px50 = x.getPixelForValue(50);
+        ctx.save();
+        ctx.beginPath(); ctx.moveTo(px50, y.top); ctx.lineTo(px50, y.bottom);
+        ctx.strokeStyle = 'rgba(41,128,185,0.5)'; ctx.lineWidth = 1.5; ctx.setLineDash([4,4]); ctx.stroke();
+        ctx.font = '9px sans-serif'; ctx.fillStyle = 'rgba(41,128,185,0.7)';
+        ctx.fillText('FF target 50', px50+3, y.top+10);
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+// ── ④ Size adjustment chart ───────────────────────────────────────────────
+function renderCMASizeChart() {
+  // Use data from CMA size_adjustment tab — Mixta products + key competitors at avg sqm
+  const sizeData = [
+    { name:'Mixta IW A\n(current 52m²)',   current:57, adjusted:69, isMixta:true },
+    { name:'Mixta IW B\n(current 52m²)',   current:56, adjusted:67, isMixta:true },
+    { name:'Mixta MR A\n(current 38m²)',   current:52, adjusted:85, isMixta:true },
+    { name:'Shelter Valley\n(43m²)',       current:65, adjusted:null, isMixta:false },
+    { name:'Citadel Views\n(65m²)',        current:90, adjusted:null, isMixta:false },
+    { name:'Treasure Estate\n(60m²)',      current:90, adjusted:null, isMixta:false },
+    { name:'Echelon Apts\n(82m²)',         current:70, adjusted:null, isMixta:false },
+    { name:'Terra Devs\n(65m²)',           current:54, adjusted:null, isMixta:false },
+    { name:'Montego G4\n(67m²)',           current:36, adjusted:null, isMixta:false },
+  ];
+
+  const avgMktPrice = 65; // ₦65M market average from CMA
+
+  mkChart('c-cma-size', {
+    type: 'bar',
+    data: {
+      labels: sizeData.map(d => d.name.replace('\n',' ')),
+      datasets: [
+        {
+          label: 'Current asking price (₦M)',
+          data: sizeData.map(d => d.current),
+          backgroundColor: sizeData.map(d => d.isMixta ? 'rgba(192,57,43,0.85)' : 'rgba(252,185,168,0.65)'),
+          borderRadius: 4, borderWidth: 0
+        },
+        {
+          label: 'Size-adjusted to market avg sqm (₦M)',
+          data: sizeData.map(d => d.adjusted),
+          backgroundColor: 'rgba(41,128,185,0.6)',
+          borderRadius: 4, borderWidth: 0
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display:true, position:'top', labels:{font:{size:10},boxWidth:10} },
+        tooltip: {
+          mode: 'index', intersect: false,
+          callbacks: {
+            afterBody: items => {
+              const d = sizeData[items[0].dataIndex];
+              if (!d.adjusted) return [];
+              const gap = d.adjusted - d.current;
+              return ['', ' Adjusting for size adds ₦' + gap + 'M to Mixta\'s price', ' Moving Mixta above the ₦65M market average'];
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks:{font:{size:9}}, grid:{display:false} },
+        y: {
+          title: {display:true,text:'₦M'},
+          ticks: {callback:v=>'₦'+v+'M'},
+          grid: {color:'rgba(0,0,0,0.04)'}
+        }
+      }
+    },
+    plugins: [{
+      id: 'sizeAvgLine',
+      afterDraw(chart) {
+        const { ctx, scales: { x, y } } = chart;
+        if (!x || !y) return;
+        const yPx = y.getPixelForValue(avgMktPrice);
+        ctx.save();
+        ctx.beginPath(); ctx.moveTo(x.left, yPx); ctx.lineTo(x.right, yPx);
+        ctx.strokeStyle = 'rgba(41,128,185,0.5)'; ctx.lineWidth = 1.5; ctx.setLineDash([5,3]); ctx.stroke();
+        ctx.font = '700 9px sans-serif'; ctx.fillStyle = 'rgba(41,128,185,0.7)';
+        ctx.fillText('Market avg ₦65M', x.left + 4, yPx - 4);
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+// ── ⑤ Mortgage eligibility grid ──────────────────────────────────────────
+function renderCMAMortgageGrid() {
+  const el = document.getElementById('cma-mortgage-grid');
+  if (!el) return;
+
+  const lenders = [
+    {
+      name: 'Stanbic IBTC',
+      tier: 'HIGH',
+      tierColor: '#1E8449',
+      requirement: 'Shell finish acceptable if windows, doors and roof are fully in place.',
+      hybrid: { ok: true,  text: '✓ QUALIFIES — Hybrid spec meets and exceeds' },
+      ff:     { ok: true,  text: '✓ QUALIFIES — No change required' },
+      action: 'No action needed. Actively market Stanbic IBTC eligibility to buyers — a real differentiator vs cash-only competitors.'
+    },
+    {
+      name: 'Access Bank',
+      tier: 'MODERATE',
+      tierColor: '#D68910',
+      requirement: 'Disbursement triggered at 75% construction completion on the specific unit.',
+      hybrid: { ok: true,  text: '✓ QUALIFIES — Hybrid spec exceeds shell threshold' },
+      ff:     { ok: true,  text: '✓ QUALIFIES — No change required' },
+      action: 'Ensure milestone reporting is aligned to the 75% disbursement trigger. Map project timelines to Access Bank schedule.'
+    },
+    {
+      name: 'FirstBank',
+      tier: 'STRICT',
+      tierColor: '#922B21',
+      requirement: 'Fully Finished with kitchen fittings, bathroom fittings, flooring and internal joinery. No exceptions.',
+      hybrid: { ok: false, text: '✗ EXCLUDED — Hybrid spec does not meet threshold' },
+      ff:     { ok: true,  text: '✓ QUALIFIES — FF upgrade resolves immediately' },
+      action: 'FF upgrade (₦2.6M–₦5.1M/unit) unlocks this lender. Highest-impact single decision available to management.'
+    },
+    {
+      name: 'AG Mortgage',
+      tier: 'STRICT',
+      tierColor: '#922B21',
+      requirement: 'Fully Finished with sufficient fittings for immediate client move-in.',
+      hybrid: { ok: false, text: '✗ EXCLUDED — Hybrid spec does not meet threshold' },
+      ff:     { ok: true,  text: '✓ QUALIFIES — FF upgrade resolves immediately' },
+      action: 'Same resolution as FirstBank — FF upgrade unlocks both simultaneously.'
+    }
+  ];
+
+  let html = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;padding:4px 0">`;
+  lenders.forEach(l => {
+    const hybridBg = l.hybrid.ok ? '#EAFAF1' : '#FDECEA';
+    const hybridColor = l.hybrid.ok ? '#1E8449' : '#922B21';
+    const ffBg = '#EAFAF1';
+    html += `
+    <div style="border:1px solid #E0E4EA;border-radius:12px;overflow:hidden">
+      <div style="padding:10px 14px;background:${l.tierColor};color:white">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:0.8;margin-bottom:2px">${l.tier}</div>
+        <div style="font-size:14px;font-weight:700">${l.name}</div>
+      </div>
+      <div style="padding:12px 14px">
+        <div style="font-size:10.5px;color:var(--text2);line-height:1.5;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #F0F2F5">${l.requirement}</div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Current (Hybrid)</div>
+          <div style="padding:6px 10px;border-radius:7px;background:${hybridBg};font-size:10.5px;font-weight:600;color:${hybridColor}">${l.hybrid.text}</div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-top:4px">FF Upgrade</div>
+          <div style="padding:6px 10px;border-radius:7px;background:${ffBg};font-size:10.5px;font-weight:600;color:#1E8449">${l.ff.text}</div>
+        </div>
+        <div style="font-size:10px;color:var(--text3);line-height:1.5;padding:8px 10px;background:#F7F9FC;border-radius:7px">💡 ${l.action}</div>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+
+  // Summary bar
+  html += `<div style="margin-top:14px;padding:12px 16px;border-radius:10px;background:#FEF9E7;border:1px solid #FAD7A0;font-size:11.5px;line-height:1.6">
+    <strong>⚖️ Key Takeaway:</strong> Mixta's current hybrid spec qualifies for <strong>2 of 4 lenders</strong> (Stanbic IBTC + Access Bank). The FF upgrade (₦2.6M/1-bed, ₦5.1M/2-bed) immediately unlocks FirstBank + AG Mortgage — multiplying the buyer pool from cash-only to mortgage-backed. However, this must be weighed against the thin margin profile of the affordable portfolio.
+  </div>`;
+
+  el.innerHTML = html;
+}
+
 </script>
 </body>
 </html>
