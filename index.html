@@ -5325,11 +5325,35 @@ function renderInsightEngine(d, rows) {
 }
 
 /* =====================================================
-   AUTO-REFRESH
+   AUTO-REFRESH  (single interval — do NOT duplicate)
    ===================================================== */
 setInterval(()=>loadData(false), 30 * 60 * 1000); // 30 minutes
 
-setInterval(()=>loadData(false), 30 * 60 * 1000); // 30 minutes
+/* =====================================================
+   BOOT SEQUENCE
+   Must run after DOM is ready. initFirebase → setupAuth
+   handles both popup flow and post-redirect flow.
+   ===================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+  initFirebase();
+
+  if (_fbReady) {
+    // Handle post-redirect auth (signInWithRedirect fallback)
+    _auth.getRedirectResult()
+      .then(result => {
+        if (result && result.user) {
+          // onAuthStateChanged will fire immediately after — no extra action needed
+          console.info('[Auth] Redirect sign-in resolved for', result.user.email);
+        }
+      })
+      .catch(err => {
+        // Common on first load when there is no pending redirect — safe to ignore
+        console.info('[Auth] getRedirectResult (no pending redirect):', err.code || err.message);
+      });
+  }
+
+  setupAuth();
+});
 
 /* =====================================================
    MARKET INTELLIGENCE MODULE
