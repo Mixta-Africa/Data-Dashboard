@@ -3138,9 +3138,12 @@ function renderCharts(d) {
 
   mkChart('c-finish',{type:'bar',data:{labels:d.finishTypes,datasets:[{label:'Avg Price',data:d.finishAvg.map(v=>+(v/1e6).toFixed(0)),backgroundColor:d.finishTypes.map((_,i)=>i===0?C.red:i===1?C.red2:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(0)+'M avg ('+d.finishUnits[c.dataIndex]+' units)'}}},scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'M'}}}}});
 
-  const tpEl=document.getElementById('top-props-bars'); tpEl.innerHTML='';
-  const maxR=d.propRevenue[0]?.v||1;
-  d.propRevenue.slice(0,12).forEach((p,i)=>{tpEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl"><span class="rn">${i+1}</span>&nbsp;${p.k}</div><div class="sl-bw"><div class="sl-bf" style="width:${(p.v/maxR*100).toFixed(0)}%"></div></div><div class="sl-val">${fB(p.v)}<span style="color:var(--text3)"> (${d.propUnits[p.k]||0})</span></div></div>`;});
+  const tpEl=document.getElementById('top-props-bars'); 
+  if (tpEl) {
+    tpEl.innerHTML='';
+    const maxR=d.propRevenue[0]?.v||1;
+    d.propRevenue.slice(0,12).forEach((p,i)=>{tpEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl"><span class="rn">${i+1}</span>&nbsp;${p.k}</div><div class="sl-bw"><div class="sl-bf" style="width:${(p.v/maxR*100).toFixed(0)}%"></div></div><div class="sl-val">${fB(p.v)}<span style="color:var(--text3)"> (${d.propUnits[p.k]||0})</span></div></div>`;});
+  }
 
   // ── SEGMENT BREAKDOWN ─────────────────────────────────────────────────────
   const segData = d.segmentBreakdown || (d.segmentLabels||[]).map((s,i)=>({segment:s,revenue:d.segmentRevs[i]||0,units:d.segmentUnits[i]||0})).filter(s=>s.revenue>0);
@@ -3188,9 +3191,12 @@ function renderCharts(d) {
 
   mkChart('c-status',{type:'doughnut',data:{labels:d.statusLabels,datasets:[{data:d.statusCounts,backgroundColor:d.statusLabels.map(s=>s==='Sold'?C.green:s==='Reserved'?C.red:C.blue),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10},boxWidth:9,boxHeight:9}}}}});
 
-  const csEl=document.getElementById('comm-simple-bars'); csEl.innerHTML='';
-  const maxU=Math.max(...d.commUnits)||1;
-  commRevSorted.slice(0,6).forEach((x,i)=>{const u=d.commUnits[d.communities.indexOf(x.c)]; csEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl" style="width:120px">${x.c}</div><div class="sl-bw"><div class="sl-bf" style="width:${(u/maxU*100).toFixed(0)}%"></div></div><div class="sl-val" style="width:80px">${u} units</div></div>`;});
+  const csEl=document.getElementById('comm-simple-bars'); 
+  if (csEl) {
+    csEl.innerHTML='';
+    const maxU=Math.max(...d.commUnits)||1;
+    commRevSorted.slice(0,6).forEach((x,i)=>{const u=d.commUnits[d.communities.indexOf(x.c)]; csEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl" style="width:120px">${x.c}</div><div class="sl-bw"><div class="sl-bf" style="width:${(u/maxU*100).toFixed(0)}%"></div></div><div class="sl-val" style="width:80px">${u} units</div></div>`;});
+  }
 
   // ── Finish Type — Volume & Revenue (defensive: guard empty arrays) ──────────
  if (d.finishTypes && d.finishTypes.length > 0 && d.finishUnits.some(v => v > 0)) {
@@ -3261,9 +3267,12 @@ function renderCharts(d) {
   mkChart('c-outstandcomm',{type:'doughnut',data:{labels:d.communities,datasets:[{data:d.commOutstanding.map(v=>+(v/1e9).toFixed(2)),backgroundColor:commColors.slice(0,d.communities.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:true,position:'right',labels:{font:{size:9},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B outstanding'}}}}});
 
   // ── AGENTS ────────────────────────────────────────────────────────────────
-  const agEl=document.getElementById('agent-bars'); agEl.innerHTML='';
-  const maxAR=d.dealingAgentRev[0]||1;
-  d.dealingAgents.forEach((n,i)=>{agEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl"><span class="rn">${i+1}</span>&nbsp;${n}</div><div class="sl-bw"><div class="sl-bf" style="width:${(d.dealingAgentRev[i]/maxAR*100).toFixed(0)}%"></div></div><div class="sl-val">${fB(d.dealingAgentRev[i])}<span style="color:var(--text3)"> (${d.dealingAgentCnt[i]})</span></div></div>`;});
+  const agEl=document.getElementById('agent-bars'); 
+  if (agEl) {
+    agEl.innerHTML='';
+    const maxAR=d.dealingAgentRev[0]||1;
+    d.dealingAgents.forEach((n,i)=>{agEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl"><span class="rn">${i+1}</span>&nbsp;${n}</div><div class="sl-bw"><div class="sl-bf" style="width:${(d.dealingAgentRev[i]/maxAR*100).toFixed(0)}%"></div></div><div class="sl-val">${fB(d.dealingAgentRev[i])}<span style="color:var(--text3)"> (${d.dealingAgentCnt[i]})</span></div></div>`;});
+  }
 
   const chanColors=[C.red,C.blue,C.green,C.purple,C.orange,C.teal,C.amber];
   mkChart('c-channel',{type:'doughnut',data:{labels:d.agentGroups,datasets:[{data:d.agentGrpRev.map(v=>+(v/1e9).toFixed(2)),backgroundColor:chanColors.slice(0,d.agentGroups.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B'}}}}});
@@ -3905,10 +3914,12 @@ function renderSimpleMode(d) {
   mkChart('c-sm-finish', { type:'bar', data:{ labels:d.finishTypes, datasets:[{ label:'Avg Price', data:d.finishAvg.map(v=>+(v/1e6).toFixed(0)), backgroundColor:['#C0392B','#E74C3C','#F5B7B1'], borderRadius:5, borderSkipped:false }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>'₦'+c.parsed.y.toFixed(0)+'M avg'}} }, scales:{ x:{grid:{display:false},ticks:{font:{size:9}}}, y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'M',font:{size:9}}} } } });
 
   // Top properties
-  const tpEl = document.getElementById('sm-top-props'); tpEl.innerHTML = '';
-  const maxR = d.propRevenue[0]?.v || 1;
-  d.propRevenue.slice(0,8).forEach((p,i) => { tpEl.innerHTML += `<div class="sl-row"><div class="sl-lbl"><span class="rn">${i+1}</span>&nbsp;${p.k}</div><div class="sl-bw"><div class="sl-bf" style="width:${(p.v/maxR*100).toFixed(0)}%"></div></div><div class="sl-val">${fB(p.v)}<span style="color:var(--text3);font-weight:400"> (${d.propUnits[p.k]||0})</span></div></div>`; });
-
+  const tpEl_sm = document.getElementById('sm-top-props'); 
+  if (tpEl_sm) {
+    tpEl_sm.innerHTML = '';
+    const maxR = d.propRevenue[0]?.v || 1;
+    d.propRevenue.slice(0,8).forEach((p,i) => { tpEl_sm.innerHTML += `<div class="sl-row"><div class="sl-lbl"><span class="rn">${i+1}</span>&nbsp;${p.k}</div><div class="sl-bw"><div class="sl-bf" style="width:${(p.v/maxR*100).toFixed(0)}%"></div></div><div class="sl-val">${fB(p.v)}<span style="color:var(--text3);font-weight:400"> (${d.propUnits[p.k]||0})</span></div></div>`; });
+  }
   // Insight panel
   const insightEl = document.getElementById('sm-insight-text');
   if (insightEl && d.revByYear && d.revByYear.length >= 2) {
