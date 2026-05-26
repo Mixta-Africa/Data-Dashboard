@@ -359,7 +359,7 @@ body.simple-mode .deep-only{display:none!important}
 ::-webkit-scrollbar-thumb{background:var(--card-border);border-radius:3px}
 
 /* ─── BAR CLICK INSIGHT CARD ──────────────────────────────────────────────── */
-.bar-insight-card{position:fixed;z-index:8000;background:var(--card);border:1px solid var(--card-border);border-radius:14px;box-shadow:var(--shadow-lg);padding:16px 18px;max-width:300px;min-width:220px;pointer-events:none;opacity:0;transform:translateY(6px) scale(0.97);transition:opacity 0.18s,transform 0.18s}
+.bar-insight-card{position:fixed;z-index:8000;background:var(--card);border:1px solid var(--card-border);border-radius:14px;box-shadow:var(--shadow-lg);padding:16px 18px;max-width:300px;min-width:220px;pointer-events:none;opacity:0;transform:translateY(6px) scale(0.97);transition:all 0.3s ease-in-out;transform-style:preserve-3d}
 .bar-insight-card.visible{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
 .bar-insight-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--red),var(--red2));border-radius:14px 14px 0 0}
 .bic-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:5px}
@@ -885,7 +885,7 @@ body.simple-mode .deep-only{display:none!important}
       <div><div class="ins-val" id="ins-top-channel">—</div><div class="ins-lbl" id="ins-top-channel-lbl">—</div></div>
     </div>
   </div>
-  <div class="g32">
+  <div class="g2">
     <div class="cc">
       <div class="ch"><div><div class="ct">Revenue Recognition Trend</div><div class="cs">Annual total selling price · ₦ Billions</div></div><span class="badge br" id="ov-years-badge">—</span></div>
       <div class="cw" style="height:230px;overflow:visible"><canvas id="c-revyear"></canvas></div>
@@ -895,17 +895,6 @@ body.simple-mode .deep-only{display:none!important}
       <div class="cw" style="height:160px;overflow:visible"><canvas id="c-commdonut"></canvas></div>
       <div class="legend" id="leg-comm"></div>
     </div>
-  </div>
-  <div class="g2">
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Sales Channel Performance</div><div class="cs">Revenue by agent group · ₦ Billions</div></div></div>
-      <div class="cw" style="height:210px;overflow:visible"><canvas id="c-agentgrp"></canvas></div>
-    </div>
-    <div class="cc">
-      <div class="ch"><div><div class="ct">Top Properties by Cumulative Revenue</div><div class="cs">Ranked by total selling price</div></div><span class="badge bg_">Top 12</span></div>
-      <div id="top-props-bars"></div>
-    </div>
-  </div>
   <div class="cc full" id="segment-breakdown-card">
     <div class="ch">
       <div>
@@ -1313,7 +1302,7 @@ body.simple-mode .deep-only{display:none!important}
         </div>
       </div>
     </div>
-    <div class="cw" style="height:150px;overflow:visible"><canvas id="c-forecast"></canvas></div>
+    <div class="cw" style="height:250px;overflow:visible"><canvas id="c-forecast"></canvas></div>
     <div id="forecast-note" style="font-size:10px;color:var(--text3);margin-top:8px;padding:6px 10px;background:#F7F7F9;border-radius:6px;border-left:3px solid var(--red3)">Loading model…</div>
   </div>
 
@@ -3204,12 +3193,21 @@ function renderCharts(d) {
   commRevSorted.slice(0,6).forEach((x,i)=>{const u=d.commUnits[d.communities.indexOf(x.c)]; csEl.innerHTML+=`<div class="sl-row"><div class="sl-lbl" style="width:120px">${x.c}</div><div class="sl-bw"><div class="sl-bf" style="width:${(u/maxU*100).toFixed(0)}%"></div></div><div class="sl-val" style="width:80px">${u} units</div></div>`;});
 
   // ── Finish Type — Volume & Revenue (defensive: guard empty arrays) ──────────
-  if (d.finishTypes && d.finishTypes.length > 0 && d.finishUnits && d.finishRev) {
-    mkChart('c-finishmix',{type:'bar',data:{labels:d.finishTypes,datasets:[{label:'Units',data:d.finishUnits,backgroundColor:C.red3,borderRadius:4,borderSkipped:false,yAxisID:'y'},{label:'Revenue ₦B',data:d.finishRev.map(v=>+(v/1e9).toFixed(2)),type:'line',borderColor:C.red,backgroundColor:'transparent',borderWidth:2,tension:0.3,pointRadius:4,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:9,boxHeight:9}},tooltip:{callbacks:{label:c=>c.yAxisID==='y1'?'₦'+c.parsed.y.toFixed(1)+'B revenue':c.parsed.y+' units'}}},scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{position:'left',grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+' u'}},y1:{position:'right',grid:{display:false},ticks:{callback:v=>'₦'+v+'B'}}}}});
-  } else {
-    const fmEl = document.getElementById('c-finishmix');
-    if (fmEl) { const ctx = fmEl.parentElement; ctx.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:11px">Finish type data not available in this dataset</div>'; }
-  }
+ if (d.finishTypes && d.finishTypes.length > 0 && d.finishUnits.some(v => v > 0)) {
+    mkChart('c-finishmix', {
+        type: 'bar',
+        data: {
+            labels: d.finishTypes,
+            datasets: [
+                { label: 'Units', data: d.finishUnits, backgroundColor: C.red3, borderRadius: 4, yAxisID: 'y' },
+                { label: 'Revenue', data: d.finishRev.map(v => +(v/1e6).toFixed(0)), type: 'line', borderColor: C.red, tension: 0.3, yAxisID: 'y1' }
+            ]
+        },
+        options: { /* Keep existing options, but change tooltip to format millions properly */ }
+    });
+} else {
+    document.getElementById('c-finishmix').parentElement.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text3);">Insufficient Finish Type data in this view.</div>';
+}
 
   // Heatmap — filters already applied via computeAnalytics, just re-render
   const hmEl=document.getElementById('heatmap-wrap');
@@ -3219,7 +3217,7 @@ function renderCharts(d) {
     const heatYears = validYears.length > 0 ? validYears : (d.years || []);
     if (topComms.length > 0 && heatYears.length > 0) {
       const allVals=topComms.flatMap(c=>heatYears.map(y=>d.commYearMatrix[c]?.[y]||0)).filter(v=>v>0);
-      const maxHM=Math.max(...allVals)||1;
+      const maxHM=Math.max(...allVals)||1e9;
       const getHMColor=v=>{if(!v)return '#F0F0F4';const r=v/maxHM;const R=Math.round(192+(255-192)*(1-r)),G=Math.round(57*(1-r)),B=Math.round(43*(1-r));return `rgb(${R},${G},${B})`;};
       let htm=`<table style="border-collapse:separate;border-spacing:4px;font-family:var(--mono);font-size:10px;min-width:500px"><tr><td style="padding:4px 8px;color:var(--text3);font-size:9px;font-weight:600"> </td>`;
       heatYears.forEach(y=>{htm+=`<td style="padding:4px 5px;text-align:center;color:var(--text3);font-weight:600;font-size:9px">${y}</td>`;});
@@ -3278,7 +3276,7 @@ function renderCharts(d) {
   }
 
   // ── BUYERS ────────────────────────────────────────────────────────────────
-  if(d.buyerTypeLabels.length){const btColors=[C.red,C.blue,C.green,C.purple,C.orange,C.teal];mkChart('c-buyertype',{type:'doughnut',data:{labels:d.buyerTypeLabels,datasets:[{data:d.buyerTypeCounts,backgroundColor:btColors.slice(0,d.buyerTypeLabels.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:true,position:'right',labels:{font:{size:10},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed+' units'}}}}});}
+  if(d.buyerGeoLabels && d.buyerGeoCounts){mkChart('c-buyertype',{type:'doughnut',data:{labels:['Lagos (Local)', 'Cross-State', 'Diaspora'],datasets:[{data:[d.buyerGeoCounts[0], d.buyerGeoCounts[1], d.buyerGeoCounts[2]],backgroundColor:[C.red, '#F39C12', '#2980B9'],borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:true,position:'right',labels:{font:{size:10},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed+' units'}}}}});}
 
   // ── Buyer Geography: Lagos Local vs Cross-State (383 buyers) vs Diaspora ──
   if (d.buyerGeoLabels && d.buyerGeoCounts) {
@@ -5194,7 +5192,14 @@ function renderForecast(d) {
       },
       scales: {
         x: { grid: { color: 'rgba(0,0,0,0.04)' } },
-        y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v => '₦' + (v >= 1 ? v.toFixed(1)+'B' : (v*1000).toFixed(0)+'M') } }
+        y: {
+            grid: { color: 'rgba(0,0,0,0.04)' },
+            ticks: {
+              callback: function(value) {
+                return '₦' + (value / 1000000).toFixed(0) + 'M';
+              }
+            }
+          }
       }
     }
   });
@@ -7618,6 +7623,17 @@ function attachAllBarInsights(d) {
       title: 'Geographic demand signal',
       body: ctx.dataIndex === 0 ? 'Dominant state — diversification risk if > 70% concentrated here.' : 'Secondary market — activation opportunity.'
     }));
+
+  // Universal fallback for remaining bar charts
+  const barCharts = ['c-agentgrp', 'c-finish', 'c-sm-channel', 'c-mortgage'];
+  barCharts.forEach(id => {
+    if (!document.getElementById(id)) return; // safety check
+    attachBarInsight(id,
+        ctx => ctx.label,
+        ctx => ctx.value,
+        ctx => ({ title: 'Segment Insight', body: `Detailed breakdown for ${ctx.label}.` })
+    );
+  });
 }
 
 
