@@ -537,7 +537,75 @@ body.simple-mode .deep-only{display:none!important}
 <!-- MAIN -->
   <span class="filter-label">Filter</span>
 
-<!-- ===== SIMPLE MODE ===== -->
+  <div class="filter-divider"></div>
+
+  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Year</span>
+  <div class="ms-wrap" id="ms-year-wrap">
+    <button class="ms-btn" id="ms-year-btn" onclick="toggleMS('year')" type="button">
+      <span id="ms-year-label">All Years</span><span class="ms-arrow">▼</span>
+    </button>
+    <div class="ms-panel" id="ms-year-panel">
+      <div class="ms-opt ms-all"><input type="checkbox" id="ms-year-all" checked onchange="msToggleAll('year')"><label for="ms-year-all">All Years</label></div>
+    </div>
+  </div>
+
+  <div class="filter-divider"></div>
+  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Quarter</span>
+  <select class="filter-select" id="filterQuarter" onchange="applyFilters()" disabled>
+    <option value="all">All Quarters</option>
+  </select>
+
+  <div class="filter-divider"></div>
+  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Segment</span>
+  <div class="ms-wrap" id="ms-segment-wrap">
+    <button class="ms-btn" id="ms-segment-btn" onclick="toggleMS('segment')" type="button">
+      <span id="ms-segment-label">All Segments</span><span class="ms-arrow">▼</span>
+    </button>
+    <div class="ms-panel" id="ms-segment-panel">
+      <div class="ms-opt ms-all"><input type="checkbox" id="ms-segment-all" checked onchange="msToggleAll('segment')"><label for="ms-segment-all">All Segments</label></div>
+    </div>
+  </div>
+
+  <div class="filter-divider"></div>
+  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Community</span>
+  <div class="ms-wrap" id="ms-community-wrap">
+    <button class="ms-btn" id="ms-community-btn" onclick="toggleMS('community')" type="button">
+      <span id="ms-community-label">All Communities</span><span class="ms-arrow">▼</span>
+    </button>
+    <div class="ms-panel" id="ms-community-panel">
+      <div class="ms-opt ms-all"><input type="checkbox" id="ms-community-all" checked onchange="msToggleAll('community')"><label for="ms-community-all">All Communities</label></div>
+    </div>
+  </div>
+
+  <div class="filter-divider"></div>
+  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Channel</span>
+  <div class="ms-wrap" id="ms-channel-wrap">
+    <button class="ms-btn" id="ms-channel-btn" onclick="toggleMS('channel')" type="button">
+      <span id="ms-channel-label">All Channels</span><span class="ms-arrow">▼</span>
+    </button>
+    <div class="ms-panel" id="ms-channel-panel">
+      <div class="ms-opt ms-all"><input type="checkbox" id="ms-channel-all" checked onchange="msToggleAll('channel')"><label for="ms-channel-all">All Channels</label></div>
+    </div>
+  </div>
+
+  <div class="filter-divider"></div>
+  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Risk</span>
+  <select class="filter-select" id="filterRisk" onchange="applyFilters()">
+    <option value="all">All Risk Tiers</option>
+  </select>
+
+  <div class="filter-divider"></div>
+  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Phase</span>
+  <select class="filter-select" id="filterPhase" onchange="applyFilters()">
+    <option value="all">All Phases</option>
+  </select>
+
+  <button class="filter-reset" onclick="resetFilters()" id="resetBtn" style="display:none">✕ Clear Filters</button>
+  <span class="filter-count" id="filterCount"></span>
+</div>
+
+<main class="main">
+  <!-- ===== SIMPLE MODE ===== -->
 <div id="section-simple" class="section active">
   <div class="simple-page-header">
     <div class="simple-page-title">Portfolio Executive Summary</div>
@@ -719,75 +787,6 @@ body.simple-mode .deep-only{display:none!important}
   </div>
 
 </div><!-- end section-simple -->
-
-  <div class="filter-divider"></div>
-
-  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Year</span>
-  <div class="ms-wrap" id="ms-year-wrap">
-    <button class="ms-btn" id="ms-year-btn" onclick="toggleMS('year')" type="button">
-      <span id="ms-year-label">All Years</span><span class="ms-arrow">▼</span>
-    </button>
-    <div class="ms-panel" id="ms-year-panel">
-      <div class="ms-opt ms-all"><input type="checkbox" id="ms-year-all" checked onchange="msToggleAll('year')"><label for="ms-year-all">All Years</label></div>
-    </div>
-  </div>
-
-  <div class="filter-divider"></div>
-  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Quarter</span>
-  <select class="filter-select" id="filterQuarter" onchange="applyFilters()" disabled>
-    <option value="all">All Quarters</option>
-  </select>
-
-  <div class="filter-divider"></div>
-  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Segment</span>
-  <div class="ms-wrap" id="ms-segment-wrap">
-    <button class="ms-btn" id="ms-segment-btn" onclick="toggleMS('segment')" type="button">
-      <span id="ms-segment-label">All Segments</span><span class="ms-arrow">▼</span>
-    </button>
-    <div class="ms-panel" id="ms-segment-panel">
-      <div class="ms-opt ms-all"><input type="checkbox" id="ms-segment-all" checked onchange="msToggleAll('segment')"><label for="ms-segment-all">All Segments</label></div>
-    </div>
-  </div>
-
-  <div class="filter-divider"></div>
-  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Community</span>
-  <div class="ms-wrap" id="ms-community-wrap">
-    <button class="ms-btn" id="ms-community-btn" onclick="toggleMS('community')" type="button">
-      <span id="ms-community-label">All Communities</span><span class="ms-arrow">▼</span>
-    </button>
-    <div class="ms-panel" id="ms-community-panel">
-      <div class="ms-opt ms-all"><input type="checkbox" id="ms-community-all" checked onchange="msToggleAll('community')"><label for="ms-community-all">All Communities</label></div>
-    </div>
-  </div>
-
-  <div class="filter-divider"></div>
-  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Channel</span>
-  <div class="ms-wrap" id="ms-channel-wrap">
-    <button class="ms-btn" id="ms-channel-btn" onclick="toggleMS('channel')" type="button">
-      <span id="ms-channel-label">All Channels</span><span class="ms-arrow">▼</span>
-    </button>
-    <div class="ms-panel" id="ms-channel-panel">
-      <div class="ms-opt ms-all"><input type="checkbox" id="ms-channel-all" checked onchange="msToggleAll('channel')"><label for="ms-channel-all">All Channels</label></div>
-    </div>
-  </div>
-
-  <div class="filter-divider"></div>
-  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Risk</span>
-  <select class="filter-select" id="filterRisk" onchange="applyFilters()">
-    <option value="all">All Risk Tiers</option>
-  </select>
-
-  <div class="filter-divider"></div>
-  <span class="filter-label" style="font-size:10px;color:var(--text3);font-weight:400">Phase</span>
-  <select class="filter-select" id="filterPhase" onchange="applyFilters()">
-    <option value="all">All Phases</option>
-  </select>
-
-  <button class="filter-reset" onclick="resetFilters()" id="resetBtn" style="display:none">✕ Clear Filters</button>
-  <span class="filter-count" id="filterCount"></span>
-</div>
-
-<main class="main">
 
 <!-- ===== OVERVIEW ===== -->
 <div id="section-overview" class="section active">
