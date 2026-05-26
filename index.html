@@ -234,6 +234,8 @@ body.simple-mode .deep-only{display:none!important}
 .g2>*,.g21>*,.g3>*,.g32>*,.grid2>*{min-width:0}
 .g2-single{grid-template-columns:1fr 1fr}
 .cc:has(#c-payplan){max-width:calc(50% - 8px)}
+.predict-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,0.95fr);gap:16px;margin-bottom:16px;align-items:start}
+.predict-grid .cc{height:100%;margin-bottom:0!important}
 .full{width:100%;margin-bottom:16px}
 .cc.full{width:100%}
 
@@ -260,6 +262,16 @@ body.simple-mode .deep-only{display:none!important}
 .so-what strong{color:var(--text);font-weight:600}
 .chart-interp{font-size:10.5px;color:var(--text2);margin-top:12px;padding:10px 14px;background:#F0F9FF;border-radius:8px;line-height:1.5;border-left:3px solid #0284C7}
 .chart-interp::before{content:'📊';margin-right:6px}
+.chart-interp,.mini-insight,.sowhat,#forecast-note,#px-explorer-callout,#cma-matrix-callout,#cma-spec-callout,.strategy-card{
+  background:linear-gradient(135deg,var(--red5) 0%,var(--red) 60%,var(--red2) 100%)!important;
+  border:1px solid rgba(255,255,255,0.16)!important;
+  border-left:4px solid rgba(255,255,255,0.55)!important;
+  color:white!important;
+  box-shadow:0 8px 24px rgba(192,57,43,0.16);
+}
+.chart-interp strong,.mini-insight-text,.mini-insight-text strong,.sowhat-label,.sowhat-headline,.sowhat-body,.sowhat-body strong,.sowhat-action-title,.sowhat-action-list li,#forecast-note strong,#px-explorer-callout strong,#cma-matrix-callout strong,#cma-spec-callout strong,.strategy-card,.strategy-card strong,.strategy-card-title,.strategy-card-body{color:white!important}
+.sowhat-actions{border-top-color:rgba(255,255,255,0.2)!important}
+.sowhat-action-list li::before{color:white!important}
 
 /* ─── COMMAND BRIEF ────────────────────────────────────────────────────────── */
 .cmd-brief{background:linear-gradient(135deg,rgba(15,17,23,0.97) 0%,rgba(30,30,50,0.97) 100%);border:1px solid rgba(255,255,255,0.07);border-radius:18px;padding:22px 26px;margin-bottom:18px;position:relative;overflow:hidden}
@@ -438,6 +450,7 @@ body.simple-mode .deep-only{display:none!important}
   .g2,.g21,.g3,.grid2{grid-template-columns:1fr}
   .g2-single{grid-template-columns:1fr}
   .cc:has(#c-payplan){max-width:none}
+  .predict-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -1304,7 +1317,8 @@ body.simple-mode .deep-only{display:none!important}
     <div class="kpi"><div class="kpi-label">Revenue CAGR</div><div class="kpi-value red" id="pr-cagr2">—</div><div class="kpi-sub">Recognised across all years</div></div>
   </div>
 
-  <div class="cc full" style="margin-bottom:14px">
+  <div class="predict-grid">
+  <div class="cc predict-card" style="margin-bottom:14px">
     <div class="ch">
       <div>
         <div class="ct">Revenue Forecast — OLS Regression with ±1σ Confidence Band</div>
@@ -1324,7 +1338,7 @@ body.simple-mode .deep-only{display:none!important}
     <div id="forecast-note" style="font-size:10px;color:var(--text3);margin-top:8px;padding:6px 10px;background:#F7F7F9;border-radius:6px;border-left:3px solid var(--red3)">Loading model…</div>
   </div>
 
-  <div class="cc full">
+  <div class="cc predict-card">
     <div class="ch">
       <div>
         <div class="ct">Strategic Insights</div>
@@ -1332,6 +1346,7 @@ body.simple-mode .deep-only{display:none!important}
       </div>
     </div>
     <div id="strategy-insights"></div>
+  </div>
   </div>
 
   <!-- ===== DEMAND VELOCITY ===== -->
@@ -3273,8 +3288,10 @@ function renderCharts(d) {
     hmEl.style.maxWidth='100%';
     hmEl.style.overflowX='auto';
     hmEl.style.overflowY='hidden';
-    const validYears = (d.years || []).filter(y => topComms.some(c => (d.commYearMatrix[c]?.[y] || 0) > 0));
-    const heatYears = validYears.length > 0 ? validYears : (d.years || []);
+    const numericYears = (d.years || []).map(y => parseInt(y, 10)).filter(Number.isFinite);
+    const minHeatYear = Math.min(2009, ...(numericYears.length ? numericYears : [2009]));
+    const maxHeatYear = Math.max(2026, ...(numericYears.length ? numericYears : [2026]));
+    const heatYears = Array.from({ length: maxHeatYear - minHeatYear + 1 }, (_, i) => String(minHeatYear + i));
     if (topComms.length > 0 && heatYears.length > 0) {
       const allVals=topComms.flatMap(c=>heatYears.map(y=>d.commYearMatrix[c]?.[y]||0)).filter(v=>v>0);
       const maxHM=Math.max(...allVals)||1e9;
@@ -3395,7 +3412,8 @@ function renderCharts(d) {
     }
   }
 
-  mkChart('c-buyerstate',{type:'bar',data:{labels:d.stateLabels,datasets:[{label:'Buyers',data:d.stateCounts,backgroundColor:d.stateLabels.map((_,i)=>i===0?C.red:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{tooltip:{callbacks:{label:c=>c.parsed.x+' buyers'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
+  const stateColors=[C.red,C.red2,C.blue,C.green,C.purple,C.orange,C.teal,C.amber,C.slate,C.gray];
+  mkChart('c-buyerstate',{type:'doughnut',data:{labels:d.stateLabels,datasets:[{label:'Buyers',data:d.stateCounts,backgroundColor:stateColors.slice(0,d.stateLabels.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)',hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:true,position:'right',labels:{font:{size:9.5},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed+' buyer/unit records'}}}}});
   const csDestCard = document.getElementById('c-crossstate-dest')?.closest('.cc');
   if (csDestCard) {
     csDestCard.querySelector('.ct').textContent = 'Cross-State Buyers - Purchase Community';
@@ -5399,14 +5417,12 @@ function renderForecast(d) {
   if (!insEl) return;
   insEl.innerHTML = '';
   insights.forEach(ins => {
-    const bg  = ins.type === 'high' ? '#EAFAF1' : ins.type === 'low' ? '#FDECEA' : '#FEF9E7';
-    const bdr = ins.type === 'high' ? '#A9DFBF' : ins.type === 'low' ? '#F5B7B1' : '#FAD7A0';
     insEl.innerHTML += `
-      <div style="background:${bg};border:1px solid ${bdr};border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start">
+      <div class="strategy-card" style="border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start">
         <div style="font-size:18px;flex-shrink:0;margin-top:1px">${ins.ico}</div>
         <div>
-          <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">${ins.title}</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.45">${ins.sub}</div>
+          <div class="strategy-card-title" style="font-size:12px;font-weight:600;margin-bottom:2px">${ins.title}</div>
+          <div class="strategy-card-body" style="font-size:11px;line-height:1.45">${ins.sub}</div>
         </div>
       </div>`;
   });
