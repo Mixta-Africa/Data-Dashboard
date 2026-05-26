@@ -1112,6 +1112,14 @@ body.simple-mode .deep-only{display:none!important}
   </div>
   <div class="g2">
     <div class="cc">
+      <div class="ch"><div><div class="ct">Cross-State Investment Destinations</div><div class="cs">Which Mixta communities are out-of-state buyers investing in?</div></div></div>
+      <div class="cw" style="height:240px;overflow:visible"><canvas id="c-cs-dest"></canvas></div>
+    </div>
+    <div class="cc" style="background:transparent; border:none; box-shadow:none;">
+       </div>
+  </div>
+  <div class="g2">
+    <div class="cc">
       <div class="ch"><div><div class="ct">Buyer Salutation Profile</div><div class="cs">Title breakdown indicating buyer archetype</div></div></div>
       <div class="cw" style="height:240px;overflow:visible"><canvas id="c-salutation"></canvas></div>
     </div>
@@ -2035,6 +2043,10 @@ function enrichData(rows) {
       r._segment = seg[propName] || seg[propName.toLowerCase()] || seg[key] || 'Unclassified';
     }
     if (!r._segment) r._segment = 'Unclassified';
+    // Clean and normalize variations of Lagos
+    if (r.state && String(r.state).toLowerCase().includes('lagos')) {
+        r.state = 'Lagos';
+    }
   });
 }
 
@@ -4430,7 +4442,7 @@ function addInterpretations(d) {
   // Buyer State
   const lagosShare = d.totalRows > 0 ? (d.topStateCount || 0) / d.totalRows * 100 : 0;
   addAfter('c-buyerstate',
-    `<div class="chart-interp"><strong>${lagosShare.toFixed(0)}% of buyers are Lagos-based</strong>. ${
+    `<div class="chart-interp"><strong>${lagosShare.toFixed(0)}% of buyers (by unit volume) are Lagos-based</strong>. ${
       lagosShare > 70
         ? 'Heavy Lagos concentration — geographic risk if the Lagos market softens. Activate cross-state or diaspora campaigns to diversify.'
         : 'Buyer base is geographically diverse — lower regional exposure risk.'
@@ -7323,10 +7335,11 @@ function renderCMAMortgageGrid() {
    On bar click: shows a contextual insight card.
    ===================================================== */
 function attachBarInsight(canvasId, labelFn, valueFn, insightFn) {
-  // labelFn(ctx) → string, valueFn(ctx) → string, insightFn(ctx, d) → {title, body}
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
-  canvas.addEventListener('click', function(evt) {
+  
+  // Show on hover
+  canvas.addEventListener('mousemove', function(evt) {
     const chart = chartRegistry[canvasId];
     if (!chart) return;
     const pts = chart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
@@ -7339,12 +7352,16 @@ function attachBarInsight(canvasId, labelFn, valueFn, insightFn) {
     const insight = insightFn ? insightFn(ctx) : { title: label, body: '' };
     showBarCard(evt, label, val, insight.title, insight.body);
   });
+
+  // Hide instantly when cursor leaves
+  canvas.addEventListener('mouseout', hideBarCard);
 }
 
 const _barCard = (() => {
   const el = document.createElement('div');
   el.className = 'bar-insight-card';
-  el.innerHTML = `<span class="bic-close" onclick="hideBarCard()">×</span><div class="bic-label" id="_bic_lbl"></div><div class="bic-value" id="_bic_val"></div><div class="bic-sub" id="_bic_sub"></div>`;
+  // Removed the manual close button (×)
+  el.innerHTML = `<div class="bic-label" id="_bic_lbl"></div><div class="bic-value" id="_bic_val"></div><div class="bic-sub" id="_bic_sub"></div>`;
   document.body.appendChild(el);
   return el;
 })();
