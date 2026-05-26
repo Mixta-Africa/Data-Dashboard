@@ -5262,7 +5262,6 @@ function renderForecast(d) {
     data: {
       labels: allLabels,
       datasets: [
-        datasets: [
         { label: 'Upper bound', data: upperBand.map(v => +(v/1e6).toFixed(0)),
           borderColor: 'transparent', backgroundColor: 'rgba(192,57,43,0.10)',
           fill: '+1', tension: 0.4, pointRadius: 0 },
