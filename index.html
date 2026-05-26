@@ -231,6 +231,9 @@ body.simple-mode .deep-only{display:none!important}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
 .g32{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.g2>*,.g21>*,.g3>*,.g32>*,.grid2>*{min-width:0}
+.g2-single{grid-template-columns:1fr 1fr}
+.cc:has(#c-payplan){max-width:calc(50% - 8px)}
 .full{width:100%;margin-bottom:16px}
 .cc.full{width:100%}
 
@@ -289,7 +292,9 @@ body.simple-mode .deep-only{display:none!important}
 .rn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--red6);color:var(--red);font-size:9px;font-weight:700}
 
 /* ─── HEATMAP ─────────────────────────────────────────────────────────────── */
-.hm-cell{width:52px;height:28px;border-radius:5px;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;transition:transform 0.15s}
+#heatmap-wrap{width:100%;max-width:100%;min-width:0;overflow-x:auto;overflow-y:hidden}
+.hm-table{border-collapse:separate;border-spacing:3px;font-family:var(--mono);font-size:10px;width:max-content;min-width:100%;max-width:none}
+.hm-cell{width:clamp(42px,5vw,52px);height:28px;border-radius:5px;font-size:9.5px;font-weight:600;display:flex;align-items:center;justify-content:center;transition:transform 0.15s;white-space:nowrap}
 .hm-cell:hover{transform:scale(1.08);z-index:2;position:relative}
 
 /* ─── FORECAST / SCENARIO ─────────────────────────────────────────────────── */
@@ -431,6 +436,8 @@ body.simple-mode .deep-only{display:none!important}
   .stat-grid{grid-template-columns:1fr 1fr}
   .simple-grid,.simple-grid-wide{grid-template-columns:1fr}
   .g2,.g21,.g3,.grid2{grid-template-columns:1fr}
+  .g2-single{grid-template-columns:1fr}
+  .cc:has(#c-payplan){max-width:none}
 }
 </style>
 </head>
@@ -947,7 +954,7 @@ body.simple-mode .deep-only{display:none!important}
   </div>
   <div class="cc full">
     <div class="ch"><div><div class="ct">Payment Plan Distribution</div><div class="cs">Top plan types by unit count · signals buyer financing preferences</div></div></div>
-    <div class="cw" style="height:220px;overflow:visible"><canvas id="c-payplan"></canvas></div>
+    <div class="cw" style="height:250px;overflow:visible"><canvas id="c-payplan"></canvas></div>
   </div>
 </div>
 
@@ -1053,8 +1060,8 @@ body.simple-mode .deep-only{display:none!important}
   </div>
   <div class="g21">
     <div class="cc">
-      <div class="ch"><div><div class="ct">Top 15 Dealing Agents — Revenue Ranking</div><div class="cs">Cumulative ₦ and unit count</div></div></div>
-      <div id="agent-bars"></div>
+      <div class="ch"><div><div class="ct">Agent Group - Volume Trend</div><div class="cs">Unit count by channel per year</div></div></div>
+      <div class="cw" style="height:250px;overflow:visible"><canvas id="c-agtrend"></canvas></div>
     </div>
     <div class="cc">
       <div class="ch"><div><div class="ct">Channel Revenue Mix</div><div class="cs">Revenue by agent group</div></div></div>
@@ -1063,8 +1070,8 @@ body.simple-mode .deep-only{display:none!important}
     </div>
   </div>
   <div class="cc full">
-    <div class="ch"><div><div class="ct">Agent Group — Volume Trend</div><div class="cs">Unit count by channel per year</div></div></div>
-    <div class="cw" style="height:250px;overflow:visible"><canvas id="c-agtrend"></canvas></div>
+    <div class="ch"><div><div class="ct">Top 15 Dealing Agents - Revenue Ranking</div><div class="cs">Cumulative revenue and unit count</div></div></div>
+    <div id="agent-bars"></div>
   </div>
   <!-- So What: Channel — populated by insight engine -->
   <div class="sowhat sw-neu" id="sw-agents" data-ico="🤝" style="display:none">
@@ -1112,20 +1119,12 @@ body.simple-mode .deep-only{display:none!important}
   </div>
   <div class="g2">
     <div class="cc">
-      <div class="ch"><div><div class="ct">Cross-State Investment Destinations</div><div class="cs">Which Mixta communities are out-of-state buyers investing in?</div></div></div>
-      <div class="cw" style="height:240px;overflow:visible"><canvas id="c-cs-dest"></canvas></div>
-    </div>
-    <div class="cc" style="background:transparent; border:none; box-shadow:none;">
-       </div>
-  </div>
-  <div class="g2">
-    <div class="cc">
       <div class="ch"><div><div class="ct">Buyer Salutation Profile</div><div class="cs">Title breakdown indicating buyer archetype</div></div></div>
       <div class="cw" style="height:240px;overflow:visible"><canvas id="c-salutation"></canvas></div>
     </div>
     <div class="cc">
-      <div class="ch"><div><div class="ct">Buyer Geography — State Demand</div><div class="cs">Unit count per known state of residence</div></div></div>
-      <div id="buyer-state-bars"></div>
+      <div class="ch"><div><div class="ct">Cross-State Buyers - Purchase Community</div><div class="cs">Where non-Lagos Nigerian buyers bought; community is the property-location proxy</div></div></div>
+      <div class="cw" style="height:240px;overflow:visible"><canvas id="c-crossstate-dest"></canvas></div>
     </div>
   </div>
 </div>
@@ -1854,6 +1853,18 @@ function normaliseRow(rawRow, headerMap) {
   return r;
 }
 
+function normaliseBuyerState(value) {
+  const raw = (value ?? '').toString().trim().replace(/\s+/g, ' ');
+  const low = raw.toLowerCase();
+  if (!raw || ['nan','unknown','n/a','na','-','--'].includes(low)) return '';
+  if (low.includes('lagos')) return 'Lagos';
+  return raw.replace(/\b\w/g, ch => ch.toUpperCase());
+}
+
+function isLagosBuyerRow(row) {
+  return normaliseBuyerState(row.state) === 'Lagos';
+}
+
 function parseRevYear(raw) {
   if(!raw || String(raw).trim()==='') return null;
   const m = String(raw).match(/(\d{4})/);
@@ -2043,10 +2054,6 @@ function enrichData(rows) {
       r._segment = seg[propName] || seg[propName.toLowerCase()] || seg[key] || 'Unclassified';
     }
     if (!r._segment) r._segment = 'Unclassified';
-    // Clean and normalize variations of Lagos
-    if (r.state && String(r.state).toLowerCase().includes('lagos')) {
-        r.state = 'Lagos';
-    }
   });
 }
 
@@ -2219,13 +2226,16 @@ function computeAnalytics(rows) {
   data.buyerTypeRevs   = btTop.map(x=>sumKey(byBT[x.k],'_sp'));
 
   // ── Buyers ──
-  const byState = groupBy(valid.filter(r=>r.state&&r.state!=='nan'),'state');
-  const stTop = topN(byState,10,arr=>arr.length).filter(x=>x.k!=='Unknown'&&x.k!=='nan');
+  valid.forEach(r => { r._buyerStateNorm = normaliseBuyerState(r.state); });
+  const byState = groupBy(valid.filter(r=>r._buyerStateNorm),'_buyerStateNorm');
+  const stTop = topN(byState,10,arr=>arr.length).filter(x=>x.k);
   data.stateLabels  = stTop.map(x=>x.k);
   data.stateCounts  = stTop.map(x=>x.v);
-  const lagosTotal  = (byState['Lagos']||[]).length+(byState['Lagos State']||[]).length+(byState['LAGOS']||[]).length;
-  data.topStateName = 'Lagos'; data.topStateCount = lagosTotal;
-  data.crossStateCount = valid.filter(r=>r.state&&!['Lagos','Lagos State','LAGOS','nan','Unknown',''].includes(r.state)).length;
+  const lagosTotal  = (byState['Lagos']||[]).length;
+  const stateLeader = stTop[0] || { k:'-', v:0 };
+  data.topStateName = stateLeader.k;
+  data.topStateCount = stateLeader.v;
+  data.lagosBuyerCount = lagosTotal;
 
   const byNat = groupBy(valid.filter(r=>r.nationality&&r.nationality!=='nan'),'nationality');
   data.countries = Object.keys(byNat).length;
@@ -2261,17 +2271,23 @@ function computeAnalytics(rows) {
   // Cross-state: domestic buyers outside Lagos (and not diaspora)
   const crossStateRows = valid.filter(r => {
     if (isDiaspora(r)) return false;
-    const s = (r.state || '').trim();
-    return s && !['Lagos','Lagos State','LAGOS','nan','Unknown',''].includes(s);
+    const s = r._buyerStateNorm || normaliseBuyerState(r.state);
+    return s && s !== 'Lagos';
   });
   data.crossStateCount = crossStateRows.length;
   data.crossStateRev = crossStateRows.reduce((s,r)=>s+(r._sp||0),0);
+  const lagosRows = valid.filter(r => !isDiaspora(r) && (r._buyerStateNorm || normaliseBuyerState(r.state)) === 'Lagos');
+  const byCrossDest = groupBy(crossStateRows.filter(r=>r.community&&r.community!=='Unknown'),'community');
+  const crossDestTop = topN(byCrossDest,10,arr=>arr.length);
+  data.crossStateDestLabels = crossDestTop.map(x=>x.k);
+  data.crossStateDestCounts = crossDestTop.map(x=>x.v);
+  data.crossStateDestRevs = data.crossStateDestLabels.map(c=>sumKey(byCrossDest[c]||[],'_sp'));
 
   // Buyer segment chart data: Lagos Local | Cross-State | Diaspora
-  data.buyerGeoLabels = ['Lagos (Local)', 'Cross-State', 'Diaspora'];
+  data.buyerGeoLabels = ['Lagos-based buyers', 'Other Nigerian states', 'Diaspora'];
   data.buyerGeoCounts = [lagosTotal, data.crossStateCount, data.diaspora];
   data.buyerGeoRevs   = [
-    valid.filter(r=>['Lagos','Lagos State','LAGOS'].includes(r.state||'')).reduce((s,r)=>s+(r._sp||0),0),
+    lagosRows.reduce((s,r)=>s+(r._sp||0),0),
     data.crossStateRev,
     data.diasporaRev
   ];
@@ -2941,6 +2957,11 @@ function mkChart(id, cfg) {
   chartRegistry[id] = new Chart(el, cfg);
 }
 
+function compactAxisLabel(label, maxLen=14) {
+  const text = String(label ?? '');
+  return text.length > maxLen ? text.slice(0, maxLen - 1) + '...' : text;
+}
+
 const C = {
   red:'#C0392B', red2:'#E74C3C', red3:'#F5B7B1', red4:'#FDECEA',
   blue:'#2980B9', green:'#27AE60', purple:'#8E44AD',
@@ -3028,7 +3049,7 @@ function renderKPIs(d) {
 
   // Buyers
   setText('by-top-state', d.topStateName||'—');
-  setText('by-top-state-s', d.topStateCount+'+ buyers — top market');
+  setText('by-top-state-s', (d.topStateCount||0).toLocaleString()+' buyer/unit records');
   setText('by-crossstate', d.crossStateCount.toLocaleString());
   setText('by-diaspora', d.diaspora.toLocaleString());
   setText('by-nation', d.topNat||'—');
@@ -3203,7 +3224,7 @@ function renderCharts(d) {
   mkChart('c-bedroom',{type:'doughnut',data:{labels:d.bedroomLabels.map(b=>b+'-bed'),datasets:[{data:d.bedroomRevs.map(v=>+(v/1e9).toFixed(2)),backgroundColor:bdrColors.slice(0,d.bedroomLabels.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{tooltip:{callbacks:{label:c=>c.label+': ₦'+c.parsed.toFixed(1)+'B'}}}}});
   const legBdr=document.getElementById('leg-bedroom'); if(legBdr){legBdr.innerHTML=''; d.bedroomLabels.forEach((b,i)=>{legBdr.innerHTML+=`<div class="li"><div class="ld" style="background:${bdrColors[i]}"></div>${b}-bed: ₦${(d.bedroomRevs[i]/1e9).toFixed(1)}B</div>`;});}
 
-  mkChart('c-payplan',{type:'bar',data:{labels:d.ppLabels,datasets:[{label:'Units',data:d.ppCounts,backgroundColor:d.ppLabels.map((_,i)=>i===0?C.red:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:c=>c.parsed.y+' units'}}},scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:30}},y:{grid:{color:'rgba(0,0,0,0.04)'}}}}});
+  mkChart('c-payplan',{type:'bar',data:{labels:d.ppLabels,datasets:[{label:'Units',data:d.ppCounts,backgroundColor:d.ppLabels.map((_,i)=>i===0?C.red:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{title:items=>items?.[0]?.label||'',label:c=>c.parsed.y+' units'}}},scales:{x:{grid:{display:false},ticks:{font:{size:8},maxRotation:0,minRotation:0,autoSkip:false,callback:function(v){return compactAxisLabel(this.getLabelForValue(v),12);}}},y:{grid:{color:'rgba(0,0,0,0.04)'}}}}});
 
   // ── PORTFOLIO ─────────────────────────────────────────────────────────────
   const prTop=d.propRevenue.slice(0,20);
@@ -3223,10 +3244,23 @@ function renderCharts(d) {
             labels: d.finishTypes,
             datasets: [
                 { label: 'Units', data: d.finishUnits, backgroundColor: C.red3, borderRadius: 4, yAxisID: 'y' },
-                { label: 'Revenue', data: d.finishRev.map(v => +(v/1e6).toFixed(0)), type: 'line', borderColor: C.red, tension: 0.3, yAxisID: 'y1' }
+                { label: 'Revenue ₦M', data: d.finishRev.map(v => +(v/1e6).toFixed(0)), type: 'line', borderColor: C.red, backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.3, pointRadius: 4, pointHoverRadius: 5, yAxisID: 'y1' }
             ]
         },
-        options: { /* Keep existing options, but change tooltip to format millions properly */ }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: true, position: 'top', labels: { font: { size: 10 }, boxWidth: 9, boxHeight: 9 } },
+                tooltip: { callbacks: { label: c => c.datasetIndex === 0 ? c.parsed.y + ' units' : '₦' + c.parsed.y.toFixed(0) + 'M revenue' } }
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 0, minRotation: 0, autoSkip: false, callback: function(v){ return compactAxisLabel(this.getLabelForValue(v), 14); } } },
+                y: { position: 'left', beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v => v + ' u' } },
+                y1: { position: 'right', beginAtZero: true, grid: { display: false }, ticks: { callback: v => '₦' + v + 'M' } }
+            }
+        }
     });
 } else {
     document.getElementById('c-finishmix').parentElement.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text3);">Insufficient Finish Type data in this view.</div>';
@@ -3236,13 +3270,16 @@ function renderCharts(d) {
   const hmEl=document.getElementById('heatmap-wrap');
   if (hmEl) {
     hmEl.innerHTML='';
+    hmEl.style.maxWidth='100%';
+    hmEl.style.overflowX='auto';
+    hmEl.style.overflowY='hidden';
     const validYears = (d.years || []).filter(y => topComms.some(c => (d.commYearMatrix[c]?.[y] || 0) > 0));
     const heatYears = validYears.length > 0 ? validYears : (d.years || []);
     if (topComms.length > 0 && heatYears.length > 0) {
       const allVals=topComms.flatMap(c=>heatYears.map(y=>d.commYearMatrix[c]?.[y]||0)).filter(v=>v>0);
       const maxHM=Math.max(...allVals)||1e9;
       const getHMColor=v=>{if(!v)return '#F0F0F4';const r=v/maxHM;const R=Math.round(192+(255-192)*(1-r)),G=Math.round(57*(1-r)),B=Math.round(43*(1-r));return `rgb(${R},${G},${B})`;};
-      let htm=`<table style="border-collapse:separate;border-spacing:4px;font-family:var(--mono);font-size:10px;min-width:500px"><tr><td style="padding:4px 8px;color:var(--text3);font-size:9px;font-weight:600"> </td>`;
+      let htm=`<table class="hm-table"><tr><td style="padding:4px 8px;color:var(--text3);font-size:9px;font-weight:600"> </td>`;
       heatYears.forEach(y=>{htm+=`<td style="padding:4px 5px;text-align:center;color:var(--text3);font-weight:600;font-size:9px">${y}</td>`;});
       htm+='</tr>';
       topComms.forEach(comm=>{htm+=`<tr><td style="padding:4px 10px 4px 0;white-space:nowrap;color:var(--text2);font-size:10px;font-weight:500">${comm}</td>`;heatYears.forEach(y=>{const v=(d.commYearMatrix[comm]?.[y]||0)/1e9;const bg=getHMColor(d.commYearMatrix[comm]?.[y]||0);const tc=v>maxHM/1e9*0.4?'white':'#5A5A72';htm+=`<td><div class="hm-cell" style="background:${bg};color:${tc}" title="${comm} ${y}: ₦${v.toFixed(1)}B">${v>0?'₦'+v.toFixed(1)+'B':'—'}</div></td>`;});htm+='</tr>';});
@@ -3299,7 +3336,18 @@ function renderCharts(d) {
   }
 
   // ── BUYERS ────────────────────────────────────────────────────────────────
-  if(d.buyerGeoLabels && d.buyerGeoCounts){mkChart('c-buyertype',{type:'doughnut',data:{labels:['Lagos (Local)', 'Cross-State', 'Diaspora'],datasets:[{data:[d.buyerGeoCounts[0], d.buyerGeoCounts[1], d.buyerGeoCounts[2]],backgroundColor:[C.red, '#F39C12', '#2980B9'],borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:true,position:'right',labels:{font:{size:10},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed+' units'}}}}});}
+  const agTrendCard = document.getElementById('c-agtrend')?.closest('.cc');
+  if (agTrendCard) {
+    agTrendCard.querySelector('.ct').textContent = 'Agent Group - Volume Trend';
+    agTrendCard.querySelector('.cs').textContent = 'Unit count by channel per year';
+  }
+  const agRankCard = document.getElementById('agent-bars')?.closest('.cc');
+  if (agRankCard) {
+    agRankCard.querySelector('.ct').textContent = 'Top 15 Dealing Agents - Revenue Ranking';
+    agRankCard.querySelector('.cs').textContent = 'Cumulative revenue and unit count';
+  }
+
+  if(d.buyerTypeLabels && d.buyerTypeLabels.length){mkChart('c-buyertype',{type:'doughnut',data:{labels:d.buyerTypeLabels,datasets:[{data:d.buyerTypeCounts,backgroundColor:[C.red, '#F39C12', '#2980B9', C.green, C.purple, C.teal].slice(0,d.buyerTypeLabels.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:true,position:'right',labels:{font:{size:10},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed+' buyer/unit records'}}}}});}
 
   // ── Buyer Geography: Lagos Local vs Cross-State (383 buyers) vs Diaspora ──
   if (d.buyerGeoLabels && d.buyerGeoCounts) {
@@ -3348,6 +3396,16 @@ function renderCharts(d) {
   }
 
   mkChart('c-buyerstate',{type:'bar',data:{labels:d.stateLabels,datasets:[{label:'Buyers',data:d.stateCounts,backgroundColor:d.stateLabels.map((_,i)=>i===0?C.red:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{tooltip:{callbacks:{label:c=>c.parsed.x+' buyers'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
+  const csDestCard = document.getElementById('c-crossstate-dest')?.closest('.cc');
+  if (csDestCard) {
+    csDestCard.querySelector('.ct').textContent = 'Cross-State Buyers - Purchase Community';
+    csDestCard.querySelector('.cs').textContent = 'Where non-Lagos Nigerian buyers bought; community is the property-location proxy';
+  }
+  if (d.crossStateDestLabels && d.crossStateDestLabels.length) {
+    mkChart('c-crossstate-dest',{type:'bar',data:{labels:d.crossStateDestLabels,datasets:[{label:'Buyer/unit records',data:d.crossStateDestCounts,backgroundColor:d.crossStateDestLabels.map((_,i)=>i===0?C.red:C.red3),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.x+' buyer/unit records'}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{display:false},ticks:{font:{size:9.5},callback:function(v){return compactAxisLabel(this.getLabelForValue(v),22);}}}}}});
+  } else if (document.getElementById('c-crossstate-dest')) {
+    document.getElementById('c-crossstate-dest').parentElement.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:11px">No cross-state buyer records available for the current filters.</div>';
+  }
 
   const salColors=[C.red,C.blue,C.green,C.purple,C.orange,C.teal,C.amber,C.slate];
   mkChart('c-salutation',{type:'doughnut',data:{labels:d.salLabels,datasets:[{data:d.salCounts,backgroundColor:salColors.slice(0,d.salLabels.length),borderWidth:2,borderColor:'rgba(255,255,255,0.9)'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{display:true,position:'right',labels:{font:{size:9.5},boxWidth:8,boxHeight:8}},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed}}}}});
@@ -4440,9 +4498,9 @@ function addInterpretations(d) {
   }
 
   // Buyer State
-  const lagosShare = d.totalRows > 0 ? (d.topStateCount || 0) / d.totalRows * 100 : 0;
+  const lagosShare = d.totalRows > 0 ? (d.lagosBuyerCount || 0) / d.totalRows * 100 : 0;
   addAfter('c-buyerstate',
-    `<div class="chart-interp"><strong>${lagosShare.toFixed(0)}% of buyers (by unit volume) are Lagos-based</strong>. ${
+    `<div class="chart-interp"><strong>${lagosShare.toFixed(0)}% of buyer/unit records are Lagos-based</strong> (count of units/transactions, not cash value). ${
       lagosShare > 70
         ? 'Heavy Lagos concentration — geographic risk if the Lagos market softens. Activate cross-state or diaspora campaigns to diversify.'
         : 'Buyer base is geographically diverse — lower regional exposure risk.'
@@ -7335,11 +7393,10 @@ function renderCMAMortgageGrid() {
    On bar click: shows a contextual insight card.
    ===================================================== */
 function attachBarInsight(canvasId, labelFn, valueFn, insightFn) {
+  // labelFn(ctx) → string, valueFn(ctx) → string, insightFn(ctx, d) → {title, body}
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
-  
-  // Show on hover
-  canvas.addEventListener('mousemove', function(evt) {
+  canvas.addEventListener('click', function(evt) {
     const chart = chartRegistry[canvasId];
     if (!chart) return;
     const pts = chart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
@@ -7352,21 +7409,21 @@ function attachBarInsight(canvasId, labelFn, valueFn, insightFn) {
     const insight = insightFn ? insightFn(ctx) : { title: label, body: '' };
     showBarCard(evt, label, val, insight.title, insight.body);
   });
-
-  // Hide instantly when cursor leaves
-  canvas.addEventListener('mouseout', hideBarCard);
+  canvas.addEventListener('mouseleave', () => queueHideBarCard(140));
+  canvas.addEventListener('mouseenter', clearBarCardHide);
 }
 
 const _barCard = (() => {
   const el = document.createElement('div');
   el.className = 'bar-insight-card';
-  // Removed the manual close button (×)
-  el.innerHTML = `<div class="bic-label" id="_bic_lbl"></div><div class="bic-value" id="_bic_val"></div><div class="bic-sub" id="_bic_sub"></div>`;
+  el.innerHTML = `<span class="bic-close" onclick="hideBarCard()">×</span><div class="bic-label" id="_bic_lbl"></div><div class="bic-value" id="_bic_val"></div><div class="bic-sub" id="_bic_sub"></div>`;
   document.body.appendChild(el);
   return el;
 })();
 
 function showBarCard(evt, label, val, title, body) {
+  clearBarCardHide();
+  _barCardAnchor = evt.currentTarget || null;
   document.getElementById('_bic_lbl').textContent = label;
   document.getElementById('_bic_val').textContent = val;
   document.getElementById('_bic_sub').innerHTML = '<strong>' + title + '</strong>' + (body ? '<br>' + body : '');
@@ -7382,12 +7439,36 @@ function showBarCard(evt, label, val, title, body) {
 }
 
 function hideBarCard() {
+  clearBarCardHide();
   _barCard.classList.remove('visible');
+  _barCardAnchor = null;
 }
+
+let _barCardHideTimer = null;
+let _barCardAnchor = null;
+function clearBarCardHide() {
+  if (_barCardHideTimer) clearTimeout(_barCardHideTimer);
+  _barCardHideTimer = null;
+}
+function queueHideBarCard(delay=180) {
+  clearBarCardHide();
+  _barCardHideTimer = setTimeout(hideBarCard, delay);
+}
+
+_barCard.addEventListener('mouseenter', clearBarCardHide);
+_barCard.addEventListener('mouseleave', () => queueHideBarCard(120));
 
 document.addEventListener('click', function(e) {
   if (!_barCard.contains(e.target) && !e.target.closest('canvas')) hideBarCard();
 });
+document.addEventListener('mousemove', function(e) {
+  if (!_barCard.classList.contains('visible')) return;
+  if (_barCard.contains(e.target)) return;
+  if (_barCardAnchor && _barCardAnchor.contains(e.target)) return;
+  queueHideBarCard(160);
+});
+window.addEventListener('scroll', () => hideBarCard(), true);
+window.addEventListener('resize', () => hideBarCard());
 
 /* =====================================================
    SEARCH OVERLAY
