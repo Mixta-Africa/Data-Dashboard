@@ -214,6 +214,16 @@ body.simple-mode .deep-only{display:none!important}
 .kpi-value.red{color:var(--red)}
 .kpi-sub{font-size:10px;color:var(--text3);margin-top:4px}
 .kpi-sub.up{color:#27AE60}.kpi-sub.dn{color:var(--red2)}
+  
+/* ─── INSIGHT ICONS (Deep Dive Overview) ────────────────────────────────── */
+.ins-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.ins{background:var(--card);border:1px solid var(--card-border);border-radius:var(--r);box-shadow:var(--shadow-sm);padding:15px 17px;display:flex;gap:12px;align-items:flex-start}
+.ins-ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ins-ico.r{background:var(--red6)} .ins-ico.g{background:#EAFAF1} .ins-ico.a{background:#FEF9E7} .ins-ico.b{background:#EBF5FB}
+.ins-ico.r svg{color:var(--red)} .ins-ico.g svg{color:#1E8449} .ins-ico.a svg{color:#D68910} .ins-ico.b svg{color:#2980B9}
+.ins-ico svg{width:17px;height:17px;fill:none;stroke-width:2}
+.ins-val{font-size:18px;font-weight:700;color:var(--text);letter-spacing:-.4px}
+.ins-lbl{font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4}
 
 /* ─── GRIDS ────────────────────────────────────────────────────────────────── */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
@@ -534,6 +544,12 @@ body.simple-mode .deep-only{display:none!important}
     <div class="simple-page-sub" id="simple-date-sub">Live data · updated just now · 2,845 records</div>
   </div>
 
+  <!-- Insight panel -->
+  <div class="mini-insight" id="sm-insight-panel" style="margin-bottom: 24px;">
+    <div class="mini-insight-label">⚡ Portfolio Intelligence Signal</div>
+    <div class="mini-insight-text" id="sm-insight-text">Loading portfolio analysis…</div>
+  </div>
+
   <!-- Hero stats row -->
   <div class="stat-grid">
     <!-- Revenue hero -->
@@ -700,12 +716,6 @@ body.simple-mode .deep-only{display:none!important}
       <span class="badge br">Top 8</span>
     </div>
     <div id="sm-top-props"></div>
-  </div>
-
-  <!-- Insight panel -->
-  <div class="mini-insight" id="sm-insight-panel">
-    <div class="mini-insight-label">⚡ Portfolio Intelligence Signal</div>
-    <div class="mini-insight-text" id="sm-insight-text">Loading portfolio analysis…</div>
   </div>
 
 </div><!-- end section-simple -->
@@ -3633,13 +3643,13 @@ function renderSimpleMode(d) {
   const fB = v => v >= 1e9 ? '₦'+(v/1e9).toFixed(1)+'B' : v >= 1e6 ? '₦'+(v/1e6).toFixed(0)+'M' : '₦'+Math.round(v).toLocaleString();
 
   setText('sm-totalrev',    fB(d.totalRev));
-  setText('sm-units',       (d.totalUnits||0).toLocaleString());
+  setText('sm-units',       (d.totalRows||0).toLocaleString());
   setText('sm-collected',   fB(d.totalPaid));
   setText('sm-outstanding', fB(d.totalOut));
-  setText('sm-props',       (d.propCount||d.activePropCount||0).toString());
+  setText('sm-props',       (d.propRevenue ? d.propRevenue.length : 0).toString());
   setText('sm-mortgage',    (d.mortgageCount||0).toLocaleString());
   setText('sm-comms',       (d.communities||[]).length + ' communities');
-
+  
   const collRate = d.totalPaid && d.totalRev ? ((d.totalPaid/d.totalRev)*100).toFixed(1) : '—';
   setText('sm-coll-rate', collRate + '% collection rate');
   setText('sm-coll-delta', '✓ ' + collRate + '%');
