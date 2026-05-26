@@ -177,9 +177,9 @@ body.simple-mode .deep-only{display:none!important}
 .stat-delta.neu{background:var(--bg);color:var(--text3)}
 .stat-delta-sub{font-size:10.5px;color:var(--text3);margin-left:6px;font-weight:400}
 /* Revenue hero card */
-.stat-card.hero{grid-column:span 2;background:linear-gradient(135deg,var(--red5) 0%,var(--red) 60%,var(--red2) 100%);color:white;border-color:transparent}
-.stat-card.hero .stat-card-label{color:rgba(255,255,255,0.65)}
-.stat-card.hero .stat-card-value{color:white;font-size:34px}
+.stat-card.hero{background:linear-gradient(135deg, #78281F 0%, #B03A2E 50%, #E74C3C 100%);color:white;border-color:transparent}
+.stat-card.hero .stat-card-label{color:rgba(255,255,255,0.75)}
+.stat-card.hero .stat-card-value{color:white;font-size:26px}
 .stat-card.hero .stat-delta{background:rgba(255,255,255,0.15);color:white}
 .stat-card.hero .stat-delta-sub{color:rgba(255,255,255,0.6)}
 .stat-card.hero::after{content:'';position:absolute;right:-30px;top:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.06)}
@@ -5262,20 +5262,17 @@ function renderForecast(d) {
     data: {
       labels: allLabels,
       datasets: [
-        // Upper bound (transparent line, fills DOWN to next dataset → tinted band)
-        { label: 'Upper bound', data: upperBand.map(v => +(v/1e9).toFixed(2)),
+        datasets: [
+        { label: 'Upper bound', data: upperBand.map(v => +(v/1e6).toFixed(0)),
           borderColor: 'transparent', backgroundColor: 'rgba(192,57,43,0.10)',
           fill: '+1', tension: 0.4, pointRadius: 0 },
-        // Trend line (dashed)
-        { label: 'OLS Trend', data: trendLine.map(v => +(v/1e9).toFixed(2)),
+        { label: 'OLS Trend', data: trendLine.map(v => +(v/1e6).toFixed(0)),
           borderColor: 'rgba(192,57,43,0.55)', borderWidth: 2, borderDash: [6,3],
           tension: 0.4, pointRadius: 0, fill: false },
-        // Lower bound (transparent line, completes the band)
-        { label: 'Lower bound', data: lowerBand.map(v => +(v/1e9).toFixed(2)),
+        { label: 'Lower bound', data: lowerBand.map(v => +(v/1e6).toFixed(0)),
           borderColor: 'transparent', backgroundColor: 'rgba(192,57,43,0.10)',
           fill: false, tension: 0.4, pointRadius: 0 },
-        // Actual revenue points
-        { label: 'Actual Revenue', data: actuals.map(v => v !== null ? +(v/1e9).toFixed(2) : null),
+        { label: 'Actual Revenue', data: actuals.map(v => v !== null ? +(v/1e6).toFixed(0) : null),
           borderColor: C.red, backgroundColor: 'rgba(192,57,43,0.06)',
           fill: false, tension: 0.4, borderWidth: 2.5,
           pointBackgroundColor: C.red, pointRadius: 4, pointHoverRadius: 6 },
@@ -5287,7 +5284,7 @@ function renderForecast(d) {
         legend: { display: true, position: 'top',
           labels: { font: { size: 10 }, boxWidth: 9, boxHeight: 9,
             filter: item => item.text !== 'Upper bound' && item.text !== 'Lower bound' } },
-        tooltip: { callbacks: { label: c => c.dataset.label + ': ₦' + c.parsed.y.toFixed(1) + 'B' } }
+        tooltip: { callbacks: { label: c => c.dataset.label + ': ₦' + c.parsed.y + 'M' } }
       },
       scales: {
         x: { grid: { color: 'rgba(0,0,0,0.04)' } },
@@ -5295,7 +5292,7 @@ function renderForecast(d) {
             grid: { color: 'rgba(0,0,0,0.04)' },
             ticks: {
               callback: function(value) {
-                return '₦' + (value / 1000000).toFixed(0) + 'M';
+                return '₦' + value + 'M';
               }
             }
           }
