@@ -744,7 +744,7 @@ body.simple-mode .deep-only{display:none!important}
       </div>
     </div>
     <div style="margin-top:14px;font-size:11px;color:rgba(255,255,255,0.35)">
-      June 2026 · ₦70Bn is the 2026 annual revenue target · Gap closes via: new sales + collections recovery + institutional deals
+      June 2026 · Targets: ₦60Bn (2025) · ₦70Bn (2026) · Gap closes via: new sales + collections recovery + institutional deals
     </div>
   </div>
 
@@ -917,7 +917,7 @@ body.simple-mode .deep-only{display:none!important}
     <div style="margin-top:16px;height:6px;background:rgba(255,255,255,0.1);border-radius:6px;overflow:hidden">
       <div id="gp-progress" style="height:100%;background:linear-gradient(90deg,#E74C3C,#F5B7B1);border-radius:6px;width:0%;transition:width 1.2s ease"></div>
     </div>
-    <div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,0.35)">June 2026 · 6 months remaining · Gap closes via three levers: collections recovery + new sales + institutional deal</div>
+    <div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,0.35)">June 2026 · 6 months remaining in 2026 · Targets: ₦60Bn (2025), ₦70Bn (2026) · Gap closes via three levers</div>
   </div>
 
   <!-- The Gap Explained -->
@@ -4082,9 +4082,10 @@ function showSection(name, btn) {
     }
   });
 
-  // Render gap section scenario planner on first visit
+  // Render gap section scenario planner — always refresh on navigate
   if (name === 'gap') {
-    if (typeof gpUpdate === 'function') gpUpdate();
+    // Small delay ensures _GP_BASE_REV is set from renderSimpleMode first
+    setTimeout(() => { if (typeof gpUpdate === 'function') gpUpdate(); }, 50);
   }
   // Render pricing charts when pricing tab is shown
   if (name === 'pricing' && PRICING_DATA && INFLATION_DATA) {
@@ -4102,7 +4103,7 @@ function showSection(name, btn) {
 function gpUpdate() {
   const fB = v => v >= 1e9 ? '₦'+(v/1e9).toFixed(1)+'B' : v >= 1e6 ? '₦'+(v/1e6).toFixed(0)+'M' : '₦0';
   const TARGET = 70e9;
-  const baseRev = window._GP_BASE_REV || 83e9; // all-time contracted as base
+  const baseRev = (window._GP_BASE_REV && window._GP_BASE_REV > 0) ? window._GP_BASE_REV : 83e9;
 
   const s1Raw = parseInt(document.getElementById('gp-slider1')?.value || 4750);
   const s2Units = parseInt(document.getElementById('gp-slider2')?.value || 10);
@@ -4178,23 +4179,25 @@ function renderSimpleMode(d) {
   setEl('gap-number', fB(gapToTarget));
   setEl('gap-ytd', fB(totalRev));
   setEl('gap-outstanding-band', fB(totalOut));
-  setEl('gap-pct-label', pctAchieved.toFixed(1) + '% of ₦70Bn target achieved (all-time contracted)');
+  setEl('gap-pct-label', pctAchieved.toFixed(1) + '% of ₦70Bn target (all-time contracted vs 2026 goal)');
 
-  // Also populate section-gap hero numbers
-  setEl('gp-gap-hero', fB(gapToTarget));
-  setEl('gp-total-hero', fB(totalRev));
-  setEl('gp-recv-hero', fB(totalOut));
+  // gap hero numbers populated above in gap tracker block
 
-  setTimeout(() => {
-    const bar = document.getElementById('gap-progress-bar');
-    if (bar) bar.style.width = pctAchieved.toFixed(1) + '%';
-    const gpBar = document.getElementById('gp-progress');
-    if (gpBar) gpBar.style.width = pctAchieved.toFixed(1) + '%';
-  }, 200);
-
-  // Initialise scenario planner with live totalRev as base
+  // Store base rev for scenario planner and update gap section if visible
   window._GP_BASE_REV = totalRev;
-  gpUpdate();
+  // Update gap section elements directly (they may not be visible yet but will be correct when navigated to)
+  const gpSetEl = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+  gpSetEl('gp-gap-hero', fB(gapToTarget));
+  gpSetEl('gp-total-hero', fB(totalRev));
+  gpSetEl('gp-recv-hero', fB(totalOut));
+  setTimeout(() => {
+    const pct = pctAchieved.toFixed(1) + '%';
+    ['gap-progress-bar','gp-progress'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.width = pct;
+    });
+    if (typeof gpUpdate === 'function') gpUpdate();
+  }, 300);
   // ── END GAP TRACKER ────────────────────────────────────────────────────
 
 
@@ -4266,7 +4269,15 @@ function renderSimpleMode(d) {
     const DASHES = [[], [6,3], [2,4], [8,3,2,3]];
     mkChart('c-sm-revyear', { type:'line', data:{ labels: cmp.series[0].years, datasets: cmp.series.map((s,i)=>({ label:s.label, data:s.revByYear.map(v=>+(v/1e9).toFixed(2)), borderColor:s.color, backgroundColor:s.color, borderWidth:2, borderDash:DASHES[i]||[], tension:0.35, fill:false, pointRadius:3, spanGaps:true, pointBorderColor:'#fff', pointBorderWidth:1.5 })) }, options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false}, plugins:{ legend:{display:true,position:'top',labels:{font:{size:9.5},boxWidth:9,boxHeight:9,usePointStyle:true}}, tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}} }, scales:{ x:{grid:{color:'rgba(0,0,0,0.04)'}}, y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'}} } } });
   } else {
-    mkChart('c-sm-revyear', { type:'line', data:{ labels:d.years, datasets:[ { label:'Revenue ₦B', data:d.revByYear.map(v=>+(v/1e9).toFixed(2)), borderColor:'#C0392B', backgroundColor:'rgba(192,57,43,0.08)', fill:true, tension:0.4, borderWidth:2.5, pointBackgroundColor:'#C0392B', pointBorderColor:'#fff', pointBorderWidth:2, pointRadius:4, pointHoverRadius:7 }, { label:'₦70Bn Target', data:d.years.map(()=>70), borderColor:'rgba(192,57,43,0.35)', borderDash:[6,4], borderWidth:1.5, pointRadius:0, fill:false, tension:0 } ] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:true,position:'top',labels:{font:{size:9},boxWidth:8,boxHeight:8,usePointStyle:true}}, tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}} }, scales:{ x:{grid:{color:'rgba(0,0,0,0.04)'}}, y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'},suggestedMax:75} } } });
+    mkChart('c-sm-revyear', { type:'line', data:{ labels:d.years, datasets:[ { label:'Revenue ₦B', data:d.revByYear.map(v=>+(v/1e9).toFixed(2)), borderColor:'#C0392B', backgroundColor:'rgba(192,57,43,0.08)', fill:true, tension:0.4, borderWidth:2.5, pointBackgroundColor:'#C0392B', pointBorderColor:'#fff', pointBorderWidth:2, pointRadius:4, pointHoverRadius:7 }, { label:'Annual Target', data:d.years.map(y => {
+    const yr = parseInt(y);
+    if (yr === 2026) return 70;
+    if (yr === 2025) return 60;
+    if (yr === 2024) return 40;
+    if (yr === 2023) return 30;
+    if (yr === 2022) return 20;
+    return null; // no target line for earlier years
+  }), borderColor:'rgba(192,57,43,0.4)', borderDash:[6,4], borderWidth:1.5, pointRadius:0, fill:false, tension:0, spanGaps:false } ] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:true,position:'top',labels:{font:{size:9},boxWidth:8,boxHeight:8,usePointStyle:true}}, tooltip:{callbacks:{label:c=>c.dataset.label+': ₦'+c.parsed.y.toFixed(1)+'B'}} }, scales:{ x:{grid:{color:'rgba(0,0,0,0.04)'}}, y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'₦'+v+'B'},suggestedMax:72} } } });
   }
 
   // Community donut
