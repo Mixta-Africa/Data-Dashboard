@@ -28,7 +28,7 @@
   --shadow-lg:0 12px 40px rgba(0,0,0,0.1),0 0 0 1px rgba(0,0,0,0.05);
   --r:14px;--r-sm:8px;--r-lg:20px;
   --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
-  --nav-w:215px;
+  --nav-w:220px;
   --hdr-h:60px;
   --sidebar-bg:#FFFFFF;
 }
@@ -54,7 +54,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 /* ─── LAYOUT ────────────────────────────────────────────────────────────── */
 .sidebar{width:var(--nav-w);min-height:100vh;background:var(--sidebar-bg);border-right:1px solid var(--card-border);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:200;transition:transform 0.3s}
 .sidebar-inner{display:flex;flex-direction:column;height:100%;padding:14px 0 16px}
-.page-body{margin-left:var(--nav-w);display:flex;flex-direction:column;min-height:100vh;flex:1;overflow-x:hidden}
+.page-body{margin-left:var(--nav-w);display:flex;flex-direction:column;min-height:100vh;flex:1;overflow-x:hidden;min-width:0}
 
 /* ─── SIDEBAR BRAND ────────────────────────────────────────────────────── */
 .sb-brand{display:flex;align-items:center;gap:10px;padding:0 16px 14px;border-bottom:1px solid var(--card-border);margin-bottom:8px}
@@ -97,7 +97,7 @@ body.simple-mode .deep-only{display:none!important}
 .sb-report svg{width:13px;height:13px;flex-shrink:0}
 
 /* ─── TOP BAR ──────────────────────────────────────────────────────────── */
-.hdr{height:var(--hdr-h);display:flex;align-items:center;padding:0 28px;background:var(--card);border-bottom:1px solid var(--card-border);position:sticky;top:0;z-index:100;gap:16px}
+.hdr{height:var(--hdr-h);display:flex;align-items:center;padding:0 32px;background:var(--card);border-bottom:1px solid var(--card-border);position:sticky;top:0;z-index:100;gap:16px}
 .hdr-title{font-size:16px;font-weight:700;color:var(--text);letter-spacing:-0.4px;flex:1}
 .hdr-sub{font-size:11px;color:var(--text3);font-weight:400;margin-top:1px}
 .hdr-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
@@ -114,23 +114,23 @@ body.simple-mode .deep-only{display:none!important}
 .loader-sub{font-size:11px;color:var(--text3)}
 
 /* ─── MAIN CONTENT ───────────────────────────────────────────────────────── */
-.main{padding:24px 28px 48px;flex:1}
+.main{padding:24px 32px 48px 32px;flex:1;min-width:0}
 .error-bar{display:none;background:#FFF3CD;border:1px solid #FFEAA7;border-radius:10px;padding:10px 16px;margin:0 0 16px;font-size:12px;color:#856404;align-items:center;gap:8px}
 .error-bar.show{display:flex}
 .schema-warn{display:none;background:#FEF9E7;border:1px solid #F9E79F;border-radius:10px;padding:10px 16px;margin:0 0 16px;font-size:12px;color:#7D6608;align-items:center;gap:8px}
 .schema-warn.show{display:flex}
 
 /* ─── FILTER BAR ────────────────────────────────────────────────────────── */
-.filter-bar{display:flex;align-items:center;gap:8px;padding:10px 28px;background:var(--card);border-bottom:1px solid var(--card-border);flex-wrap:wrap;position:sticky;top:var(--hdr-h);z-index:90}
-.filter-label{font-size:10.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap}
-.filter-select{padding:5px 10px;border-radius:8px;font-size:11.5px;font-weight:500;color:var(--text);background:#fff;border:1px solid var(--card-border);cursor:pointer;font-family:var(--font);outline:none;transition:border-color 0.18s;box-shadow:var(--shadow-sm)}
+.filter-bar{display:flex;align-items:center;gap:6px;padding:8px 32px;background:var(--card);border-bottom:1px solid var(--card-border);flex-wrap:nowrap;overflow-x:auto;position:sticky;top:var(--hdr-h);z-index:90;scrollbar-width:none;-ms-overflow-style:none}.filter-bar::-webkit-scrollbar{display:none}
+.filter-label{font-size:10.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;flex-shrink:0}
+.filter-select{padding:5px 10px;border-radius:8px;font-size:11.5px;font-weight:500;color:var(--text);background:#fff;border:1px solid var(--card-border);cursor:pointer;font-family:var(--font);outline:none;transition:border-color 0.18s;box-shadow:var(--shadow-sm);flex-shrink:0}
 .filter-select:focus{border-color:var(--red)}
 .filter-reset{padding:4px 11px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--red3);color:var(--red);background:var(--red4);font-family:var(--font);transition:all 0.15s}
 .filter-reset:hover{background:var(--red3)}
 .filter-divider{width:1px;height:18px;background:var(--card-border);flex-shrink:0}
-.filter-count{font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-left:auto;white-space:nowrap}
+.filter-count{font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-left:8px;white-space:nowrap;flex-shrink:0}
 .ms-wrap{position:relative;display:inline-block}
-.ms-btn{padding:5px 10px;border-radius:8px;font-size:11.5px;font-weight:500;color:var(--text);background:#fff;border:1px solid var(--card-border);cursor:pointer;font-family:var(--font);outline:none;transition:all 0.18s;white-space:nowrap;display:flex;align-items:center;gap:5px;min-width:90px;justify-content:space-between;box-shadow:var(--shadow-sm)}
+.ms-btn{padding:5px 10px;border-radius:8px;font-size:11.5px;font-weight:500;color:var(--text);background:#fff;border:1px solid var(--card-border);cursor:pointer;font-family:var(--font);outline:none;transition:all 0.18s;white-space:nowrap;display:flex;align-items:center;gap:5px;min-width:80px;justify-content:space-between;box-shadow:var(--shadow-sm);flex-shrink:0}
 .ms-btn.active{border-color:var(--red);background:var(--red4);color:var(--red)}
 .ms-btn .ms-arrow{font-size:8px;opacity:0.5;transition:transform 0.15s}
 .ms-btn.open .ms-arrow{transform:rotate(180deg)}
@@ -886,7 +886,6 @@ body.simple-mode .deep-only{display:none!important}
   </div>
 
 </div><!-- end section-simple -->
-</div><!-- end section-simple -->
 
 <!-- ===== OVERVIEW ===== -->
 <!-- ===== GAP & SCENARIO PLANNER ===== -->
@@ -1487,6 +1486,79 @@ body.simple-mode .deep-only{display:none!important}
     </div>
   </div>
 
+  <!-- ── ACT 6: COST PRESSURE INDEX ────────────────────────────────────── -->
+  <div style="margin-top:28px;margin-bottom:6px" class="sdiv">⑥ Cost Pressure — Did sale prices outrun the cost of building the product?</div>
+
+  <!-- KPI strip -->
+  <div class="kpi-strip" style="margin-bottom:18px;grid-template-columns:repeat(4,1fr)">
+    <div class="kpi">
+      <div class="kpi-label">CCPI Today vs Base</div>
+      <div class="kpi-value" id="ccpi-today" style="color:var(--red3)">350</div>
+      <div class="kpi-sub">Q4 2021 base = 100 · Hybrid finish materials</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Peak Index Reached</div>
+      <div class="kpi-value red" id="ccpi-peak">483</div>
+      <div class="kpi-sub">Q1–Q2 2024 · Rebar + FX shock</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Peak-to-Now Softening</div>
+      <div class="kpi-value green" id="ccpi-softening">−27.6%</div>
+      <div class="kpi-sub">Materials partially normalising</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Cost/sqm Today (incl. labour)</div>
+      <div class="kpi-value" id="ccpi-sqm-today">₦184k</div>
+      <div class="kpi-sub">vs ₦53k at Q4 2021 base</div>
+    </div>
+  </div>
+
+  <!-- Chart 6a: CCPI vs Unit Sale Price Index -->
+  <div class="cc full" style="margin-bottom:4px">
+    <div class="ch" style="flex-wrap:wrap;gap:10px">
+      <div style="flex:1;min-width:200px">
+        <div class="ct">Construction Cost Index vs Sale Price Index — Both rebased to launch quarter = 100</div>
+        <div class="cs">CCPI (red) = composite material + labour cost · Unit lines = sale price indexed from each product's own launch quarter · Gap = margin buffer</div>
+      </div>
+      <div style="display:flex;gap:4px;background:rgba(0,0,0,0.04);padding:3px;border-radius:8px;align-self:flex-start">
+        <button class="scenario-btn active" data-ccpigroup="marula" onclick="setCCPIGroup('marula')" style="padding:4px 10px;border:none;background:white;border-radius:6px;font-size:10px;font-weight:600;color:var(--text);cursor:pointer;font-family:var(--font);transition:all 0.15s;box-shadow:0 1px 3px rgba(0,0,0,0.08)">Marula</button>
+        <button class="scenario-btn" data-ccpigroup="iw" onclick="setCCPIGroup('iw')" style="padding:4px 10px;border:none;background:transparent;border-radius:6px;font-size:10px;font-weight:600;color:var(--text3);cursor:pointer;font-family:var(--font);transition:all 0.15s">Ibudo Wura</button>
+      </div>
+    </div>
+    <div class="cw" style="height:300px">
+      <canvas id="c-ccpi-overlay"></canvas>
+    </div>
+    <div id="ccpi-overlay-callout" style="margin-top:12px;padding:12px 16px;border-radius:10px;font-size:11.5px;line-height:1.6;border-left:4px solid var(--red);background:var(--red4)"></div>
+  </div>
+
+  <!-- Chart 6b: Implied Margin Multiple + Category Waterfall side by side -->
+  <div class="grid2" style="margin-bottom:4px;margin-top:14px">
+    <div class="cc">
+      <div class="ch">
+        <div>
+          <div class="ct">Implied Margin Multiple — Sale Price ÷ Build Cost</div>
+          <div class="cs">How many ₦ of sale price sit above every ₦ of material + labour cost · Danger zone: below 6×</div>
+        </div>
+      </div>
+      <div class="cw" style="height:280px">
+        <canvas id="c-ccpi-multiple"></canvas>
+      </div>
+      <div id="ccpi-multiple-callout" style="margin-top:8px;padding:10px 14px;border-radius:9px;font-size:11px;line-height:1.5;border-left:3px solid var(--red);background:var(--red4)"></div>
+    </div>
+    <div class="cc">
+      <div class="ch">
+        <div>
+          <div class="ct">Cost Composition Shift — What drove the CCPI spike</div>
+          <div class="cs">₦/sqm by category · Q4 2021 → Q1 2024 peak → Q2 2026 current · Structural = rebar + cement + granite + blocks</div>
+        </div>
+      </div>
+      <div class="cw" style="height:280px">
+        <canvas id="c-ccpi-waterfall"></canvas>
+      </div>
+      <div id="ccpi-waterfall-callout" style="margin-top:8px;padding:10px 14px;border-radius:9px;font-size:11px;line-height:1.5;border-left:3px solid #2980B9;background:#EBF5FB"></div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ===== PREDICTIVE INTELLIGENCE (Stage 1: forecast only) ===== -->
@@ -1809,6 +1881,153 @@ const SCHEMA_VERSION = 'v3-2025-06';
 // Global storage for pricing data
 let PRICING_DATA = null;
 let INFLATION_DATA = null;
+
+// ── COMPOSITE CONSTRUCTION PRICE INDEX (CCPI) ─────────────────────────────
+// Static dataset — hybrid finish, RC-frame mid-rise apartments, Lagos
+// Material recipe per sqm GFA (industry-standard quantities):
+//   Cement 0.65 bags · Rebar 0.095T · Granite 0.009×20T loads
+//   225mm blocks 8.5 units · 150mm blocks 3.0 units
+//   Plaster sand 0.014×7T · Fill sand 0.003×20T
+//   Porcelain tiles 0.55m² · Marine plank 0.18 pcs
+//   Kalsi board 0.04 sheets · Gypsum board 0.06 sheets
+// Labour applied as 40% uplift on material cost (Lagos hybrid finish standard)
+// Base: Q4 2021 = 100 · Updates: semi-annual at most
+const CCPI_DATA = (() => {
+  // Material unit prices keyed by period
+  // Periods: year or 'YYYY-H1'/'YYYY-H2' for within-year split
+  const prices = {
+    '2021':    { cement:3500,  rebar:280000,  granite:100000, b225:250, b150:200, psand:22000,  fsand:45000,  tiles:6000,  plank:3000,  kalsi:8500,  gyp:7500  },
+    '2022':    { cement:4000,  rebar:350000,  granite:140000, b225:300, b150:250, psand:28000,  fsand:55000,  tiles:7500,  plank:4000,  kalsi:10000, gyp:9000  },
+    '2023':    { cement:4600,  rebar:800000,  granite:250000, b225:500, b150:380, psand:55000,  fsand:110000, tiles:9000,  plank:7000,  kalsi:16000, gyp:14000 },
+    '2024-H1': { cement:8800,  rebar:1600000, granite:380000, b225:600, b150:550, psand:90000,  fsand:180000, tiles:13500, plank:11000, kalsi:27000, gyp:24000 },
+    '2024-H2': { cement:12500, rebar:1500000, granite:420000, b225:700, b150:500, psand:100000, fsand:200000, tiles:15000, plank:13000, kalsi:32000, gyp:28000 },
+    '2025':    { cement:7700,  rebar:1050000, granite:500000, b225:700, b150:450, psand:110000, fsand:220000, tiles:14500, plank:12000, kalsi:30000, gyp:26000 },
+    '2026':    { cement:10000, rebar:1000000, granite:550000, b225:800, b150:500, psand:130000, fsand:250000, tiles:15500, plank:14000, kalsi:35000, gyp:30000 },
+  };
+
+  // Per-sqm quantities
+  const qty = { cement:0.65, rebar:0.095, granite:0.009, b225:8.5, b150:3.0,
+                psand:0.014, fsand:0.003, tiles:0.55, plank:0.18, kalsi:0.04, gyp:0.06 };
+
+  // Category groupings for the waterfall chart (per sqm, materials only)
+  const categories = {
+    'Structural': ['cement','rebar','granite','b225','b150'],
+    'Earthworks': ['psand','fsand'],
+    'Finishing':  ['tiles'],
+    'Formwork':   ['plank'],
+    'Boards':     ['kalsi','gyp'],
+  };
+
+  function matCostPerSqm(period) {
+    const p = prices[period];
+    if (!p) return 0;
+    return Object.keys(qty).reduce((sum, mat) => sum + (p[mat] || 0) * qty[mat], 0);
+  }
+
+  function totalCostPerSqm(period) {
+    return matCostPerSqm(period) * 1.40; // 40% labour uplift
+  }
+
+  // Map quarter string → price period key
+  function qToPeriod(q) {
+    const [qpart, yr] = q.split(' ');
+    const n = parseInt(qpart.slice(1));
+    const y = parseInt(yr);
+    if (y <= 2021) return '2021';
+    if (y === 2022) return '2022';
+    if (y === 2023) return '2023';
+    if (y === 2024) return n <= 2 ? '2024-H1' : '2024-H2';
+    if (y === 2025) return '2025';
+    return '2026';
+  }
+
+  // All quarters in the dataset (Q4 2021 is the Marula base)
+  const quarters = [
+    'Q4 2021','Q1 2022','Q2 2022','Q3 2022','Q4 2022',
+    'Q1 2023','Q2 2023','Q3 2023','Q4 2023',
+    'Q1 2024','Q2 2024','Q3 2024','Q4 2024',
+    'Q1 2025','Q2 2025','Q3 2025','Q4 2025',
+    'Q1 2026','Q2 2026',
+  ];
+
+  // Build index (base Q4 2021 = 100)
+  const baseMatCost = matCostPerSqm('2021');
+  const baseTotalCost = totalCostPerSqm('2021');
+  const index = {};
+  quarters.forEach(q => {
+    const period = qToPeriod(q);
+    index[q] = {
+      matPerSqm:   Math.round(matCostPerSqm(period)),
+      totalPerSqm: Math.round(totalCostPerSqm(period)),
+      ccpi:        parseFloat((matCostPerSqm(period) / baseMatCost * 100).toFixed(1)),
+    };
+  });
+
+  // Unit definitions: name, sqm, launch quarter, prices by quarter
+  const units = [
+    { id:'marula1', label:'Marula 1BR (38m²)', group:'marula', sqm:38, launch:'Q4 2021',
+      prices:{'Q4 2021':14300000,'Q1 2022':15730000,'Q2 2022':17557088,'Q3 2022':18583000,
+              'Q4 2022':18583000,'Q1 2023':18583000,'Q2 2023':18583000,'Q3 2023':18583000,
+              'Q4 2023':22060125,'Q1 2024':30913000,'Q2 2024':32458650,'Q3 2024':35704515,
+              'Q4 2024':37500000,'Q1 2025':41956700,'Q2 2025':41956700,'Q3 2025':41956700,
+              'Q4 2025':46200000,'Q1 2026':46200000,'Q2 2026':46200000} },
+    { id:'marula2', label:'Marula 2BR (62m²)', group:'marula', sqm:62, launch:'Q4 2021',
+      prices:{'Q4 2021':23320000,'Q1 2022':25652000,'Q2 2022':29238295,'Q3 2022':30951000,
+              'Q4 2022':30951000,'Q1 2023':30951000,'Q2 2023':30951000,'Q3 2023':30951000,
+              'Q4 2023':36707625,'Q1 2024':51439000,'Q2 2024':54010950,'Q3 2024':58871936,
+              'Q4 2024':59600500,'Q1 2025':66683800,'Q2 2025':66683800,'Q3 2025':66683800,
+              'Q4 2025':69300000,'Q1 2026':69300000,'Q2 2026':69300000} },
+    { id:'marula3', label:'Marula 3BR (81m²)', group:'marula', sqm:81, launch:'Q4 2021',
+      prices:{'Q4 2021':30470000,'Q1 2022':33517000,'Q2 2022':33061670,'Q3 2022':35454000,
+              'Q4 2022':35454000,'Q1 2023':35454000,'Q2 2023':35454000,'Q3 2023':35454000,
+              'Q4 2023':42553125,'Q1 2024':64024000,'Q2 2024':65624600,'Q3 2024':71530814,
+              'Q4 2024':71175800,'Q1 2025':77585100,'Q2 2025':77585100,'Q3 2025':77585100,
+              'Q4 2025':78500000,'Q1 2026':78500000,'Q2 2026':78500000} },
+    { id:'iw1a', label:'IW 1BR-A (52m²)', group:'iw', sqm:52, launch:'Q1 2025',
+      prices:{'Q1 2025':44825000,'Q2 2025':44825000,'Q3 2025':44825000,
+              'Q4 2025':46914440,'Q1 2026':50941000,'Q2 2026':50941000} },
+    { id:'iw1b', label:'IW 1BR-B (52m²)', group:'iw', sqm:52, launch:'Q1 2025',
+      prices:{'Q1 2025':42900000,'Q2 2025':42900000,'Q3 2025':42900000,
+              'Q4 2025':44899709,'Q1 2026':49714000,'Q2 2026':49714000} },
+    { id:'iw2a', label:'IW 2BR-A (75m²)', group:'iw', sqm:75, launch:'Q1 2025',
+      prices:{'Q1 2025':67035000,'Q2 2025':67035000,'Q3 2025':67035000,
+              'Q4 2025':70011146,'Q1 2026':75800000,'Q2 2026':75800000} },
+    { id:'iw2b', label:'IW 2BR-B (75m²)', group:'iw', sqm:75, launch:'Q1 2025',
+      prices:{'Q1 2025':65400000,'Q2 2025':65400000,'Q3 2025':65400000,
+              'Q4 2025':69358629,'Q1 2026':75204000,'Q2 2026':75204000} },
+  ];
+
+  // Pre-compute implied multiples for each unit × quarter
+  units.forEach(u => {
+    u.multiples = {};
+    quarters.forEach(q => {
+      if (!u.prices[q]) return;
+      const buildCost = index[q].totalPerSqm * u.sqm;
+      u.multiples[q] = parseFloat((u.prices[q] / buildCost).toFixed(2));
+    });
+  });
+
+  // Category cost breakdown for waterfall (three snapshots)
+  const waterfallPeriods = ['2021','2024-H1','2026'];
+  const waterfallLabels  = ['Q4 2021\n(base)','Q1 2024\n(peak)','Q2 2026\n(current)'];
+  const waterfallData = {};
+  Object.keys(categories).forEach(cat => {
+    waterfallData[cat] = waterfallPeriods.map(period => {
+      const p = prices[period];
+      return Math.round(categories[cat].reduce((s, mat) => s + (p[mat]||0)*qty[mat], 0));
+    });
+  });
+
+  // Find peak index quarter
+  const peakQ = quarters.reduce((best, q) => index[q].ccpi > index[best].ccpi ? q : best, quarters[0]);
+
+  return { quarters, index, units, waterfallLabels, waterfallData,
+           baseMatPerSqm: Math.round(baseMatCost), baseTotalPerSqm: Math.round(baseTotalCost),
+           peakQ, peakCCPI: index[peakQ].ccpi,
+           currentQ: 'Q2 2026', currentCCPI: index['Q2 2026'].ccpi,
+           softening: parseFloat((((index[peakQ].ccpi - index['Q2 2026'].ccpi) / index[peakQ].ccpi)*100).toFixed(1)),
+           qToPeriod };
+})();
 let CLASSIFICATION_DATA = null;
 
 // Pricing intelligence enabled flag
@@ -3938,6 +4157,8 @@ function renderFromRows(rows, fromCache) {
   // meaningless, so we deliberately do NOT call this from applyFilters().
   try { renderPredict(analytics, rows); } catch(e) { console.warn('[predict] render failed:', e); }
   try { renderInsightEngine(analytics, rows); } catch(e) { console.warn('[insights] render failed:', e); }
+  // CCPI is static — always render regardless of filter state
+  try { renderCCPICharts(); } catch(e) { console.warn('[ccpi] render failed:', e); }
   window._lastAnalytics = analytics;
   updateFreshness(fromCache);
   
@@ -4090,6 +4311,7 @@ function showSection(name, btn) {
   // Render pricing charts when pricing tab is shown
   if (name === 'pricing' && PRICING_DATA && INFLATION_DATA) {
     renderPricingCharts();
+    renderCCPICharts();
   }
   // Lazy-load CMA data on first visit to Market tab
   if (name === 'market' && !CMA_DATA && !_cmaLoading) {
@@ -5384,6 +5606,286 @@ function renderPricingCharts() {
   addAfter('c-price-performance-matrix', '<div class="chart-interp"><strong>How to read this final chart:</strong> Top-right = Stars (high revenue AND prices beating inflation — double down on these). Bottom-right = Cash Cows (high revenue but prices lagging inflation — protect margin, don\'t over-invest). Top-left = Question Marks (great appreciation but small revenue — these could be Stars, scale them up). Bottom-left = Dogs (low revenue, losing to inflation — exit or fundamental reposition). '+(star?'<strong>Top Star right now: '+star.label.substring(0,35)+'</strong> — '+star.y.toFixed(1)+'% real CAGR, '+star.x.toFixed(1)+'% of revenue. ':' ')+(dog?'<strong>Biggest Dog: '+dog.label.substring(0,35)+'</strong> — '+dog.y.toFixed(1)+'% real CAGR, generating '+dog.x.toFixed(1)+'% of revenue.':'')+'</div>');
 
   console.log('[Pricing] Charts rendered successfully');
+}
+
+// ── CCPI RENDERING ────────────────────────────────────────────────────────
+let _ccpiGroup = 'marula'; // 'marula' | 'iw'
+
+function setCCPIGroup(group) {
+  _ccpiGroup = group;
+  document.querySelectorAll('[data-ccpigroup]').forEach(btn => {
+    const active = btn.dataset.ccpigroup === group;
+    btn.style.background = active ? 'white' : 'transparent';
+    btn.style.color = active ? 'var(--text)' : 'var(--text3)';
+    btn.style.boxShadow = active ? '0 1px 3px rgba(0,0,0,0.08)' : 'none';
+  });
+  renderCCPIOverlay();
+  renderCCPIMultiple();
+}
+
+function renderCCPIKPIs() {
+  const d = CCPI_DATA;
+  const el = id => document.getElementById(id);
+  if (el('ccpi-today'))     el('ccpi-today').textContent     = d.currentCCPI.toFixed(0);
+  if (el('ccpi-peak'))      el('ccpi-peak').textContent      = d.peakCCPI.toFixed(0);
+  if (el('ccpi-softening')) el('ccpi-softening').textContent = '−' + d.softening.toFixed(1) + '%';
+  if (el('ccpi-sqm-today')) {
+    const todayCost = d.index[d.currentQ].totalPerSqm;
+    el('ccpi-sqm-today').textContent = '₦' + (todayCost >= 1000 ? (todayCost/1000).toFixed(0)+'k' : todayCost.toLocaleString());
+  }
+}
+
+function renderCCPIOverlay() {
+  const d = CCPI_DATA;
+  const group = _ccpiGroup;
+  const groupUnits = d.units.filter(u => u.group === group);
+
+  // Use shared quarterly axis from CCPI_DATA
+  // For CCPI line: base = Q4 2021 (index 100)
+  // For each unit: rebase sale price from its own launch quarter = 100
+  const allQ = d.quarters;
+
+  // CCPI line — all quarters, rebased at Q4 2021
+  const ccpiLine = allQ.map(q => ({ x: q, y: d.index[q].ccpi }));
+
+  // Unit price index lines — each rebased from launch quarter
+  const unitColors = [C.blue, C.green, C.purple, C.teal];
+  const unitDatasets = groupUnits.map((u, i) => {
+    const launchPrice = u.prices[u.launch];
+    const data = allQ.map(q => {
+      if (!u.prices[q]) return null;
+      return parseFloat(((u.prices[q] / launchPrice) * 100).toFixed(1));
+    });
+    // Rebase CCPI to unit's launch quarter too (so gap is directly comparable)
+    return {
+      label: u.label,
+      data,
+      borderColor: unitColors[i % unitColors.length],
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      borderDash: [],
+      pointRadius: 3,
+      pointHoverRadius: 5,
+      tension: 0.25,
+      spanGaps: false,
+    };
+  });
+
+  // CCPI rebased from each group's first launch quarter
+  const groupLaunch = group === 'marula' ? 'Q4 2021' : 'Q1 2025';
+  const ccpiBase = d.index[groupLaunch].ccpi;
+  const ccpiRebased = allQ.map(q => {
+    // For IW group, only show from Q1 2025
+    if (group === 'iw' && allQ.indexOf(q) < allQ.indexOf('Q1 2025')) return null;
+    return parseFloat((d.index[q].ccpi / ccpiBase * 100).toFixed(1));
+  });
+
+  mkChart('c-ccpi-overlay', {
+    type: 'line',
+    data: {
+      labels: allQ,
+      datasets: [
+        {
+          label: 'CCPI (Build Cost Index)',
+          data: ccpiRebased,
+          borderColor: C.red,
+          backgroundColor: 'rgba(192,57,43,0.06)',
+          fill: true,
+          borderWidth: 2.5,
+          borderDash: [5, 3],
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          tension: 0.25,
+          spanGaps: false,
+        },
+        ...unitDatasets
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: true, position: 'top', labels: { font: { size: 10 }, boxWidth: 12, padding: 10 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) : '—'}`,
+            afterBody: items => {
+              const ccpiItem = items.find(i => i.dataset.label === 'CCPI (Build Cost Index)');
+              const unitItem = items.find(i => i.dataset.label !== 'CCPI (Build Cost Index)');
+              if (ccpiItem && unitItem && ccpiItem.parsed.y && unitItem.parsed.y) {
+                const gap = unitItem.parsed.y - ccpiItem.parsed.y;
+                return [`Gap: ${gap >= 0 ? '+' : ''}${gap.toFixed(1)} pts ${gap >= 0 ? '▲ Price outpacing cost' : '▼ Cost squeezing margin'}`];
+              }
+              return [];
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
+        y: {
+          title: { display: true, text: 'Index (launch quarter = 100)', font: { size: 9 } },
+          ticks: { callback: v => v.toFixed(0) },
+          grid: { color: 'rgba(0,0,0,0.06)' }
+        }
+      }
+    }
+  });
+
+  // Callout
+  const callout = document.getElementById('ccpi-overlay-callout');
+  if (callout) {
+    if (group === 'marula') {
+      callout.innerHTML = 'Between Q4 2021 and Q1 2024, Mixta\'s build cost index surged to <strong>483</strong> while Marula sale prices rose to only ~215 (1BR) — a 268-point gap during which the cost of building rose more than <strong>twice as fast</strong> as asking prices. This is the 2023 margin compression story. Since Q1 2025, sale prices have recovered above the CCPI line, restoring a positive buffer. The gap must be actively maintained — it is not automatic.';
+    } else {
+      callout.innerHTML = 'Ibudo Wura launched into a partially normalised market at Q1 2025 (CCPI = 350). Sale prices have outpaced the CCPI since launch — the cost index has been broadly flat while IW prices rose ~15% by Q2 2026. This is a structurally healthier margin entry point than Marula\'s 2021 launch into a rising cost environment, but the absolute build cost per sqm (₦184k incl. labour) remains 3.5× the 2021 base.';
+    }
+  }
+
+  requestAnimationFrame(() => {
+    const ch = chartRegistry['c-ccpi-overlay'];
+    if (ch) ch.resize();
+  });
+}
+
+function renderCCPIMultiple() {
+  const d = CCPI_DATA;
+  const group = _ccpiGroup;
+  const groupUnits = d.units.filter(u => u.group === group);
+
+  // Show the Marula 1BR as reference line (most data points), or IW 1BR-A
+  // Gather all quarters that have multiples for ANY unit in group
+  const refUnit = groupUnits[0]; // 1BR for both groups
+  const qs = d.quarters.filter(q => refUnit.multiples[q] !== undefined);
+
+  const unitColors = [C.blue, C.green, C.purple, C.teal];
+  const datasets = groupUnits.map((u, i) => ({
+    label: u.label,
+    data: qs.map(q => u.multiples[q] ?? null),
+    borderColor: unitColors[i % unitColors.length],
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    pointRadius: 3,
+    pointHoverRadius: 5,
+    tension: 0.2,
+    spanGaps: false,
+  }));
+
+  // Danger zone reference line at 6×
+  datasets.push({
+    label: 'Danger zone (6×)',
+    data: qs.map(() => 6),
+    borderColor: 'rgba(192,57,43,0.5)',
+    borderDash: [6, 4],
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+  });
+
+  mkChart('c-ccpi-multiple', {
+    type: 'line',
+    data: { labels: qs, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: true, position: 'top', labels: { font: { size: 10 }, boxWidth: 12, padding: 8 } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(2)+'×' : '—'}` } }
+      },
+      scales: {
+        x: { ticks: { maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
+        y: {
+          title: { display: true, text: 'Sale Price ÷ Build Cost (×)', font: { size: 9 } },
+          ticks: { callback: v => v.toFixed(1) + '×' },
+          suggestedMin: 3, suggestedMax: 12,
+          grid: { color: 'rgba(0,0,0,0.06)' }
+        }
+      }
+    }
+  });
+
+  // Callout: find the minimum multiple period
+  let minMult = Infinity, minQ = '', minUnit = '';
+  groupUnits.forEach(u => {
+    Object.entries(u.multiples).forEach(([q, m]) => {
+      if (m < minMult) { minMult = m; minQ = q; minUnit = u.label; }
+    });
+  });
+  const el = document.getElementById('ccpi-multiple-callout');
+  if (el) {
+    el.innerHTML = `Lowest margin multiple: <strong>${minUnit}</strong> at <strong>${minQ}</strong> = <strong>${minMult.toFixed(2)}×</strong> — the narrowest spread between build cost and sale price in the dataset. A multiple below 6× leaves insufficient room for overhead, marketing, finance costs, and developer return. The danger zone line is a floor, not a target.`;
+  }
+
+  requestAnimationFrame(() => {
+    const ch = chartRegistry['c-ccpi-multiple'];
+    if (ch) ch.resize();
+  });
+}
+
+function renderCCPIWaterfall() {
+  const d = CCPI_DATA;
+  const categories = Object.keys(d.waterfallData);
+  const catColors = [C.red, C.amber, C.blue, C.teal, C.slate];
+  const periodLabels = ['Q4 2021 (base)', 'Q1 2024 (peak)', 'Q2 2026 (current)'];
+
+  const datasets = categories.map((cat, i) => ({
+    label: cat,
+    data: d.waterfallData[cat],
+    backgroundColor: catColors[i % catColors.length],
+    borderRadius: 4,
+    borderSkipped: false,
+  }));
+
+  mkChart('c-ccpi-waterfall', {
+    type: 'bar',
+    data: { labels: periodLabels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'top', labels: { font: { size: 10 }, boxWidth: 10, padding: 8 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ₦${ctx.parsed.y.toLocaleString()}/m²`,
+            afterBody: items => {
+              const total = items.reduce((s, i) => s + i.parsed.y, 0);
+              return [`Total (materials): ₦${total.toLocaleString()}/m²`];
+            }
+          }
+        }
+      },
+      scales: {
+        x: { stacked: true, ticks: { font: { size: 10 } } },
+        y: {
+          stacked: true,
+          title: { display: true, text: '₦ / m² (materials only)', font: { size: 9 } },
+          ticks: { callback: v => v >= 1000 ? '₦' + (v/1000).toFixed(0) + 'k' : '₦' + v }
+        }
+      }
+    }
+  });
+
+  // Callout: structural share
+  const structAt2021 = d.waterfallData['Structural'][0];
+  const totalAt2021  = Object.values(d.waterfallData).reduce((s, arr) => s + arr[0], 0);
+  const structAt2024 = d.waterfallData['Structural'][1];
+  const totalAt2024  = Object.values(d.waterfallData).reduce((s, arr) => s + arr[1], 0);
+  const el = document.getElementById('ccpi-waterfall-callout');
+  if (el) {
+    el.innerHTML = `Structural materials (rebar, cement, granite, blocks) were <strong>${(structAt2021/totalAt2021*100).toFixed(0)}%</strong> of material cost in Q4 2021 and <strong>${(structAt2024/totalAt2024*100).toFixed(0)}%</strong> at the Q1 2024 peak — confirming that rebar inflation, not finishing cost, drove the crisis. Earthworks (fill + plaster sand) inflated the most in percentage terms (+465% from base), driven entirely by diesel/haulage — the hidden fuel subsidy removal pass-through.`;
+  }
+
+  requestAnimationFrame(() => {
+    const ch = chartRegistry['c-ccpi-waterfall'];
+    if (ch) ch.resize();
+  });
+}
+
+function renderCCPICharts() {
+  try { renderCCPIKPIs();     } catch(e) { console.warn('[CCPI] KPIs failed:', e); }
+  try { renderCCPIOverlay();  } catch(e) { console.warn('[CCPI] Overlay failed:', e); }
+  try { renderCCPIMultiple(); } catch(e) { console.warn('[CCPI] Multiple failed:', e); }
+  try { renderCCPIWaterfall();} catch(e) { console.warn('[CCPI] Waterfall failed:', e); }
+  console.log('[CCPI] Charts rendered');
 }
 
 
