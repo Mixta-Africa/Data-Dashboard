@@ -4681,11 +4681,16 @@ function showSection(name, btn) {
     // Small delay ensures _GP_BASE_REV is set from renderSimpleMode first
     setTimeout(() => { if (typeof gpUpdate === 'function') gpUpdate(); }, 50);
   }
+  
   // Render pricing charts when pricing tab is shown
   if (name === 'pricing' && PRICING_DATA && INFLATION_DATA) {
-    renderPricingCharts();
-    renderCCPICharts();
+    // FIX: Defer rendering to allow the browser to compute container dimensions
+    setTimeout(() => {
+      renderPricingCharts();
+      renderCCPICharts();
+    }, 50); 
   }
+  
   // Lazy-load CMA data on first visit to Market tab
   if (name === 'market' && !CMA_DATA && !_cmaLoading) {
     loadCMAData();
