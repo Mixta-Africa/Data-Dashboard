@@ -1189,7 +1189,7 @@ body.simple-mode .section-readme-wrap{display:none}
           <span style="font-size:11px;font-weight:600;color:var(--text)">Collections Recovery</span>
           <span style="font-size:12px;font-weight:700;color:var(--red);font-family:var(--mono)" id="gp-s1-val">₦4.8B</span>
         </div>
-        <input type="range" id="gp-slider1" min="0" max="9500" value="4750" step="50"
+        <input type="range" id="gp-slider1" min="0" max="9500" value="0" step="50"
           style="width:100%;accent-color:var(--red);height:4px;cursor:pointer"
           oninput="gpUpdate()">
         <div style="display:flex;justify-content:space-between;margin-top:4px">
@@ -1204,7 +1204,7 @@ body.simple-mode .section-readme-wrap{display:none}
           <span style="font-size:11px;font-weight:600;color:var(--text)">New Sales (units/month)</span>
           <span style="font-size:12px;font-weight:700;color:#2980B9;font-family:var(--mono)" id="gp-s2-val">₦4.7B</span>
         </div>
-        <input type="range" id="gp-slider2" min="0" max="30" value="10" step="1"
+        <input type="range" id="gp-slider2" min="0" max="30" value="0" step="1"
           style="width:100%;accent-color:#2980B9;height:4px;cursor:pointer"
           oninput="gpUpdate()">
         <div style="display:flex;justify-content:space-between;margin-top:4px">
@@ -1246,7 +1246,8 @@ body.simple-mode .section-readme-wrap{display:none}
           <div style="height:8px;background:rgba(0,0,0,0.08);border-radius:8px;overflow:hidden">
             <div id="gp-scenario-bar" style="height:100%;border-radius:8px;transition:width .4s ease,background .4s ease;width:0%"></div>
           </div>
-          <div style="font-size:10px;color:var(--text3);margin-top:4px" id="gp-scenario-note">Adjust levers above to model your path</div>
+          <div style="font-size:10.5px;font-weight:500;margin-bottom:6px" id="gp-ytd-base">No 2026 data yet — build to ₦70B using the three H2 levers below</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:4px" id="gp-scenario-note">Move the sliders to model different paths to ₦70B.</div>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
@@ -4695,19 +4696,31 @@ function showSection(name, btn) {
 
 // ── SCENARIO PLANNER (Gap section) ────────────────────────────────────────
 function gpUpdate() {
-  const fB = v => v >= 1e9 ? '₦'+(v/1e9).toFixed(1)+'B' : v >= 1e6 ? '₦'+(v/1e6).toFixed(0)+'M' : '₦0';
+  const fB = v => {
+    if (!isFinite(v) || v < 0) return '₦0';
+    return v >= 1e9 ? '₦'+(v/1e9).toFixed(1)+'B' : v >= 1e6 ? '₦'+(v/1e6).toFixed(0)+'M' : '₦'+Math.round(v).toLocaleString();
+  };
+
   const TARGET = 70e9;
-  const baseRev = (window._GP_BASE_REV && window._GP_BASE_REV > 0) ? window._GP_BASE_REV : 83e9;
 
-  const s1Raw = parseInt(document.getElementById('gp-slider1')?.value || 4750);
-  const s2Units = parseInt(document.getElementById('gp-slider2')?.value || 10);
-  const s3Raw = parseInt(document.getElementById('gp-slider3')?.value || 0);
+  // ── Base: 2026 YTD contracted revenue only ────────────────────────────
+  // This is what has already been contracted in Jan–Jun 2026.
+  // The three levers represent what H2 2026 must add to reach ₦70B.
+  // Fallback: 0 (forces honest lever-building from scratch if no 2026 data yet).
+  const ytd2026 = (window._GP_BASE_REV > 0 && isFinite(window._GP_BASE_REV))
+    ? window._GP_BASE_REV : 0;
 
-  const lever1 = s1Raw * 1e6;           // collections recovery ₦
-  const lever2 = s2Units * 77.6e6 * 6;  // units/month × ₦77.6M ASP × 6 months
-  const lever3 = s3Raw * 1e6;           // institutional deal ₦
+  const s1Raw   = parseInt(document.getElementById('gp-slider1')?.value ?? 0);
+  const s2Units = parseInt(document.getElementById('gp-slider2')?.value ?? 0);
+  const s3Raw   = parseInt(document.getElementById('gp-slider3')?.value ?? 0);
 
-  const projected = baseRev + lever1 + lever2 + lever3;
+  const lever1 = s1Raw * 1e6;          // collections recovery in H2 (₦M → ₦)
+  const lever2 = s2Units * 77.6e6 * 6; // new units/month × avg deal ₦77.6M × 6 months
+  const lever3 = s3Raw * 1e6;          // institutional/bulk deal (₦M → ₦)
+
+  // Projected 2026 full-year revenue = YTD + three H2 levers
+  const projected = ytd2026 + lever1 + lever2 + lever3;
+  const remaining = Math.max(0, TARGET - ytd2026);  // gap levers must close
   const vsTarget  = projected - TARGET;
   const pct       = Math.min(100, (projected / TARGET) * 100);
 
@@ -4717,10 +4730,24 @@ function gpUpdate() {
   setEl('gp-s2-val', fB(lever2));
   setEl('gp-s3-val', fB(lever3));
   setEl('gp-projected', fB(projected));
-  setEl('gp-vs-target', (vsTarget >= 0 ? '+' : '') + fB(Math.abs(vsTarget)) + (vsTarget >= 0 ? ' above' : ' below') + ' target');
+
+  // vs-target: show gap remaining, not false "above target"
+  const vsText = vsTarget >= 0
+    ? '+' + fB(vsTarget) + ' above target'
+    : fB(Math.abs(vsTarget)) + ' still needed';
+  setEl('gp-vs-target', vsText);
   setEl('gp-out-l1', fB(lever1));
   setEl('gp-out-l2', fB(lever2));
   setEl('gp-out-l3', fB(lever3));
+
+  // Show 2026 YTD base inline if it is non-zero (user sees starting point)
+  const ytdEl = document.getElementById('gp-ytd-base');
+  if (ytdEl) {
+    ytdEl.textContent = ytd2026 > 0
+      ? '2026 YTD already contracted: ' + fB(ytd2026) + ' · H2 levers must add: ' + fB(remaining)
+      : 'No 2026 data yet — build to ₦70B using the three H2 levers below';
+    ytdEl.style.color = ytd2026 > 0 ? '#27AE60' : 'var(--text3)';
+  }
 
   const bar = document.getElementById('gp-scenario-bar');
   if (bar) {
@@ -4729,19 +4756,24 @@ function gpUpdate() {
   }
 
   const badge = document.getElementById('gp-scenario-badge');
-  const note = document.getElementById('gp-scenario-note');
+  const note  = document.getElementById('gp-scenario-note');
+  const leversTotal = lever1 + lever2 + lever3;
+
   if (s3Raw > 10000) {
     if (badge) badge.textContent = 'Institutional-led';
-    if (note) note.textContent = 'This scenario depends on securing a large institutional deal — structure now.';
+    if (note)  note.textContent  = 'Scenario depends on securing a bulk deal. Identify counterparty and structure now — 6-month window is tight.';
   } else if (s1Raw > 7000) {
     if (badge) badge.textContent = 'Collections-heavy';
-    if (note) note.textContent = 'This requires recovering >70% of the outstanding book — Lagos New Town is the critical path.';
+    if (note)  note.textContent  = 'Requires recovering >70% of outstanding book (' + fB(s1Raw*1e6) + '). Lagos New Town is the critical path.';
   } else if (s2Units >= 20) {
     if (badge) badge.textContent = 'Sales-heavy';
-    if (note) note.textContent = 'Requires ' + s2Units + ' units/month — significantly above best-ever annual velocity.';
+    if (note)  note.textContent  = s2Units + ' units/month is significantly above historical velocity. Requires agent activation and pricing reset.';
+  } else if (leversTotal === 0) {
+    if (badge) badge.textContent = 'No Levers Set';
+    if (note)  note.textContent  = 'Move the sliders to model different paths to ₦70B. Start with Collections — it is the fastest lever.';
   } else {
-    if (badge) badge.textContent = 'Base Case';
-    if (note) note.textContent = 'Adjust levers above to model your path to ₦70Bn.';
+    if (badge) badge.textContent = 'Balanced';
+    if (note)  note.textContent  = 'Balanced across levers. ' + (vsTarget < 0 ? fB(Math.abs(vsTarget)) + ' gap remains — increase one lever.' : 'Target reachable on this mix.');
   }
 
   const vsEl = document.getElementById('gp-vs-target');
@@ -4777,8 +4809,20 @@ function renderSimpleMode(d) {
 
   // gap hero numbers populated above in gap tracker block
 
-  // Store base rev for scenario planner and update gap section if visible
-  window._GP_BASE_REV = totalRev;
+  // Store 2026 YTD revenue as the scenario planner base.
+  // The ₦70B target is a 2026 ANNUAL target — the planner asks:
+  // "Given what we've already contracted in 2026, what do the three
+  //  H2 levers need to contribute to reach ₦70B this year?"
+  // Using all-time totalRev as the base was wrong — it made the
+  // planner start above target before any lever moved.
+  const rev2026 = (() => {
+    if (!d.years || !d.revByYear) return 0;
+    const idx = d.years.indexOf('2026');
+    if (idx === -1) return 0;
+    return d.revByYear[idx] || 0;
+  })();
+  window._GP_BASE_REV = rev2026;   // 2026 YTD contracted only
+  window._GP_ALL_TIME_REV = totalRev; // kept for reference, not used in planner
   // Update gap section elements directly (they may not be visible yet but will be correct when navigated to)
   const gpSetEl = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
   gpSetEl('gp-gap-hero', fB(gapToTarget));
