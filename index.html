@@ -5744,6 +5744,7 @@ function renderPricingCharts() {
     summaryEl.innerHTML = '<strong style="color:var(--red)">₦100 of construction in '+baseYear+' cost ₦'+(inflation.cpiIndex[latestCpiYear]||0).toFixed(0)+' in '+latestCpiYear+'</strong><br>Peak: '+peakRate.toFixed(1)+'% cost surge in '+peakYear+' (rebar + FX shock). Sale prices had to match this pace to protect margins.';
   }
 
+  const getMetric = p => p.marginDelta !== null ? p.marginDelta : p.realCAGR;
   const act3El = document.getElementById('px-act3-summary');
   if (act3El) {
     const topW = winners.sort((a,b) => getMetric(b) - getMetric(a))[0];
@@ -5879,10 +5880,16 @@ function renderPricingCharts() {
             }
           },
           tooltip: { callbacks: { label: ctx => {
-            const p = data[ctx.dataIndex];
-            const verdict = p.realCAGR>10 ? '✅ Beat inflation' : p.realCAGR>0 ? '⚠️ Marginal' : '🔴 Lost to inflation';
-            return [
-              ' Margin Delta: '+md.toFixed(1)+'%  '+verdict+trendStr,
+          const p = data[ctx.dataIndex];
+          const verdict = p.realCAGR>10 ? '✅ Beat inflation' : p.realCAGR>0 ? '⚠️ Marginal' : '🔴 Lost to inflation';
+          
+          // ADD THESE THREE LINES:
+          const md = p.marginDelta !== null ? p.marginDelta : p.realCAGR;
+          const t = p.marginTrend;
+          const trendStr = t !== null ? ' (' + (t>=0?'+':'') + t.toFixed(1) + 'pp YoY)' : '';
+          
+          return [
+            ' Margin Delta: '+md.toFixed(1)+'%  '+verdict+trendStr,
               ' Nominal CAGR: '+p.nominalCAGR.toFixed(1)+'%',
               ' Build cost erosion: '+p.inflationErosion.toFixed(1)+'pp',
               ' Span: '+p.firstYear+'→'+p.lastYear+' ('+p.dataPoints+' data points)'
