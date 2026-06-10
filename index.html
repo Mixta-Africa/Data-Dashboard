@@ -452,6 +452,197 @@ body.simple-mode .deep-only{display:none!important}
   .cc:has(#c-payplan){max-width:none}
   .predict-grid{grid-template-columns:1fr}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   HELP SYSTEM — Multi-audience documentation layer
+   Layers: KPI subtitles · Help icons · Glossary modal · Section READMEs
+           Data health · Onboarding · Chart reference cards
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── KPI subtitle (Layer 1: Simple Mode plain-English context) ── */
+.kpi-context{font-size:10.5px;color:var(--text3);line-height:1.4;margin-top:3px;font-weight:400}
+.kpi-mode-badge{display:inline-block;font-size:8px;font-weight:700;letter-spacing:.5px;
+  text-transform:uppercase;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle}
+.kpi-mode-badge.good{background:#E8F8F0;color:#27AE60}
+.kpi-mode-badge.warn{background:#FEF9E7;color:#F39C12}
+.kpi-mode-badge.bad{background:#FDEDEC;color:#E74C3C}
+
+/* ── Help icon (hover-reveal per KPI/chart) ── */
+.help-icon{position:absolute;top:6px;right:6px;width:16px;height:16px;border-radius:50%;
+  background:var(--bg);border:1px solid var(--card-border);color:var(--text3);
+  font-size:9px;font-weight:700;display:none;align-items:center;justify-content:center;
+  cursor:pointer;z-index:10;transition:all .15s;user-select:none;line-height:1}
+.kpi:hover .help-icon,.cc:hover .help-icon{display:flex}
+.help-icon:hover{background:var(--red6);border-color:var(--red3);color:var(--red)}
+
+/* ── Help tooltip (click on help icon) ── */
+.help-tooltip{position:fixed;z-index:9000;background:white;border:1px solid var(--card-border);
+  border-radius:10px;padding:12px 14px;max-width:280px;box-shadow:0 8px 24px rgba(0,0,0,.12);
+  font-size:11px;line-height:1.55;color:var(--text);display:none}
+.help-tooltip.visible{display:block}
+.help-tooltip-title{font-weight:700;font-size:12px;color:var(--text);margin-bottom:5px}
+.help-tooltip-body{color:var(--text2);margin-bottom:8px}
+.help-tooltip-meta{font-size:10px;color:var(--text3);border-top:1px solid var(--bg2);padding-top:6px;margin-top:6px}
+.help-tooltip-link{font-size:10px;color:var(--red);font-weight:600;cursor:pointer;
+  display:inline-block;margin-top:4px;text-decoration:none}
+.help-tooltip-link:hover{text-decoration:underline}
+
+/* ── Global Help button (top-right bar) ── */
+.help-btn{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:9px;
+  border:1px solid var(--card-border);background:var(--bg);font-size:11px;font-weight:500;
+  color:var(--text2);cursor:pointer;font-family:var(--font);transition:all .15s;position:relative}
+.help-btn:hover{background:var(--red6);border-color:var(--red3);color:var(--red)}
+.help-dropdown{position:absolute;top:calc(100% + 6px);right:0;background:white;
+  border:1px solid var(--card-border);border-radius:10px;padding:6px;
+  box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:180px;z-index:8000;display:none}
+.help-dropdown.open{display:block}
+.help-dd-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;
+  font-size:11.5px;color:var(--text);cursor:pointer;transition:background .12s;white-space:nowrap}
+.help-dd-item:hover{background:var(--bg)}
+.help-dd-item svg{flex-shrink:0;opacity:.6}
+
+/* ── Data health indicator ── */
+.data-health{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;
+  font-size:10.5px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid transparent}
+.data-health.ok{background:#E8F8F0;color:#27AE60;border-color:#A9DFBF}
+.data-health.warn{background:#FEF9E7;color:#F39C12;border-color:#FAD7A0}
+.data-health.error{background:#FDEDEC;color:#E74C3C;border-color:#F5B7B1}
+.data-health-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.data-health.ok .data-health-dot{background:#27AE60}
+.data-health.warn .data-health-dot{background:#F39C12}
+.data-health.error .data-health-dot{background:#E74C3C}
+
+/* ── Glossary modal ── */
+.help-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;
+  display:none;align-items:center;justify-content:center;padding:20px}
+.help-modal-overlay.open{display:flex}
+.help-modal{background:white;border-radius:16px;width:100%;max-width:780px;max-height:88vh;
+  display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden}
+.help-modal-hdr{padding:18px 22px 14px;border-bottom:1px solid var(--card-border);
+  display:flex;align-items:center;gap:12px;flex-shrink:0}
+.help-modal-hdr-title{font-size:15px;font-weight:700;color:var(--text);flex:1}
+.help-modal-close{width:28px;height:28px;border-radius:50%;border:1px solid var(--card-border);
+  background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:var(--text3);flex-shrink:0;transition:all .15s}
+.help-modal-close:hover{background:var(--red6);color:var(--red);border-color:var(--red3)}
+.help-modal-search{flex:1;padding:7px 12px;border:1px solid var(--card-border);border-radius:8px;
+  font-size:12px;font-family:var(--font);color:var(--text);outline:none;background:var(--bg)}
+.help-modal-search:focus{border-color:var(--red3);background:white}
+.help-modal-body{display:flex;flex:1;overflow:hidden;min-height:0}
+.help-modal-cats{width:140px;flex-shrink:0;border-right:1px solid var(--card-border);
+  padding:10px 8px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.help-cat-btn{padding:6px 10px;border-radius:7px;font-size:11px;font-weight:500;
+  color:var(--text2);cursor:pointer;border:none;background:none;font-family:var(--font);
+  text-align:left;width:100%;transition:all .12s;white-space:nowrap}
+.help-cat-btn:hover{background:var(--bg);color:var(--text)}
+.help-cat-btn.active{background:var(--red6);color:var(--red);font-weight:600}
+.help-modal-entries{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+.help-entry{border:1px solid var(--card-border);border-radius:10px;overflow:hidden;cursor:pointer}
+.help-entry-hdr{padding:10px 14px;display:flex;align-items:center;gap:8px;
+  background:var(--bg);transition:background .12s}
+.help-entry-hdr:hover{background:var(--red6)}
+.help-entry-term{font-size:12px;font-weight:700;color:var(--text);flex:1}
+.help-entry-type{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  padding:2px 7px;border-radius:4px;background:white;color:var(--text3);border:1px solid var(--card-border)}
+.help-entry-chevron{font-size:10px;color:var(--text3);transition:transform .15s}
+.help-entry.open .help-entry-chevron{transform:rotate(180deg)}
+.help-entry-body{display:none;padding:12px 14px;border-top:1px solid var(--card-border);
+  font-size:11.5px;line-height:1.6;color:var(--text2)}
+.help-entry.open .help-entry-body{display:block}
+.help-entry-formula{font-family:var(--mono);font-size:10.5px;background:#F7F9FC;
+  border:1px solid var(--card-border);border-radius:6px;padding:7px 10px;margin:6px 0;color:var(--text)}
+.help-entry-seealso{font-size:10px;color:var(--text3);margin-top:6px}
+.help-entry-seealso span{color:var(--red);cursor:pointer;font-weight:500}
+.help-entry-seealso span:hover{text-decoration:underline}
+.help-entry-example{font-size:10.5px;color:#2980B9;background:#EBF5FB;border-radius:5px;
+  padding:5px 9px;margin-top:5px;border-left:3px solid #2980B9}
+
+/* ── Section README (Deep Dive sidebar) ── */
+.section-readme{background:white;border:1px solid var(--card-border);border-radius:12px;
+  overflow:hidden;margin-bottom:18px}
+.section-readme-hdr{padding:12px 16px;background:linear-gradient(90deg,var(--red6),var(--bg));
+  display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.section-readme-title{font-size:12px;font-weight:700;color:var(--text);flex:1}
+.section-readme-toggle{font-size:10px;color:var(--text3);transition:transform .15s}
+.section-readme.collapsed .section-readme-toggle{transform:rotate(-90deg)}
+.section-readme-body{padding:0 16px;max-height:600px;overflow-y:auto;transition:all .2s}
+.section-readme.collapsed .section-readme-body{max-height:0;padding-top:0;padding-bottom:0;overflow:hidden}
+.readme-block{padding:10px 0;border-bottom:1px solid var(--bg2)}
+.readme-block:last-child{border-bottom:none;padding-bottom:14px}
+.readme-block-title{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+  color:var(--text3);margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.readme-block-body{font-size:11.5px;line-height:1.6;color:var(--text2)}
+.readme-table{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:5px}
+.readme-table th{padding:4px 8px;text-align:left;color:var(--text3);font-weight:600;
+  font-size:10px;border-bottom:1px solid var(--card-border);background:var(--bg)}
+.readme-table td{padding:5px 8px;color:var(--text2);border-bottom:1px solid var(--bg2);vertical-align:top}
+.readme-table tr:last-child td{border-bottom:none}
+.readme-formula{font-family:var(--mono);font-size:10px;background:#F7F9FC;border-radius:4px;
+  padding:2px 6px;color:var(--text);display:inline}
+.readme-warning{background:#FEF9E7;border-left:3px solid #F39C12;padding:6px 10px;
+  border-radius:0 5px 5px 0;font-size:11px;color:#7D6608;margin:4px 0;line-height:1.5}
+.readme-error{background:#FDEDEC;border-left:3px solid #E74C3C;padding:6px 10px;
+  border-radius:0 5px 5px 0;font-size:11px;color:#922B21;margin:4px 0;line-height:1.5}
+.readme-verify{background:#EBF5FB;border-left:3px solid #2980B9;padding:6px 10px;
+  border-radius:0 5px 5px 0;font-size:11px;color:#1A5276;margin:4px 0;line-height:1.5}
+
+/* ── Chart reference card ── */
+.chart-ref-card{background:#F7F9FC;border:1px solid var(--card-border);border-radius:9px;
+  overflow:hidden;margin-top:8px;display:none}
+.chart-ref-card.open{display:block}
+.chart-ref-hdr{padding:8px 12px;display:flex;align-items:center;gap:6px;cursor:pointer;
+  background:white;border-bottom:1px solid var(--card-border)}
+.chart-ref-hdr-title{font-size:10.5px;font-weight:600;color:var(--text2);flex:1}
+.chart-ref-body{padding:10px 12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:10.5px}
+.chart-ref-section{display:flex;flex-direction:column;gap:4px}
+.chart-ref-label{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text3)}
+.chart-ref-value{color:var(--text2);line-height:1.5}
+.chart-ref-code{font-family:var(--mono);font-size:9.5px;background:white;border:1px solid var(--card-border);
+  border-radius:4px;padding:4px 7px;color:var(--text);line-height:1.6}
+.chart-ref-full{grid-column:1/-1}
+
+/* ── Onboarding modal ── */
+.onboard-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:11000;
+  display:none;align-items:center;justify-content:center;padding:20px}
+.onboard-overlay.open{display:flex}
+.onboard-modal{background:white;border-radius:20px;width:100%;max-width:460px;
+  box-shadow:0 24px 64px rgba(0,0,0,.22);overflow:hidden}
+.onboard-slide{display:none;padding:36px 32px 24px;text-align:center}
+.onboard-slide.active{display:block}
+.onboard-emoji{font-size:52px;margin-bottom:16px;line-height:1}
+.onboard-title{font-size:18px;font-weight:700;color:var(--text);margin-bottom:10px}
+.onboard-body{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:24px}
+.onboard-dots{display:flex;justify-content:center;gap:6px;margin-bottom:20px}
+.onboard-dot{width:7px;height:7px;border-radius:50%;background:var(--card-border);transition:all .2s}
+.onboard-dot.active{background:var(--red);width:20px;border-radius:4px}
+.onboard-btns{display:flex;align-items:center;justify-content:space-between;
+  padding:16px 32px;border-top:1px solid var(--card-border);background:var(--bg)}
+.onboard-skip{font-size:11px;color:var(--text3);cursor:pointer;border:none;background:none;
+  font-family:var(--font);padding:0}
+.onboard-skip:hover{color:var(--text)}
+.onboard-next{padding:8px 22px;background:var(--red);color:white;border:none;border-radius:8px;
+  font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:background .15s}
+.onboard-next:hover{background:var(--red2)}
+
+/* ── Margin delta bars (Act 3 replacement) ── */
+.margin-status-bar{display:flex;align-items:center;gap:8px;padding:5px 0}
+.margin-status-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.margin-status-dot.positive{background:#27AE60}
+.margin-status-dot.warning{background:#F39C12}
+.margin-status-dot.negative{background:#E74C3C}
+
+/* ── Deep Dive: README container injected before each section ── */
+.section-readme-wrap{margin-bottom:14px}
+body.simple-mode .section-readme-wrap{display:none}
+
+/* ── Chart ct (title) — make clickable for reference card ── */
+.ct-clickable{cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.ct-clickable:hover{color:var(--red)}
+.ct-ref-icon{font-size:9px;color:var(--text3);opacity:0}
+.ct-clickable:hover .ct-ref-icon{opacity:1}
+
+/* ── Legend override: ensure all chart legends are readable ── */
+
 </style>
 </head>
 <body>
@@ -602,11 +793,42 @@ body.simple-mode .deep-only{display:none!important}
   </div>
   <div class="hdr-right">
     <div class="freshness" id="syncStatusText" style="display:none">Syncing…</div>
+
+    <!-- Data Health Indicator -->
+    <div class="data-health ok" id="dataHealthBtn" onclick="openHealth()" title="Data source status — click for sync log">
+      <div class="data-health-dot"></div>
+      <span id="dataHealthLabel">Data OK</span>
+    </div>
+
+    <!-- Search -->
     <button onclick="openSearch()" style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:9px;border:1px solid var(--card-border);background:var(--bg);font-size:11px;font-weight:500;color:var(--text2);cursor:pointer;font-family:var(--font);transition:all 0.15s" title="Search dashboard (/)">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       Search
       <span style="font-size:9px;color:var(--text4);background:white;border:1px solid var(--card-border);border-radius:3px;padding:1px 4px;font-family:var(--mono)">/</span>
     </button>
+
+    <!-- Global Help Button -->
+    <div style="position:relative">
+      <button class="help-btn" id="globalHelpBtn" onclick="toggleHelpDropdown()" title="Help, Glossary &amp; Documentation">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Help
+      </button>
+      <div class="help-dropdown" id="helpDropdown">
+        <div class="help-dd-item" onclick="openGlossary();closeHelpDropdown()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+          Glossary
+        </div>
+        <div class="help-dd-item" onclick="openHealth();closeHelpDropdown()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Data Health
+        </div>
+        <div class="help-dd-item" onclick="openOnboarding();closeHelpDropdown()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Dashboard Tour
+        </div>
+      </div>
+    </div>
+
     <div class="live-badge" style="background:var(--red6);border:1px solid var(--red3);color:var(--red);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:6px">
       <div class="live-dot" style="background:var(--red)"></div>Live
     </div>
@@ -1340,35 +1562,41 @@ body.simple-mode .deep-only{display:none!important}
 
   <!-- ── KPI STRIP ──────────────────────────────────────────────────────── -->
   <div class="kpi-strip" style="margin-bottom:18px">
-    <div class="kpi">
+    <div class="kpi" style="position:relative">
+      <span class="help-icon" onclick="showKpiHelp(event,'Nominal Price Growth','Compound Annual Growth Rate of asking prices from first to most recent data point. This is the raw number — it does not account for the rising cost of building the product.','Formula: (Last_Price / First_Price)^(1/years) - 1','pricing')">?</span>
       <div class="kpi-label">Nominal Price Growth</div>
       <div class="kpi-value" id="pricing-nominal-cagr">—</div>
-      <div class="kpi-sub">Avg CAGR across all products</div>
+      <div class="kpi-context">Sticker price CAGR — before adjusting for build costs</div>
     </div>
-    <div class="kpi">
-      <div class="kpi-label">Real Price Growth</div>
-      <div class="kpi-value green" id="pricing-real-cagr">—</div>
-      <div class="kpi-sub">After stripping out construction inflation</div>
+    <div class="kpi" style="position:relative">
+      <span class="help-icon" onclick="showKpiHelp(event,'Avg Margin Delta','How far is the current asking price from the cost-justified breakeven price? Positive = priced above cost, building buffer. Negative = priced below cost, margin at risk.','Formula: (Asking - Breakeven) / Breakeven × 100','pricing')">?</span>
+      <div class="kpi-label">Avg Margin Delta</div>
+      <div class="kpi-value" id="pricing-real-cagr">—</div>
+      <div class="kpi-context" id="pricing-margin-context">Avg gap vs CCPI breakeven price</div>
     </div>
-    <div class="kpi">
-      <div class="kpi-label">Cost Inflation Ate</div>
+    <div class="kpi" style="position:relative">
+      <span class="help-icon" onclick="showKpiHelp(event,'Cost Erosion','How many percentage points of nominal price gain were absorbed by rising construction costs? This is the invisible tax — your headline price rose, but part of that rise just kept up with material costs.','Formula: Nominal CAGR - Real CAGR (or: Margin Delta change)','pricing')">?</span>
+      <div class="kpi-label">Cost Erosion</div>
       <div class="kpi-value" id="pricing-erosion" style="color:var(--red3)">—</div>
-      <div class="kpi-sub">Of every % of nominal price gain</div>
+      <div class="kpi-context">pp of nominal growth absorbed by CCPI</div>
     </div>
-    <div class="kpi">
+    <div class="kpi" style="position:relative">
+      <span class="help-icon" onclick="showKpiHelp(event,'Cumulative CCPI Rise','Total rise in the construction cost index since the base year (2020=100). This is the bar Mixta's sale prices needed to clear just to break even on margin. It does not include land, overheads, or profit.','Source: Inflation_Analysis.xlsx Summary sheet — material prices + 40% labour uplift','pricing')">?</span>
       <div class="kpi-label">Cumulative CCPI Rise</div>
       <div class="kpi-value" id="pricing-total-inflation">—</div>
-      <div class="kpi-sub">Construction cost rise since 2020</div>
+      <div class="kpi-context">Construction cost rise since 2020 — the bar to clear</div>
     </div>
-    <div class="kpi">
-      <div class="kpi-label">Products Beating Build Costs</div>
+    <div class="kpi" style="position:relative">
+      <span class="help-icon" onclick="showKpiHelp(event,'Products with Positive Margin','How many products have an asking price above their CCPI-adjusted breakeven? Green = margin buffer exists. Red = asking price is below what costs would justify — not necessarily a loss, but signals pricing pressure.','Formula: Breakeven = Launch_Price × (CCPI_Now / CCPI_Launch)','pricing')">?</span>
+      <div class="kpi-label">Products Above Breakeven</div>
       <div class="kpi-value" id="pricing-winners-count" style="color:#27AE60">—</div>
-      <div class="kpi-sub">Real CAGR > 0% vs CCPI · of <span id="pricing-product-count">—</span> analyzed</div>
+      <div class="kpi-context">Asking price above CCPI breakeven · of <span id="pricing-product-count">—</span> analyzed</div>
     </div>
-    <div class="kpi">
+    <div class="kpi" style="position:relative">
+      <span class="help-icon" onclick="showKpiHelp(event,'Avg Discount Rate','Gap between the listed asking price and the actual revenue recognized per unit sold. High discount rate signals buyer resistance — the market is negotiating prices down from the sheet price.','Source: Comparing Price Sheet asking price vs actual transaction revenue per unit','pricing')">?</span>
       <div class="kpi-label">Avg Discount Rate</div>
       <div class="kpi-value" id="pricing-discount-rate">—</div>
-      <div class="kpi-sub">Asking vs realized price gap</div>
+      <div class="kpi-context">Asking vs realized price gap — buyer resistance signal</div>
     </div>
   </div>
 
@@ -1418,7 +1646,7 @@ body.simple-mode .deep-only{display:none!important}
   </div>
 
   <!-- ── ACT 3: WHO WON ────────────────────────────────────────────────── -->
-  <div style="margin-top:22px;margin-bottom:6px" class="sdiv">③ Who Beat Construction Costs? — Real price appreciation by product</div>
+  <div style="margin-top:22px;margin-bottom:6px" class="sdiv">③ Margin Status — Which products are priced above their cost breakeven?</div>
   <div id="px-act3-summary" style="font-size:12px;color:var(--text2);margin-bottom:10px;padding:10px 14px;background:#F7F9FC;border-radius:8px;line-height:1.6;border-left:3px solid #27AE60"></div>
   <div class="grid2" style="margin-bottom:4px">
     <div class="cc">
@@ -3242,10 +3470,16 @@ function calculateRealPrices(priceData, inflationData) {
       if (!isFinite(realPrice) || realPrice <= 0) return null;
       if (realPrice > nominalPrice * 100 || realPrice < nominalPrice / 100) return null;
       
+      // Breakeven price: what this product should cost today if prices matched CCPI exactly
+      // Formula: initial_asking * (cpiIndex_now / cpiIndex_launch)
+      // We don't have the launch index here — that's computed per-product in calculatePricingMetrics.
+      // Store cpiIndex here so per-product margin delta can be computed downstream.
+      const breakeven = null; // populated per-product in calculatePricingMetrics
       return {
         nominal:  nominalPrice,
         real:     realPrice,
         cpiIndex: cpiIndex,
+        breakeven: breakeven,
         year:     year
       };
     });
@@ -3319,6 +3553,36 @@ function calculatePricingMetrics(enhancedPricing, inflationData) {
     const nominalAppreciation = ((lastPrice.nominal / firstPrice.nominal) - 1) * 100;
     const realAppreciation = ((lastPrice.real / firstPrice.real) - 1) * 100;
     
+    // ── Margin Delta: How far is the LATEST asking price from the CCPI-justified breakeven? ──
+    // Breakeven at any quarter = firstPrice.nominal * (ccpiIndex_that_quarter / ccpiIndex_launch)
+    // Margin Delta = (lastNominal - breakeven_last) / breakeven_last * 100
+    // Positive = asking price above cost breakeven (margin buffer exists)
+    // Negative = asking price below cost breakeven (underpriced vs construction costs)
+    const launchCcpi  = firstPrice.cpiIndex;  // CCPI at launch (base for this product)
+    const currentCcpi = lastPrice.cpiIndex;   // CCPI at most recent quarter
+    let marginDelta = null;
+    let breakeven_latest = null;
+    if (launchCcpi > 0 && currentCcpi > 0) {
+      breakeven_latest = firstPrice.nominal * (currentCcpi / launchCcpi);
+      marginDelta = ((lastPrice.nominal - breakeven_latest) / breakeven_latest) * 100;
+      if (!isFinite(marginDelta) || Math.abs(marginDelta) > 500) marginDelta = null;
+    }
+
+    // ── Margin Trend: Is the margin gap widening or narrowing year-over-year? ──
+    // Find the price point ~1 year before the last price, compute that delta, compare.
+    let marginTrend = null;
+    const priorYearPrices = validPrices.filter(p => p.year <= lastPrice.year - 0.75);
+    if (priorYearPrices.length > 0 && launchCcpi > 0) {
+      const priorPrice = priorYearPrices[priorYearPrices.length - 1];
+      const priorBreakeven = firstPrice.nominal * (priorPrice.cpiIndex / launchCcpi);
+      if (priorBreakeven > 0) {
+        const priorDelta = ((priorPrice.nominal - priorBreakeven) / priorBreakeven) * 100;
+        if (isFinite(priorDelta) && marginDelta !== null) {
+          marginTrend = marginDelta - priorDelta; // positive = improving, negative = worsening
+        }
+      }
+    }
+
     const productMetric = {
       product: product.product,
       category: product.category,
@@ -3334,7 +3598,13 @@ function calculatePricingMetrics(enhancedPricing, inflationData) {
       lastPriceNominal: lastPrice.nominal,
       firstPriceReal: firstPrice.real,
       lastPriceReal: lastPrice.real,
-      dataPoints: validPrices.length
+      dataPoints: validPrices.length,
+      // ── Commercial margin metrics ──────────────────────────────────
+      marginDelta: marginDelta,       // % above/below CCPI breakeven TODAY
+      marginTrend: marginTrend,       // pp change vs prior year (+ = improving)
+      breakevenLatest: breakeven_latest, // N amount that would be cost-neutral
+      launchCcpi: launchCcpi,         // CCPI at product launch
+      currentCcpi: currentCcpi        // CCPI at most recent data point
     };
     
     metrics.byProduct.push(productMetric);
@@ -3361,6 +3631,13 @@ function calculatePricingMetrics(enhancedPricing, inflationData) {
     metrics.portfolio.nominalCAGR = totalNominalCAGR / count;
     metrics.portfolio.realCAGR = totalRealCAGR / count;
     metrics.portfolio.inflationErosion = metrics.portfolio.nominalCAGR - metrics.portfolio.realCAGR;
+    // Portfolio margin delta = average of all product margin deltas
+    const validDeltas = metrics.byProduct.filter(p => p.marginDelta !== null).map(p => p.marginDelta);
+    metrics.portfolio.marginDelta = validDeltas.length
+      ? validDeltas.reduce((a, b) => a + b, 0) / validDeltas.length : null;
+    const validTrends = metrics.byProduct.filter(p => p.marginTrend !== null).map(p => p.marginTrend);
+    metrics.portfolio.marginTrend = validTrends.length
+      ? validTrends.reduce((a, b) => a + b, 0) / validTrends.length : null;
   }
   
   // Calculate category averages
@@ -3432,8 +3709,28 @@ function mkChart(id, cfg) {
   if(chartRegistry[id]) { try { chartRegistry[id].destroy(); } catch(e){} }
   const el = document.getElementById(id);
   if(!el) return;
+
+  // ── Auto-enforce legends on all charts ──────────────────────────────────
+  // Every chart gets a visible legend. Consistent style: top-right, 9px font.
+  // Charts with custom generateLabels keep them. Legend never silently hidden.
+  if (!cfg.options) cfg.options = {};
+  if (!cfg.options.plugins) cfg.options.plugins = {};
+  if (!cfg.options.plugins.legend) cfg.options.plugins.legend = {};
+  const leg = cfg.options.plugins.legend;
+  if (leg.display !== false) {
+    leg.display = true;
+    if (!leg.position) leg.position = 'top';
+    if (!leg.align) leg.align = 'end';
+    if (!leg.labels) leg.labels = {};
+    if (!leg.labels.font) leg.labels.font = {};
+    if (!leg.labels.font.size) leg.labels.font.size = 9;
+    if (leg.labels.boxWidth === undefined) leg.labels.boxWidth = 10;
+    if (leg.labels.padding === undefined) leg.labels.padding = 8;
+  }
+
   chartRegistry[id] = new Chart(el, cfg);
 }
+
 
 function compactAxisLabel(label, maxLen=14) {
   const text = String(label ?? '');
@@ -4190,6 +4487,7 @@ function resetFilters() {
    RENDER HELPERS — called with any row set
    ===================================================== */
 function renderFromRows(rows, fromCache) {
+  if (typeof checkOnboarding === 'function') checkOnboarding();
   enrichData(rows); // Calculates Year/Quarter FIRST
   populateFilters(rows); // Now filters will successfully see the years!
   
@@ -4245,11 +4543,21 @@ function showSyncStatus(msg) {
 function hideSyncStatus(success=true) {
   const chip = document.getElementById('syncStatus');
   const toast = document.getElementById('syncToast');
-  chip.classList.remove('show');
-  toast.classList.remove('active');
-  if(success) {
-    toast.classList.add('done');
-    setTimeout(()=>toast.classList.remove('done'), 800);
+  if (chip) chip.classList.remove('show');
+  if (toast) {
+    toast.classList.remove('active');
+    if(success) { toast.classList.add('done'); setTimeout(()=>toast.classList.remove('done'), 800); }
+  }
+  // Log sync outcome to audit trail
+  if (typeof logSyncEvent === 'function') {
+    const rowCount = document.getElementById('record-count')?.textContent || '—';
+    logSyncEvent({
+      label: success ? 'Sync Successful' : 'Sync Failed',
+      details: success
+        ? 'All data sources refreshed. ' + rowCount + ' records loaded.'
+        : 'Data sync failed. Check console for [CCPI] / [Pricing] logs.',
+      error: success ? null : 'Network or parse error'
+    });
   }
 }
 
@@ -5337,8 +5645,24 @@ function renderPricingCharts() {
 
   // KPI cards
   document.getElementById('pricing-nominal-cagr').textContent = fmtPct(metrics.portfolio.nominalCAGR);
-  document.getElementById('pricing-real-cagr').textContent    = fmtPct(metrics.portfolio.realCAGR);
-  document.getElementById('pricing-erosion').textContent      = fmtPp(metrics.portfolio.inflationErosion);
+  // Avg Margin Delta: positive = above breakeven, negative = below
+  const portMD = metrics.portfolio.marginDelta;
+  const mdEl = document.getElementById('pricing-real-cagr');
+  if (mdEl) {
+    mdEl.textContent = portMD !== null ? (portMD >= 0 ? '+' : '') + portMD.toFixed(1) + '%' : '—';
+    mdEl.style.color = portMD === null ? '' : portMD >= 0 ? '#27AE60' : 'var(--red3)';
+  }
+  // Context subtitle for margin delta
+  const mdCtx = document.getElementById('pricing-margin-context');
+  if (mdCtx && portMD !== null) {
+    const trend = metrics.portfolio.marginTrend;
+    const trendStr = trend !== null
+      ? (trend >= 0 ? ' ↑ improving' : ' ↓ worsening') + ' (' + (trend >= 0 ? '+' : '') + trend.toFixed(1) + 'pp YoY)'
+      : '';
+    mdCtx.textContent = (portMD >= 0 ? 'Prices above cost breakeven' : 'Prices below cost breakeven') + trendStr;
+    mdCtx.style.color = portMD >= 0 ? '#27AE60' : 'var(--red3)';
+  }
+  document.getElementById('pricing-erosion').textContent = fmtPp(metrics.portfolio.inflationErosion);
 
   const cpiYears      = Object.keys(inflation.cpiIndex).map(Number).sort();
   const latestCpiYear = cpiYears[cpiYears.length - 1];
@@ -5350,8 +5674,10 @@ function renderPricingCharts() {
   document.getElementById('pricing-product-count').textContent   = metrics.byProduct.length || '—';
 
   const qualified = metrics.byProduct.filter(p => p.dataPoints >= 4);
-  const winners   = qualified.filter(p => p.realCAGR > 0);
-  const losers    = qualified.filter(p => p.realCAGR <= 0);
+  // Above breakeven = asking price > CCPI cost-justified price (marginDelta > 0)
+  // Fall back to realCAGR > 0 for products with no marginDelta computed
+  const winners = qualified.filter(p => p.marginDelta !== null ? p.marginDelta > 0 : p.realCAGR > 0);
+  const losers  = qualified.filter(p => p.marginDelta !== null ? p.marginDelta <= 0 : p.realCAGR <= 0);
   const winnersEl = document.getElementById('pricing-winners-count');
   if (winnersEl) winnersEl.textContent = winners.length + ' / ' + qualified.length;
 
@@ -5371,9 +5697,9 @@ function renderPricingCharts() {
 
   const act3El = document.getElementById('px-act3-summary');
   if (act3El) {
-    const topW = winners.sort((a,b) => b.realCAGR - a.realCAGR)[0];
-    const topL = losers.sort((a,b) => a.realCAGR - b.realCAGR)[0];
-    act3El.innerHTML = 'Of <strong>'+qualified.length+' products</strong> with enough pricing history, <strong style="color:#27AE60">'+winners.length+' beat inflation</strong> and <strong style="color:var(--red)">'+losers.length+' fell behind</strong>. Best performer: <strong>'+(topW ? topW.product.substring(0,35) : '—')+'</strong> at <strong style="color:#27AE60">'+(topW ? topW.realCAGR.toFixed(1)+'% real CAGR' : '—')+'</strong>. Worst: <strong>'+(topL ? topL.product.substring(0,35) : '—')+'</strong> at <strong style="color:var(--red)">'+(topL ? topL.realCAGR.toFixed(1)+'% real CAGR' : '—')+'</strong>. Green bars = real value created; red bars = inflation won.';
+    const topW = winners.sort((a,b) => getMetric(b) - getMetric(a))[0];
+    const topL = losers.sort((a,b) => getMetric(a) - getMetric(b))[0];
+    act3El.innerHTML = 'Of <strong>'+qualified.length+' products</strong> with pricing history, <strong style="color:#27AE60">'+winners.length+' are priced above their CCPI cost breakeven</strong> and <strong style="color:var(--red)">'+losers.length+' are below it</strong>. Strongest margin buffer: <strong>'+(topW ? topW.product.substring(0,35) : '--')+'</strong> at <strong style="color:#27AE60">'+(topW ? '+'+getMetric(topW).toFixed(1)+'% above breakeven' : '--')+'</strong>. Most at risk: <strong>'+(topL ? topL.product.substring(0,35) : '--')+'</strong> at <strong style="color:var(--red)">'+(topL ? getMetric(topL).toFixed(1)+'% below breakeven' : '--')+'</strong>. Green = asking price covers build cost; red = pricing action recommended.';
   }
 
   // Populate product selector (once)
@@ -5459,7 +5785,7 @@ function renderPricingCharts() {
       c.stroke();
       c.font = '700 9px sans-serif';
       c.fillStyle = 'rgba(231,76,60,0.7)';
-      c.fillText('← Inflation wins  |  Beats inflation →', zero - 115, yScale.top + 12);
+      c.fillText('← Below breakeven  |  0 = breakeven  |  Above →', zero - 130, yScale.top + 12);
       c.restore();
     }
   };
@@ -5496,9 +5822,9 @@ function renderPricingCharts() {
             display: true, position: 'top',
             labels: {
               generateLabels: () => [
-                { text: '>10%  Beat inflation',   fillStyle:'#27AE60BB', strokeStyle:'#27AE60', lineWidth:1, pointStyle:'rect' },
-                { text: '0–10%  Marginal',        fillStyle:'#F39C12BB', strokeStyle:'#F39C12', lineWidth:1, pointStyle:'rect' },
-                { text: '<0%   Lost to inflation', fillStyle:'#E74C3CBB', strokeStyle:'#E74C3C', lineWidth:1, pointStyle:'rect' }
+                { text: '>0%   Above cost breakeven (margin buffer)',  fillStyle:'#27AE60BB', strokeStyle:'#27AE60', lineWidth:1, pointStyle:'rect' },
+                { text: '0 to -20%  Warning zone',                          fillStyle:'#F39C12BB', strokeStyle:'#F39C12', lineWidth:1, pointStyle:'rect' },
+                { text: '<-20%  Below breakeven (pricing action needed)',    fillStyle:'#E74C3CBB', strokeStyle:'#E74C3C', lineWidth:1, pointStyle:'rect' }
               ],
               font:{size:10}, boxWidth:12, usePointStyle:false, padding:12
             }
@@ -5507,9 +5833,9 @@ function renderPricingCharts() {
             const p = data[ctx.dataIndex];
             const verdict = p.realCAGR>10 ? '✅ Beat inflation' : p.realCAGR>0 ? '⚠️ Marginal' : '🔴 Lost to inflation';
             return [
-              ' Real CAGR: '+p.realCAGR.toFixed(1)+'%  '+verdict,
+              ' Margin Delta: '+md.toFixed(1)+'%  '+verdict+trendStr,
               ' Nominal CAGR: '+p.nominalCAGR.toFixed(1)+'%',
-              ' Inflation eroded: '+p.inflationErosion.toFixed(1)+'pp',
+              ' Build cost erosion: '+p.inflationErosion.toFixed(1)+'pp',
               ' Span: '+p.firstYear+'→'+p.lastYear+' ('+p.dataPoints+' data points)'
             ];
           } } }
@@ -8625,6 +8951,730 @@ function attachAllBarInsights(d) {
 
 
 
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HELP SYSTEM — Full implementation
+   Layers: Glossary · Tooltips · Data Health · Onboarding · Section READMEs
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// ── Audit log (populated as syncs happen) ────────────────────────────────
+const SYNC_AUDIT_LOG = [];
+function logSyncEvent(event) {
+  SYNC_AUDIT_LOG.unshift({ ...event, ts: new Date().toISOString() });
+  if (SYNC_AUDIT_LOG.length > 30) SYNC_AUDIT_LOG.pop();
+  updateDataHealth();
+}
+
+// ── Data Health Indicator ─────────────────────────────────────────────────
+let _dataHealthState = 'ok';
+function setDataHealth(state, label) {
+  _dataHealthState = state;
+  const btn = document.getElementById('dataHealthBtn');
+  const lbl = document.getElementById('dataHealthLabel');
+  if (btn) { btn.className = 'data-health ' + state; }
+  if (lbl) { lbl.textContent = label || (state === 'ok' ? 'Data OK' : state === 'warn' ? 'Data Stale' : 'Sync Error'); }
+}
+function updateDataHealth() {
+  if (!SYNC_AUDIT_LOG.length) return;
+  const last = SYNC_AUDIT_LOG[0];
+  const ageMs = Date.now() - new Date(last.ts).getTime();
+  const ageH  = ageMs / 3600000;
+  if (last.error) setDataHealth('error', 'Sync Error');
+  else if (ageH > 24) setDataHealth('warn', 'Stale >' + Math.round(ageH) + 'h');
+  else setDataHealth('ok', 'Updated ' + (ageH < 1 ? Math.round(ageH*60)+'m' : Math.round(ageH)+'h') + ' ago');
+}
+function openHealth() {
+  const overlay = document.getElementById('healthOverlay');
+  if (!overlay) return;
+  const el = document.getElementById('healthContent');
+  if (el) {
+    if (!SYNC_AUDIT_LOG.length) {
+      el.innerHTML = '<div style="color:var(--text3);font-style:italic">No sync events recorded yet. Click "Sync Data" to load live data.</div>';
+    } else {
+      el.innerHTML = SYNC_AUDIT_LOG.map(e => {
+        const d = new Date(e.ts);
+        const age = Math.round((Date.now()-d)/60000);
+        const ageStr = age < 60 ? age+'m ago' : Math.round(age/60)+'h ago';
+        const statusIcon = e.error ? '🔴' : '🟢';
+        return '<div style="padding:10px 0;border-bottom:1px solid var(--card-border)">'
+          + '<div style="display:flex;justify-content:space-between;margin-bottom:4px">'
+          + '<strong style="font-size:11.5px">' + statusIcon + ' ' + (e.label||'Sync') + '</strong>'
+          + '<span style="font-size:10px;color:var(--text3)">' + ageStr + ' · ' + d.toLocaleTimeString() + '</span>'
+          + '</div>'
+          + (e.details ? '<div style="font-size:11px;color:var(--text2)">' + e.details + '</div>' : '')
+          + (e.error ? '<div style="font-size:11px;color:var(--red);margin-top:3px">Error: ' + e.error + '</div>' : '')
+          + '</div>';
+      }).join('');
+    }
+  }
+  overlay.classList.add('open');
+}
+function closeHealth() {
+  const overlay = document.getElementById('healthOverlay');
+  if (overlay) overlay.classList.remove('open');
+}
+
+// ── Help Tooltip ──────────────────────────────────────────────────────────
+let _tooltipTerm = '';
+function showKpiHelp(evt, title, body, meta, section) {
+  evt.stopPropagation();
+  _tooltipTerm = title;
+  const tip = document.getElementById('helpTooltip');
+  if (!tip) return;
+  document.getElementById('helpTooltipTitle').textContent = title;
+  document.getElementById('helpTooltipBody').textContent  = body;
+  document.getElementById('helpTooltipMeta').textContent  = meta || '';
+  tip.dataset.section = section || '';
+  // Position near the click point, keeping within viewport
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let x = evt.clientX + 10, y = evt.clientY + 10;
+  tip.style.display = 'block';
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  if (x + tw > vw - 10) x = evt.clientX - tw - 10;
+  if (y + th > vh - 10) y = evt.clientY - th - 10;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  tip.classList.add('visible');
+  document.addEventListener('click', hideTooltipOutside, { once: true });
+}
+function hideTooltipOutside(e) {
+  const tip = document.getElementById('helpTooltip');
+  if (tip && !tip.contains(e.target)) tip.classList.remove('visible');
+}
+function openGlossaryFromTooltip() {
+  const tip = document.getElementById('helpTooltip');
+  if (tip) tip.classList.remove('visible');
+  openGlossary(_tooltipTerm);
+}
+
+// ── Global Help Dropdown ──────────────────────────────────────────────────
+function toggleHelpDropdown() {
+  const dd = document.getElementById('helpDropdown');
+  if (!dd) return;
+  dd.classList.toggle('open');
+  if (dd.classList.contains('open')) {
+    document.addEventListener('click', closeHelpDropdownOutside, { once: true });
+  }
+}
+function closeHelpDropdown() { document.getElementById('helpDropdown')?.classList.remove('open'); }
+function closeHelpDropdownOutside(e) {
+  const dd = document.getElementById('helpDropdown');
+  const btn = document.getElementById('globalHelpBtn');
+  if (dd && !dd.contains(e.target) && !btn?.contains(e.target)) dd.classList.remove('open');
+}
+
+// ── Onboarding ────────────────────────────────────────────────────────────
+let _onboardSlide = 0;
+const ONBOARD_KEY = 'mixta_onboard_v1';
+function checkOnboarding() {
+  if (!localStorage.getItem(ONBOARD_KEY)) {
+    setTimeout(openOnboarding, 800);
+  }
+}
+function openOnboarding() {
+  _onboardSlide = 0;
+  updateOnboardSlide();
+  document.getElementById('onboardOverlay')?.classList.add('open');
+}
+function closeOnboarding() {
+  document.getElementById('onboardOverlay')?.classList.remove('open');
+  localStorage.setItem(ONBOARD_KEY, '1');
+}
+function onboardNext() {
+  if (_onboardSlide < 2) { _onboardSlide++; updateOnboardSlide(); }
+  else closeOnboarding();
+}
+function updateOnboardSlide() {
+  for (let i = 0; i < 3; i++) {
+    document.getElementById('onboard-'+i)?.classList.toggle('active', i === _onboardSlide);
+    document.getElementById('odot-'+i)?.classList.toggle('active', i === _onboardSlide);
+  }
+  const btn = document.getElementById('onboardNextBtn');
+  if (btn) btn.textContent = _onboardSlide === 2 ? "Got it ✓" : "Next →";
+}
+
+// ── Section README Renderer ───────────────────────────────────────────────
+const SECTION_READMES = {
+  simple: {
+    color: 'var(--red)',
+    title: 'Command Centre — Executive Summary',
+    purpose: 'Your 5-minute portfolio health check. Shows the most critical signals across revenue, collections, pricing, and demand in a single view. Designed for fast pattern recognition — not deep analysis.',
+    metrics: [
+      ['Total Revenue', 'Cumulative recognized revenue across all years and communities', '∑ transaction amounts in master sheet'],
+      ['Collection Rate', 'What % of contracted revenue has been received', 'Payments Received / Total Contract Value × 100'],
+      ['Units Sold', 'Total transactions in the master data', 'Count of valid rows in master sheet'],
+      ['Avg Discount Rate', 'Gap between asking price and actual selling price', '(Asking - Realized) / Asking × 100']
+    ],
+    source: 'Master Google Sheet (published XLSX). Refreshed via "Sync Data". Data is cached locally for offline access.',
+    edge: 'Simple Mode hides all filters. Numbers shown are portfolio-wide. Switch to Deep Dive for segment/year breakdowns.',
+    mistakes: 'Comparing Simple Mode KPIs to filtered Deep Dive KPIs will show different numbers — the filters are not active in Simple Mode.',
+    verify: 'Total Revenue should match or be close to the sum in your finance system. If very different, check if new community sheets were added.'
+  },
+  pricing: {
+    color: '#27AE60',
+    title: 'Pricing Intelligence — 5-Part Analysis',
+    purpose: 'Measures whether Mixta\'s sale prices kept pace with construction cost inflation (CCPI). Shows current margin status per product and the historical trend of that margin. Built around one question: "Are we pricing above the cost to build?"',
+    metrics: [
+      ['Nominal CAGR', 'Raw compound annual growth rate of asking prices', '(Last_Price / First_Price)^(1/years) − 1'],
+      ['Margin Delta', 'How far current asking price is from CCPI cost breakeven', '(Asking − Breakeven) / Breakeven × 100'],
+      ['Margin Trend', 'Is the gap vs breakeven widening or narrowing?', 'Current Margin Delta − Prior Year Margin Delta'],
+      ['Breakeven Price', 'Price that would make the product cost-neutral vs CCPI', 'Launch_Price × (CCPI_Now / CCPI_Launch)'],
+      ['Cost Erosion', 'pp of nominal gain absorbed by rising build costs', 'Nominal CAGR − Real CAGR (asking vs cost CAGR)']
+    ],
+    source: 'Price Sheet tab (master XLSX) for asking prices. CCPI_SHEET_URL (Inflation_Analysis.xlsx, Summary sheet) for construction cost index. CCPI = material prices × quantity factors × 1.40 labour uplift. Base year: 2020 = 100.',
+    edge: 'CCPI includes 40% labour uplift (Lagos market rate). Gap years 2017 and 2019 are linearly interpolated. Q2 2026 CCPI is an estimate. Asking prices only — does not use actual realized transaction prices.',
+    mistakes: 'Margin Delta ≠ profit margin. A positive Margin Delta means the asking price is above the CCPI cost index — it does NOT account for land cost, overheads, or target profit margin. Those are separate.',
+    verify: 'If CCPI chart shows flat or declining index: check CCPI_SHEET_URL is reachable. Open DevTools → console, search for [CCPI] logs. If charts show wrong values: window.PRICING_DATA in console shows raw data.'
+  },
+  market: {
+    color: '#2980B9',
+    title: 'Competitive Market Analysis — How We Compare',
+    purpose: 'Benchmarks Mixta product pricing, specifications, and total cost of ownership against comparable developments in the Lagos market. Identifies where Mixta commands a justified premium and where gaps exist.',
+    metrics: [
+      ['Price per sqm', 'Normalized price per square metre for comparison', 'Listing Price / Gross Area (sqm)'],
+      ['Spec Score', 'Qualitative score of product finish and amenities', '0–100 composite (internal weighting)'],
+      ['TCO Gap', 'Total Cost of Ownership vs comparable product', 'Mixta TCO − Comp TCO (including service charge)'],
+      ['Premium/(Discount)', 'How much more or less than market Mixta charges', '(Mixta ₦/sqm − Market ₦/sqm) / Market ₦/sqm × 100']
+    ],
+    source: 'CMA_XLSX_URL (separate sheet, different update cadence). Updated manually when new competitor data is gathered.',
+    edge: 'CMA data is manually curated — it may lag market moves by weeks. Price per sqm comparisons are on gross area; some competitors quote net area (misleadingly cheaper). Spec scores are internally subjective.',
+    mistakes: 'Do not compare ₦/sqm across bedroom types without controlling for unit size. Large units appear cheaper per sqm. The CEO has noted that price-per-sqm alone is insufficient — location premium and spec score must be read together.',
+    verify: 'If CMA tab shows no data: click Sync Data. CMA loads separately from master. Check console for [CMA] logs.'
+  },
+  collections: {
+    color: '#E74C3C',
+    title: 'Collections — Where Is The Money?',
+    purpose: 'Tracks outstanding receivables across all communities, classifies them by risk tier, and models probability-weighted recovery. Answers: "How much of our ₦9.5B outstanding will we actually collect?"',
+    metrics: [
+      ['Total Outstanding', 'Total contract value minus total payments received', '∑(Contract Value) − ∑(Payments)'],
+      ['Expected Recovery (24mo)', 'Probability-weighted forecast of collections', '∑(Outstanding × Recovery_Probability_by_tier)'],
+      ['High-Risk Receivables', 'Balances with <25% of contract value paid', 'Outstanding where % Paid < 25%'],
+      ['Collection Rate', 'Overall % of contracted value collected', '∑Payments / ∑Contract Value × 100']
+    ],
+    source: 'Master Google Sheet. % Paid column drives tier classification. Recovery probabilities: High (>70% paid) = 95%, Medium (40-70%) = 80%, Low (25-40%) = 60%, At-Risk (<25%) = 35%.',
+    edge: 'Recovery probabilities are estimates. Actual recovery depends on legal enforcement, buyer financial state, and product completion. Service charge arrears are not included in this analysis.',
+    mistakes: 'Outstanding ≠ loss. Most outstanding balances are on payment plans. Only "At-Risk" tier is genuinely at risk of write-off. High outstanding with high collection rate is normal for a development portfolio.',
+    verify: 'Total Outstanding + Total Collected should equal Total Contract Value. If they don\'t reconcile, check for rows with missing contract amounts.'
+  },
+  agents: {
+    color: '#8E44AD',
+    title: 'Agent Performance — Who Is Selling?',
+    purpose: 'Ranks agents and agent groups by revenue contribution, unit volume, and average deal size. Identifies top performers, concentration risk (too dependent on one agent), and seasonal patterns.',
+    metrics: [
+      ['Revenue by Agent', 'Total recognized revenue attributed to each agent', '∑ transaction amounts per agent'],
+      ['Units by Agent', 'Count of transactions per agent', 'Count of rows per agent_name'],
+      ['Avg Deal Size', 'Average revenue per transaction', 'Revenue / Units'],
+      ['Concentration Risk', 'What % of revenue comes from top 3 agents', 'Top-3 Revenue / Total Revenue × 100']
+    ],
+    source: 'Master Google Sheet. Agent name column. Fuzzy matching applied to normalize name variants.',
+    edge: 'Agent attribution is based on the name as entered in the sheet. Typos or name variants may split one agent into two. Fuzzy matching catches most cases but review agent list for duplicates.',
+    mistakes: 'High-volume agent ≠ high-value agent. An agent selling many low-priced plots may show high unit count but low revenue. Use both metrics together.',
+    verify: 'If agents tab shows fewer agents than expected: check for missing agent_name values in master sheet. Rows with blank agent_name are excluded.'
+  },
+  buyers: {
+    color: '#16A085',
+    title: 'Buyer Intelligence — Who Is Buying?',
+    purpose: 'Profiles the buyer base by state, category, and purchase behaviour. Answers: "Where do our buyers come from, what do they buy, and how are they paying?"',
+    metrics: [
+      ['Buyers by State', 'Number of unique buyers per Nigerian state', 'Count of transactions by buyer_state column'],
+      ['Lagos Buyer Share', 'Proportion of buyers from Lagos State', 'Lagos buyers / Total buyers × 100'],
+      ['Buyer Category Mix', 'Split between individual, corporate, diaspora buyers', 'Count by buyer_category column']
+    ],
+    source: 'Master Google Sheet. Lagos detection uses regex normalization (/lagos/i) to catch variants like "Lagos State", "LAGOS". State names are standardized.',
+    edge: 'Buyer state reflects the address on record at time of purchase — not necessarily where the buyer lives now. Corporate buyers may show headquarters state, not decision-maker location.',
+    mistakes: 'Lagos share looks dominant but Lagos is also the most populated state. Compare Lagos share to Lagos\'s share of national middle-class population for context.',
+    verify: 'If buyer state chart shows many "Unknown" entries: master sheet may have blank buyer_state values. Check with data entry team.'
+  },
+  revenue: {
+    color: 'var(--red)',
+    title: 'Revenue History — What Have We Sold?',
+    purpose: 'Full historical revenue analysis by year, quarter, community, and product type. Feeds the OLS regression forecast. Answers: "How fast are we growing, and what\'s driving it?"',
+    metrics: [
+      ['Revenue by Year', 'Annual revenue summed from all transactions', '∑ transaction amounts per year'],
+      ['Revenue CAGR', 'Compound annual growth rate of revenue', '(Latest_Year_Rev / First_Year_Rev)^(1/years) − 1'],
+      ['Quarterly Revenue', 'Revenue broken down by quarter', '∑ amounts where quarter matches']
+    ],
+    source: 'Master Google Sheet. Year and quarter extracted from transaction date column.',
+    edge: 'Revenue = contract value at point of sale. Collections (actual payments) are separate — see Collections section. Early years may have sparse data affecting CAGR.',
+    mistakes: 'Revenue CAGR looks high but is partly driven by Naira inflation. Compare against CCPI-adjusted real revenue to isolate volume vs price effect.',
+    verify: 'Revenue chart should trend upward with some year-to-year variation. A sudden drop may mean a year\'s data is missing from master sheet.'
+  },
+  predict: {
+    color: 'var(--red)',
+    title: 'Predictive Intelligence — What Does Data Predict?',
+    purpose: 'OLS linear regression on annual revenue to project 3-year forward trajectory. Also models demand velocity and collection recovery probability. Answers: "Where are we headed if current trends continue?"',
+    metrics: [
+      ['Revenue Forecast', 'OLS regression projection for next year', 'y = a + bx where x = year number'],
+      ['R² (Model Fit)', 'How well the trend explains variance', '% of variance in revenue explained by time trend'],
+      ['Confidence Band', '±1σ around the OLS line', 'Standard error of residuals']
+    ],
+    source: 'Computed from master sheet revenue history. Requires ≥3 data points for meaningful regression.',
+    edge: 'OLS assumes linearity — real growth has cycles. R² < 0.5 means time trend explains less than half the variance (other factors dominate). Use forecast as directional, not precise.',
+    mistakes: 'Do not use forecast as a budget commitment. Regressions extrapolate past trends — they cannot account for new launches, market shocks, or strategic changes.',
+    verify: 'R² below 0.4 = model is unreliable. Consider using Bear/Base/Bull scenarios instead of the point estimate.'
+  },
+  portfolio: {
+    color: '#E67E22',
+    title: 'Portfolio — What Can We Sell?',
+    purpose: 'Maps available inventory by finish type, bedroom configuration, community, and price bracket. Answers: "What product do we have, and what is it worth at current pricing?"',
+    metrics: [
+      ['Units by Type', 'Count of units per bedroom/product category', 'Count from classification sheet'],
+      ['Avg Price by Type', 'Average asking price per product type', '∑ asking prices / count per type'],
+      ['Finish Mix', 'Share of units by finish specification', '% of units per finish_type category']
+    ],
+    source: 'Price Sheet and Property Classification tabs (master XLSX).',
+    edge: 'Classification is based on product description matching — unusual naming conventions may miscategorize units. Review classification sheet for any "Unknown" entries.',
+    mistakes: 'Portfolio counts available units in the price sheet, not necessarily unsold inventory. Cross-reference with sales data to find unsold product.',
+    verify: 'If product counts seem too high: check if Property Classification sheet has been updated after new launches.'
+  },
+  gap: {
+    color: '#E74C3C',
+    title: 'The Gap — Revenue vs Target',
+    purpose: 'Compares actual recognized revenue against target or prior-year performance. Highlights shortfall by community and period. Answers: "How far behind are we, and where?"',
+    metrics: [
+      ['Revenue Gap', 'Difference between target and actual', 'Target Revenue − Actual Revenue'],
+      ['Gap %', 'Gap as percentage of target', '(Target − Actual) / Target × 100'],
+      ['Gap by Community', 'Revenue shortfall per community', 'Per-community target vs actual']
+    ],
+    source: 'Master Google Sheet (actuals) vs manually entered targets. Targets must be set in the dashboard configuration.',
+    edge: 'This section depends on targets being set. If no targets configured, shows comparison vs prior year instead.',
+    mistakes: 'A gap in collection does not mean units were not sold — there may be contracted but uncollected revenue. Check Collections section alongside this one.',
+    verify: 'If gap shows 100%: targets may not be configured. See admin settings.'
+  }
+};
+
+function renderSectionReadme(sectionId) {
+  const readme = SECTION_READMES[sectionId];
+  if (!readme) return;
+  const wrapId = 'readme-wrap-' + sectionId;
+  const existing = document.getElementById(wrapId);
+  if (existing) return; // already injected
+
+  const section = document.getElementById('section-' + sectionId);
+  if (!section) return;
+
+  const metricsRows = readme.metrics.map(([name, def, formula]) =>
+    `<tr><td><strong>${name}</strong></td><td>${def}</td><td class="readme-formula">${formula}</td></tr>`
+  ).join('');
+
+  const html = `
+<div class="section-readme-wrap" id="${wrapId}">
+  <div class="section-readme" id="readme-${sectionId}">
+    <div class="section-readme-hdr" onclick="toggleReadme('${sectionId}')">
+      <span style="font-size:16px">📖</span>
+      <div class="section-readme-title" style="border-left:3px solid ${readme.color};padding-left:8px">${readme.title}</div>
+      <span style="font-size:10px;color:var(--text3);font-weight:500">Section Guide</span>
+      <span class="section-readme-toggle">▼</span>
+    </div>
+    <div class="section-readme-body" style="padding:12px 16px">
+      <div class="readme-block">
+        <div class="readme-block-title">📝 Purpose</div>
+        <div class="readme-block-body">${readme.purpose}</div>
+      </div>
+      <div class="readme-block">
+        <div class="readme-block-title">📊 Key Metrics</div>
+        <table class="readme-table">
+          <thead><tr><th>Metric</th><th>Meaning</th><th>Formula / Method</th></tr></thead>
+          <tbody>${metricsRows}</tbody>
+        </table>
+      </div>
+      <div class="readme-block">
+        <div class="readme-block-title">🔗 Data Source</div>
+        <div class="readme-block-body">${readme.source}</div>
+      </div>
+      <div class="readme-block">
+        <div class="readme-block-title">⚠️ Edge Cases & Assumptions</div>
+        <div class="readme-warning">${readme.edge}</div>
+      </div>
+      <div class="readme-block">
+        <div class="readme-block-title">🐛 Common Mistakes</div>
+        <div class="readme-error">${readme.mistakes}</div>
+      </div>
+      <div class="readme-block">
+        <div class="readme-block-title">🔍 How to Verify</div>
+        <div class="readme-verify">${readme.verify}</div>
+      </div>
+    </div>
+  </div>
+</div>`;
+
+  section.insertAdjacentHTML('afterbegin', html);
+}
+
+function toggleReadme(sectionId) {
+  document.getElementById('readme-' + sectionId)?.classList.toggle('collapsed');
+}
+
+// ── Glossary Data ─────────────────────────────────────────────────────────
+const GLOSSARY = [
+  // === PRICING & MARGIN ===
+  { term: 'CCPI', type: 'Index', category: 'Pricing & Costs',
+    definition: 'Composite Construction Price Index. Measures how much it costs to build one square metre of hybrid-finish RC-frame construction in Lagos, relative to 2020 base.',
+    formula: 'CCPI[y] = (material_cost[y] × 1.40 labour) / (material_cost[2020] × 1.40) × 100',
+    example: 'CCPI of 492 in Q2 2024 means building costs 4.92× more than in 2020.',
+    seeAlso: ['Breakeven Price', 'Margin Delta', 'Labour Uplift'] },
+
+  { term: 'Margin Delta', type: 'KPI', category: 'Pricing & Costs',
+    definition: 'How far the current asking price is from the CCPI cost-justified breakeven price. Positive = asking price covers build cost inflation. Negative = product is underpriced relative to build costs.',
+    formula: '(Asking_Price − Breakeven_Price) / Breakeven_Price × 100',
+    example: '-55% means asking price is 55% below what CCPI cost inflation would justify.',
+    seeAlso: ['Breakeven Price', 'CCPI', 'Margin Trend'] },
+
+  { term: 'Breakeven Price', type: 'Metric', category: 'Pricing & Costs',
+    definition: 'The asking price a product would need to reach to have the same real value relative to construction costs as at launch. Not an absolute cost floor — it\'s a cost-neutral benchmark.',
+    formula: 'Breakeven = Launch_Price × (CCPI_Now / CCPI_Launch)',
+    example: 'Launched at ₦100M in Q4 2021 (CCPI=100). CCPI now = 387. Breakeven = ₦387M.',
+    seeAlso: ['Margin Delta', 'CCPI'] },
+
+  { term: 'Margin Trend', type: 'KPI', category: 'Pricing & Costs',
+    definition: 'Year-over-year change in the Margin Delta. Positive = the gap between asking and breakeven is closing (pricing catching up). Negative = gap is widening (costs outpacing price increases).',
+    formula: 'Current Margin Delta − Margin Delta 1 year ago',
+    example: '+5pp trend: last year was -60%, now -55% — slowly closing the gap.',
+    seeAlso: ['Margin Delta', 'Breakeven Price'] },
+
+  { term: 'Nominal CAGR', type: 'Metric', category: 'Pricing & Costs',
+    definition: 'Compound Annual Growth Rate of the nominal (face value) asking price, from first to most recent data point. Does not adjust for inflation.',
+    formula: '(Last_Price / First_Price)^(1/years) − 1',
+    example: 'Nominal CAGR of 18% = asking price grew 18% per year on average.',
+    seeAlso: ['Real CAGR', 'CCPI', 'Margin Delta'] },
+
+  { term: 'Real CAGR', type: 'Metric', category: 'Pricing & Costs',
+    definition: 'Compound Annual Growth Rate of the asking price after adjusting for CCPI. Measures how fast the price grew above construction cost inflation. Positive = real value created. Negative = real value lost.',
+    formula: 'CAGR(Asking) − CAGR(CCPI) — or equivalently: CAGR(Asking / Breakeven)',
+    example: 'Nominal 18% CAGR, CCPI 25% CAGR = Real CAGR of -7% (price lagged costs).',
+    seeAlso: ['Nominal CAGR', 'Margin Delta', 'CCPI'] },
+
+  { term: 'Labour Uplift', type: 'Assumption', category: 'Pricing & Costs',
+    definition: '40% added to total material cost to account for Lagos construction labour rates in the CCPI calculation. Based on typical Bills of Quantities for mid-rise RC-frame construction.',
+    formula: 'Total CCPI cost = Material Cost × 1.40',
+    example: 'If materials cost ₦100k/sqm, CCPI total is ₦140k/sqm with labour.',
+    seeAlso: ['CCPI', 'Breakeven Price'] },
+
+  { term: 'Cost Erosion', type: 'KPI', category: 'Pricing & Costs',
+    definition: 'The number of percentage points of nominal price growth that were absorbed by rising construction costs. The "invisible tax" — your sticker price looks higher, but part of that rise just matched cost inflation.',
+    formula: 'Nominal CAGR − Real CAGR',
+    example: '18% nominal CAGR − (−7% real CAGR) = 25pp of cost erosion.',
+    seeAlso: ['Nominal CAGR', 'Real CAGR'] },
+
+  // === FINANCIAL ===
+  { term: 'CAGR', type: 'Acronym', category: 'Finance & Revenue',
+    definition: 'Compound Annual Growth Rate. The smoothed annual rate at which a value grows over a period. Assumes growth is reinvested each year.',
+    formula: '(End_Value / Start_Value)^(1/years) − 1',
+    example: 'Revenue grew from ₦2B to ₦5B over 5 years: CAGR = (5/2)^(0.2) − 1 = 20.1%.',
+    seeAlso: ['Nominal CAGR', 'Real CAGR'] },
+
+  { term: 'Revenue', type: 'Metric', category: 'Finance & Revenue',
+    definition: 'Total value of signed purchase agreements recognized in the master sheet. This is contract value at point of sale, not cash collected.',
+    formula: '∑ Transaction amounts in master sheet',
+    example: '₦12.3B total revenue = sum of all contract values since records began.',
+    seeAlso: ['Collection Rate', 'Outstanding Receivables'] },
+
+  { term: 'Collection Rate', type: 'KPI', category: 'Finance & Revenue',
+    definition: 'Percentage of total contracted revenue that has been received as actual payment. Measures cash conversion efficiency.',
+    formula: 'Total Payments Received / Total Contract Value × 100',
+    example: '68% collection rate = ₦68 of every ₦100 contracted has been collected.',
+    seeAlso: ['Outstanding Receivables', 'Recovery Probability'] },
+
+  { term: 'Outstanding Receivables', type: 'Metric', category: 'Finance & Revenue',
+    definition: 'Total contracted revenue not yet collected. Includes all payment plans in progress and overdue amounts.',
+    formula: 'Total Contract Value − Total Payments Received',
+    example: '₦9.5B outstanding = sum of all unpaid balances across all buyers.',
+    seeAlso: ['Collection Rate', 'Recovery Probability', 'Risk Tiers'] },
+
+  { term: 'Recovery Probability', type: 'Metric', category: 'Finance & Revenue',
+    definition: 'Estimated probability that an outstanding balance will be collected, based on how much of the contract has already been paid.',
+    formula: 'High (>70% paid) = 95% | Medium (40-70%) = 80% | Low (25-40%) = 60% | At-Risk (<25%) = 35%',
+    example: 'Buyer at 45% paid = Medium tier = 80% chance of full collection.',
+    seeAlso: ['Risk Tiers', 'Outstanding Receivables'] },
+
+  { term: 'Risk Tiers', type: 'Classification', category: 'Finance & Revenue',
+    definition: 'Classification of outstanding receivables by payment progress. Drives recovery probability estimates and collection prioritization.',
+    formula: 'High: >70% paid | Medium: 40-70% | Low: 25-40% | At-Risk: <25%',
+    example: 'At-Risk tier = buyer has paid less than 25% of contract, high probability of default.',
+    seeAlso: ['Recovery Probability', 'Outstanding Receivables'] },
+
+  // === MARKET & COMPETITION ===
+  { term: 'CMA', type: 'Acronym', category: 'Market & Competition',
+    definition: 'Competitive Market Analysis. A structured comparison of Mixta product pricing and specifications against comparable developments in the same market area.',
+    formula: 'N/A — qualitative + quantitative comparison framework',
+    example: 'CMA shows Lakowe 3BR at ₦145k/sqm vs comparable at ₦120k/sqm = 21% premium.',
+    seeAlso: ['TCO', 'Spec Score', 'Price per sqm'] },
+
+  { term: 'TCO', type: 'Metric', category: 'Market & Competition',
+    definition: 'Total Cost of Ownership. Full buyer cost including purchase price, service charges, and estimated maintenance over a holding period. More accurate comparison than price alone.',
+    formula: 'TCO = Purchase Price + (Annual Service Charge × Years) + Estimated Maintenance',
+    example: 'TCO over 5 years may be higher than headline price due to service charges.',
+    seeAlso: ['CMA', 'Spec Score'] },
+
+  { term: 'Price per sqm', type: 'Metric', category: 'Market & Competition',
+    definition: 'Asking price divided by unit gross area in square metres. Used for normalized price comparison across different unit sizes.',
+    formula: 'Asking Price (₦) / Gross Area (sqm)',
+    example: '₦50M / 100sqm = ₦500k/sqm.',
+    seeAlso: ['CMA', 'TCO'] },
+
+  { term: 'Spec Score', type: 'Index', category: 'Market & Competition',
+    definition: 'Internal composite score rating product finish quality and amenity level. Ranges 0-100. Drives the premium justification narrative — high spec should command higher price/sqm.',
+    formula: 'Composite of: finish quality, amenities, common areas, security, management (internally weighted)',
+    example: 'Spec score of 72 vs competitor at 68 = Mixta commands higher price/sqm premium.',
+    seeAlso: ['CMA', 'TCO'] },
+
+  // === DATA & SYSTEM ===
+  { term: 'OLS', type: 'Acronym', category: 'Analytics & System',
+    definition: 'Ordinary Least Squares. The regression method used to fit a straight-line trend through revenue history and project it forward.',
+    formula: 'y = a + bx, minimizing ∑(actual − predicted)²',
+    example: 'OLS fit to 2020-2025 data projects 2026-2028 revenue trajectory.',
+    seeAlso: ['R²', 'Revenue Forecast'] },
+
+  { term: 'R²', type: 'Metric', category: 'Analytics & System',
+    definition: 'R-squared. Measures how well the OLS model explains variation in revenue. 1.0 = perfect fit. 0.0 = model explains nothing. Values below 0.5 indicate other factors dominate.',
+    formula: '1 − (Residual Sum of Squares / Total Sum of Squares)',
+    example: 'R² = 0.82 means 82% of revenue variance is explained by the time trend.',
+    seeAlso: ['OLS', 'Revenue Forecast'] },
+
+  { term: 'Sync Data', type: 'Action', category: 'Analytics & System',
+    definition: 'The button that triggers a live fetch of all Google Sheet data sources. Refreshes master data, CCPI, and CMA. Results are cached locally for offline use.',
+    formula: 'N/A',
+    example: 'Click Sync Data after updating the master sheet to see changes reflected.',
+    seeAlso: ['Data Health', 'CCPI_SHEET_URL'] },
+
+  { term: 'Deep Dive Mode', type: 'Feature', category: 'Analytics & System',
+    definition: 'The full dashboard view. Shows all 11 sections with detailed charts, section READMEs, chart reference cards, and filter controls. Designed for analysts and builders.',
+    formula: 'N/A',
+    example: 'Switch to Deep Dive for formula references and full breakdowns.',
+    seeAlso: ['Simple Mode'] },
+
+  { term: 'Simple Mode', type: 'Feature', category: 'Analytics & System',
+    definition: 'The executive summary view. Shows only the Command Centre with the most important KPIs and charts. No filters, no formulas, clean layout.',
+    formula: 'N/A',
+    example: 'Simple Mode is the default on login — ideal for the weekly 15-minute review.',
+    seeAlso: ['Deep Dive Mode'] }
+];
+
+// ── Glossary Rendering ────────────────────────────────────────────────────
+const GLOSSARY_CATS = ['All', 'Pricing & Costs', 'Finance & Revenue', 'Market & Competition', 'Analytics & System'];
+let _glossaryActiveCat = 'All';
+let _glossarySearch = '';
+let _glossaryOpenTerm = '';
+
+function openGlossary(searchTerm) {
+  const overlay = document.getElementById('glossaryOverlay');
+  if (!overlay) return;
+  overlay.classList.add('open');
+  renderGlossaryCats();
+  if (searchTerm) {
+    const inp = document.getElementById('glossarySearch');
+    if (inp) inp.value = searchTerm;
+    _glossarySearch = searchTerm;
+    _glossaryOpenTerm = searchTerm;
+  } else {
+    _glossarySearch = '';
+    _glossaryOpenTerm = '';
+  }
+  renderGlossaryEntries();
+  setTimeout(() => {
+    if (_glossaryOpenTerm) {
+      const el = document.getElementById('gentry-' + _glossaryOpenTerm.replace(/\s+/g,'_'));
+      if (el) { el.scrollIntoView({ behavior:'smooth', block:'center' }); el.classList.add('open'); }
+    }
+  }, 80);
+}
+function closeGlossary() {
+  document.getElementById('glossaryOverlay')?.classList.remove('open');
+  _glossarySearch = '';
+  _glossaryOpenTerm = '';
+  const inp = document.getElementById('glossarySearch');
+  if (inp) inp.value = '';
+}
+function filterGlossary(val) {
+  _glossarySearch = val.toLowerCase();
+  renderGlossaryEntries();
+}
+function renderGlossaryCats() {
+  const el = document.getElementById('glossaryCats');
+  if (!el) return;
+  el.innerHTML = GLOSSARY_CATS.map(cat =>
+    `<button class="help-cat-btn${cat===_glossaryActiveCat?' active':''}" onclick="setGlossaryCat('${cat}')">${cat}</button>`
+  ).join('');
+}
+function setGlossaryCat(cat) {
+  _glossaryActiveCat = cat;
+  renderGlossaryCats();
+  renderGlossaryEntries();
+}
+function renderGlossaryEntries() {
+  const el = document.getElementById('glossaryEntries');
+  if (!el) return;
+  const entries = GLOSSARY.filter(e => {
+    const catOk = _glossaryActiveCat === 'All' || e.category === _glossaryActiveCat;
+    const searchOk = !_glossarySearch || [e.term, e.definition, e.category, e.formula||'', e.example||''].some(s => s.toLowerCase().includes(_glossarySearch));
+    return catOk && searchOk;
+  });
+  if (!entries.length) {
+    el.innerHTML = '<div style="padding:20px;color:var(--text3);font-size:12px;text-align:center">No terms match your search.</div>';
+    return;
+  }
+  el.innerHTML = entries.map(e => {
+    const id = 'gentry-' + e.term.replace(/\s+/g,'_');
+    const seeAlso = e.seeAlso ? e.seeAlso.map(s => `<span onclick="openGlossary('${s}')">${s}</span>`).join(', ') : '';
+    return `<div class="help-entry" id="${id}">
+      <div class="help-entry-hdr" onclick="toggleGlossaryEntry('${id}')">
+        <div class="help-entry-term">${e.term}</div>
+        <div class="help-entry-type">${e.type}</div>
+        <div class="help-entry-chevron">▼</div>
+      </div>
+      <div class="help-entry-body">
+        <div style="margin-bottom:6px">${e.definition}</div>
+        ${e.formula ? `<div class="help-entry-formula">${e.formula}</div>` : ''}
+        ${e.example ? `<div class="help-entry-example">💡 Example: ${e.example}</div>` : ''}
+        ${seeAlso ? `<div class="help-entry-seealso">See also: ${seeAlso}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleGlossaryEntry(id) {
+  document.getElementById(id)?.classList.toggle('open');
+}
+
+// ── Chart Reference Cards ─────────────────────────────────────────────────
+const CHART_REFS = {
+  'c-inflation-context': {
+    title: 'Cumulative CCPI vs YoY Cost Change',
+    formula: 'CCPI[y] = (mat_cost[y] × 1.40) / (mat_cost[2020] × 1.40) × 100\nYoY % = (mat_cost[y] / mat_cost[y-1] − 1) × 100',
+    source: 'CCPI_SHEET_URL → Summary sheet → 10 material price rows × qty factors',
+    axes: 'Left Y: Cumulative CCPI index (2020=100) | Right Y: Annual % cost change | X: Year',
+    edge: 'Gap years 2017, 2019 interpolated. Q2 2026 is estimate. Peak in 2024 driven by rebar+FX.',
+    debug: 'Blank chart: check CCPI_SHEET_URL reachable. Console: search [CCPI] logs.'
+  },
+  'c-price-trend-explorer': {
+    title: 'Product Price vs CCPI Breakeven',
+    formula: 'Nominal: raw asking price\nBreakeven: first_price × (ccpi_now / ccpi_launch)\nReal: nominal / (ccpi_now / 100)',
+    source: 'Price Sheet tab (master XLSX) for asking prices. CCPI from CCPI_SHEET_URL.',
+    axes: 'Y: Price in ₦M | X: Quarter | Band: Breakeven zone ± 5%',
+    edge: 'Quarterly CCPI estimated from annual CCPI. Products with <4 data points excluded.',
+    debug: 'Blank: select product from dropdown. No real line: check INFLATION_DATA in console.'
+  },
+  'c-homes-real-cagr': {
+    title: 'Homes — Margin Delta vs Breakeven',
+    formula: 'Margin Delta = (Asking − Breakeven) / Breakeven × 100\nBreakeven = Launch_Price × (CCPI_Now / CCPI_Launch)',
+    source: 'Price Sheet (asking prices) + CCPI index per year.',
+    axes: 'Y: Product name | X: Margin Delta % | Green: >0% | Amber: -20 to 0% | Red: <-20%',
+    edge: 'Only products with ≥4 data points shown. Top 12 by margin delta shown.',
+    debug: 'Empty chart: no home products with enough data. Check Price Sheet categorization.'
+  },
+  'c-plots-real-cagr': {
+    title: 'Plots — Margin Delta vs Breakeven',
+    formula: 'Same as Homes chart above — margin delta vs CCPI breakeven',
+    source: 'Price Sheet (plot products only) + CCPI index.',
+    axes: 'Y: Product name | X: Margin Delta % | Colours same as Homes chart',
+    edge: 'Plots have different CCPI launch points. Each product rebased to its own launch quarter.',
+    debug: 'Empty: no plot products classified. Check Property Classification sheet.'
+  },
+  'c-ccpi-overlay': {
+    title: 'CCPI vs Sale Price Index (Marula/IW)',
+    formula: 'Both series rebased to launch quarter = 100\nSale Price Index = asking_price[q] / asking_price[launch] × 100',
+    source: 'CCPI from CCPI_SHEET_URL. Sale prices from Price Sheet tab.',
+    axes: 'Y: Index (launch=100) | X: Quarter | Red: CCPI | Blue lines: individual products',
+    edge: 'Toggle between Marula and Ibudo Wura communities. Launch quarter may differ by product.',
+    debug: 'Flat lines: Price Sheet may not have quarterly data for selected community.'
+  },
+  'c-ccpi-multiple': {
+    title: 'Implied Margin Multiple',
+    formula: 'Multiple = Avg Sale Price / CCPI Cost per sqm\nCCPI cost/sqm = (mat_cost × 1.40) in absolute ₦',
+    source: 'Sale Price from Price Sheet. CCPI cost from CCPI_SHEET_URL.',
+    axes: 'Y: Multiple (x) | X: Quarter | Red dashed: Danger zone at 6×',
+    edge: 'Danger zone of 6× is heuristic — actual minimum viable multiple depends on land cost and overheads.',
+    debug: 'If multiple looks very high: check sale price unit (should be ₦, not ₦M). Check CCPI cost/sqm in console.'
+  },
+  'c-ccpi-waterfall': {
+    title: 'Cost Composition Shift',
+    formula: 'Stacked bar: each material × qty factor × 1.40 labour\nShows 3 snapshots: Q4 2021 | Q1 2024 peak | Q2 2026 current',
+    source: 'CCPI_SHEET_URL Summary sheet. Same material weights used throughout.',
+    axes: 'Y: ₦/sqm | X: Time period | Stacks: material categories',
+    edge: 'Labour is shown as a proportional uplift on the total, not a separate material category.',
+    debug: 'If waterfall looks identical across periods: check CCPI fallback data is being used (live sheet unreachable).'
+  }
+};
+
+function showChartRef(chartId) {
+  const ref = CHART_REFS[chartId];
+  const cardId = 'chartref-' + chartId;
+  let card = document.getElementById(cardId);
+  if (card) { card.classList.toggle('open'); return; }
+  if (!ref) return;
+  const canvas = document.getElementById(chartId);
+  if (!canvas) return;
+  const container = canvas.closest('.cw') || canvas.parentElement;
+  card = document.createElement('div');
+  card.id = cardId;
+  card.className = 'chart-ref-card open';
+  card.innerHTML = `
+    <div class="chart-ref-hdr" onclick="this.parentElement.classList.toggle('open')">
+      <span style="font-size:12px">📐</span>
+      <div class="chart-ref-hdr-title">Reference: ${ref.title}</div>
+      <span style="font-size:10px;color:var(--text3)">Click to collapse</span>
+    </div>
+    <div class="chart-ref-body">
+      <div class="chart-ref-section">
+        <div class="chart-ref-label">Formula</div>
+        <div class="chart-ref-code">${ref.formula.replace(/\n/g,'<br>')}</div>
+      </div>
+      <div class="chart-ref-section">
+        <div class="chart-ref-label">Data Source</div>
+        <div class="chart-ref-value">${ref.source}</div>
+      </div>
+      <div class="chart-ref-section chart-ref-full">
+        <div class="chart-ref-label">Axes</div>
+        <div class="chart-ref-value">${ref.axes}</div>
+      </div>
+      <div class="chart-ref-section">
+        <div class="chart-ref-label">Edge Cases</div>
+        <div class="chart-ref-value" style="color:#7D6608">${ref.edge}</div>
+      </div>
+      <div class="chart-ref-section">
+        <div class="chart-ref-label">Debug Checklist</div>
+        <div class="chart-ref-value" style="color:#1A5276">${ref.debug}</div>
+      </div>
+    </div>`;
+  container.parentElement.insertBefore(card, container.nextSibling);
+}
+
+// ── Inject Section READMEs on section show (Deep Dive only) ──────────────
+const _origShowSection = typeof showSection === 'function' ? showSection : null;
+document.addEventListener('DOMContentLoaded', () => {
+  // Wrap showSection to inject README on section switch (Deep Dive mode only)
+  const origShow = window.showSection;
+  window.showSection = function(name, btn) {
+    if (origShow) origShow(name, btn);
+    if (!document.body.classList.contains('simple-mode')) {
+      setTimeout(() => renderSectionReadme(name), 50);
+    }
+  };
+
+  // Make chart titles clickable for reference cards (Deep Dive mode)
+  document.querySelectorAll('.ct').forEach(ct => {
+    const canvas = ct.closest('.cc')?.querySelector('canvas[id]');
+    if (!canvas || !CHART_REFS[canvas.id]) return;
+    ct.classList.add('ct-clickable');
+    ct.title = 'Click for formula & source reference';
+    ct.addEventListener('click', () => showChartRef(canvas.id));
+    ct.innerHTML = ct.innerHTML + ' <span class="ct-ref-icon">📐</span>';
+  });
+
+  // Onboarding check
+  checkOnboarding();
+
+  // Inject README for initial section
+  const initSection = document.querySelector('.section.active');
+  if (initSection && !document.body.classList.contains('simple-mode')) {
+    const id = initSection.id.replace('section-','');
+    setTimeout(() => renderSectionReadme(id), 100);
+  }
+
+  // Log initial load
+  logSyncEvent({ label: 'Dashboard Loaded', details: 'Initial page load. Awaiting live data sync.' });
+});
+
+
 </script>
 
 <!-- SEARCH OVERLAY -->
@@ -8673,5 +9723,77 @@ function attachAllBarInsights(d) {
   </div>
 </div>
 
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     HELP SYSTEM MODALS
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<!-- Help Tooltip (shared singleton) -->
+<div class="help-tooltip" id="helpTooltip" onclick="event.stopPropagation()">
+  <div class="help-tooltip-title" id="helpTooltipTitle"></div>
+  <div class="help-tooltip-body" id="helpTooltipBody"></div>
+  <div class="help-tooltip-meta" id="helpTooltipMeta"></div>
+  <a class="help-tooltip-link" id="helpTooltipLink" onclick="openGlossaryFromTooltip()">📖 See full definition in Glossary →</a>
+</div>
+
+<!-- Glossary Modal -->
+<div class="help-modal-overlay" id="glossaryOverlay" onclick="if(event.target===this)closeGlossary()">
+  <div class="help-modal">
+    <div class="help-modal-hdr">
+      <span style="font-size:18px">📖</span>
+      <div class="help-modal-hdr-title">Dashboard Glossary</div>
+      <input class="help-modal-search" id="glossarySearch" placeholder="Search terms, metrics, formulas…" oninput="filterGlossary(this.value)">
+      <button class="help-modal-close" onclick="closeGlossary()">✕</button>
+    </div>
+    <div class="help-modal-body">
+      <div class="help-modal-cats" id="glossaryCats"></div>
+      <div class="help-modal-entries" id="glossaryEntries"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Data Health Modal -->
+<div class="help-modal-overlay" id="healthOverlay" onclick="if(event.target===this)closeHealth()">
+  <div class="help-modal" style="max-width:560px">
+    <div class="help-modal-hdr">
+      <span style="font-size:18px">🔍</span>
+      <div class="help-modal-hdr-title">Data Health &amp; Sync Log</div>
+      <button class="help-modal-close" onclick="closeHealth()">✕</button>
+    </div>
+    <div style="padding:16px 20px;overflow-y:auto;max-height:60vh">
+      <div id="healthContent" style="font-size:12px;line-height:1.7;color:var(--text2)">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- Onboarding Modal -->
+<div class="onboard-overlay" id="onboardOverlay">
+  <div class="onboard-modal">
+    <div class="onboard-slide active" id="onboard-0">
+      <div class="onboard-emoji">🎯</div>
+      <div class="onboard-title">Welcome to the Portfolio Intelligence Hub</div>
+      <div class="onboard-body">This dashboard has <strong>two modes</strong>.<br><br><strong>Simple Mode</strong> — your 5-minute executive review. Clean, signal-focused, no jargon.<br><br><strong>Deep Dive Mode</strong> — full analysis with formulas, data sources, and deep context. Built for analysts.</div>
+    </div>
+    <div class="onboard-slide" id="onboard-1">
+      <div class="onboard-emoji">❓</div>
+      <div class="onboard-title">Help is always one click away</div>
+      <div class="onboard-body">Every KPI card and chart has a <strong>[?] icon</strong> that appears on hover.<br><br>Click it for a plain-English explanation. For deeper context, click <strong>"See in Glossary"</strong> inside any tooltip.</div>
+    </div>
+    <div class="onboard-slide" id="onboard-2">
+      <div class="onboard-emoji">📖</div>
+      <div class="onboard-title">When in doubt, use the Glossary</div>
+      <div class="onboard-body">Every metric, acronym, and formula lives in the <strong>Glossary</strong> — find it via the <strong>[?] Help</strong> button in the top bar.<br><br>In Deep Dive mode, each section shows a full <strong>README</strong> with purpose, formulas, sources, and common mistakes.</div>
+    </div>
+    <div class="onboard-dots">
+      <div class="onboard-dot active" id="odot-0"></div>
+      <div class="onboard-dot" id="odot-1"></div>
+      <div class="onboard-dot" id="odot-2"></div>
+    </div>
+    <div class="onboard-btns">
+      <button class="onboard-skip" onclick="closeOnboarding()">Skip tour</button>
+      <button class="onboard-next" id="onboardNextBtn" onclick="onboardNext()">Next →</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
