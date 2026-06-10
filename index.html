@@ -2270,6 +2270,13 @@ const PRICING_INTELLIGENCE_ENABLED = true;
    TOC Analysis, Size adjustment, Criteria
    ===================================================== */
 const CMA_XLSX_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5_MAo0Z5J0PasrGXk44ki5OZv6n2-lGCe208CYpi2GK_O2wz3JYBECgic6qecglxAeO4QZoBtnPJn/pub?output=xlsx';
+// ── CCPI Inflation Analysis workbook (published from Inflation_Analysis.xlsx) ──
+// Source: Summary sheet → material prices × qty factors × 1.40 labour → CCPI index
+// Note: Google Sheets CSV export (?output=csv) only exports one sheet.
+// This URL uses xlsx output so SheetJS can parse the multi-sheet workbook.
+// The live fetch in fetchInflationData() tries this first; falls back to
+// buildStaticCCPI() if unreachable (CORS block, network error, parse fail).
+const CCPI_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRtWSiiBAAvT04qtrMjlwLcu8RXutrCsNvNXpisyiMZ3reMdR4DksHwEPaCpp-QLBavdr1r57R0uakc/pub?output=xlsx';
 
 // Global CMA data store — populated once on first Market tab visit
 let CMA_DATA = null;
@@ -4681,16 +4688,26 @@ function showSection(name, btn) {
     // Small delay ensures _GP_BASE_REV is set from renderSimpleMode first
     setTimeout(() => { if (typeof gpUpdate === 'function') gpUpdate(); }, 50);
   }
-  
-  // Render pricing charts when pricing tab is shown
+  // Render pricing charts when pricing tab is shown.
+  // MUST be deferred: calling mkChart synchronously after classList.add('active')
+  // runs before the browser layout pass — canvas computed width is still 0,
+  // so Chart.js draws nothing. setTimeout(0) yields to the browser, lets it
+  // complete the paint, then renders into fully-sized containers.
+  // The double-rAF after ensures a final resize catches any lingering zero-width.
   if (name === 'pricing' && PRICING_DATA && INFLATION_DATA) {
-    // FIX: Defer rendering to allow the browser to compute container dimensions
     setTimeout(() => {
       renderPricingCharts();
       renderCCPICharts();
-    }, 50); 
+      // Double-rAF: first rAF = after paint, second = after composite
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (typeof chartRegistry !== 'undefined') {
+          Object.values(chartRegistry).forEach(chart => {
+            try { if (chart && typeof chart.resize === 'function') chart.resize(); } catch(e) {}
+          });
+        }
+      }));
+    }, 0);
   }
-  
   // Lazy-load CMA data on first visit to Market tab
   if (name === 'market' && !CMA_DATA && !_cmaLoading) {
     loadCMAData();
@@ -5744,7 +5761,6 @@ function renderPricingCharts() {
     summaryEl.innerHTML = '<strong style="color:var(--red)">₦100 of construction in '+baseYear+' cost ₦'+(inflation.cpiIndex[latestCpiYear]||0).toFixed(0)+' in '+latestCpiYear+'</strong><br>Peak: '+peakRate.toFixed(1)+'% cost surge in '+peakYear+' (rebar + FX shock). Sale prices had to match this pace to protect margins.';
   }
 
-  const getMetric = p => p.marginDelta !== null ? p.marginDelta : p.realCAGR;
   const act3El = document.getElementById('px-act3-summary');
   if (act3El) {
     const topW = winners.sort((a,b) => getMetric(b) - getMetric(a))[0];
@@ -5880,16 +5896,10 @@ function renderPricingCharts() {
             }
           },
           tooltip: { callbacks: { label: ctx => {
-          const p = data[ctx.dataIndex];
-          const verdict = p.realCAGR>10 ? '✅ Beat inflation' : p.realCAGR>0 ? '⚠️ Marginal' : '🔴 Lost to inflation';
-          
-          // ADD THESE THREE LINES:
-          const md = p.marginDelta !== null ? p.marginDelta : p.realCAGR;
-          const t = p.marginTrend;
-          const trendStr = t !== null ? ' (' + (t>=0?'+':'') + t.toFixed(1) + 'pp YoY)' : '';
-          
-          return [
-            ' Margin Delta: '+md.toFixed(1)+'%  '+verdict+trendStr,
+            const p = data[ctx.dataIndex];
+            const verdict = p.realCAGR>10 ? '✅ Beat inflation' : p.realCAGR>0 ? '⚠️ Marginal' : '🔴 Lost to inflation';
+            return [
+              ' Margin Delta: '+md.toFixed(1)+'%  '+verdict+trendStr,
               ' Nominal CAGR: '+p.nominalCAGR.toFixed(1)+'%',
               ' Build cost erosion: '+p.inflationErosion.toFixed(1)+'pp',
               ' Span: '+p.firstYear+'→'+p.lastYear+' ('+p.dataPoints+' data points)'
